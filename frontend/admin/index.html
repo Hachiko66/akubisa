@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AkuBisa Admin Panel</title>
+<!-- Blokir indexing search engine -->
+<meta name="robots" content="noindex, nofollow">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  :root {
+    --ink:#0f0e0d; --cream:#f5f0e8; --accent:#e8521a; --accent2:#2a6b4a;
+    --accent3:#d4a017; --muted:#8a8070; --card:#ffffff; --border:#ddd8ce;
+    --warm:#faf7f2; --danger:#dc2626; --success:#16a34a;
+  }
+  body { font-family:'Segoe UI',system-ui,sans-serif; background:#f1f5f9; color:var(--ink); }
+
+  /* LOGIN */
+  #login-screen {
+    min-height:100vh; display:flex; align-items:center; justify-content:center;
+    background:linear-gradient(135deg,#0f0e0d 0%,#1a1a2e 100%);
+  }
+  .login-box {
+    background:white; border-radius:20px; padding:2.5rem;
+    width:100%; max-width:380px; box-shadow:0 20px 60px rgba(0,0,0,.4);
+  }
+  .login-box h1 { font-size:1.5rem; margin-bottom:.3rem; }
+  .login-box p  { color:var(--muted); font-size:.85rem; margin-bottom:1.5rem; }
+  .form-input {
+    width:100%; padding:.7rem 1rem; border:1.5px solid var(--border);
+    border-radius:10px; font-size:.9rem; margin-bottom:1rem;
+    transition:border-color .2s; outline:none;
+  }
+  .form-input:focus { border-color:var(--accent); }
+  .btn-login {
+    width:100%; padding:.8rem; background:var(--accent); color:white;
+    border:none; border-radius:10px; font-size:.95rem; font-weight:700;
+    cursor:pointer; transition:opacity .2s;
+  }
+  .btn-login:hover { opacity:.9; }
+  .error-msg { color:var(--danger); font-size:.82rem; margin-bottom:.8rem; min-height:1.2rem; }
+  .logo-admin { font-size:1.4rem; font-weight:800; margin-bottom:1.5rem; display:block; }
+  .logo-admin span { color:var(--accent); }
+  .security-note {
+    margin-top:1rem; padding:.6rem; background:#fff8f6; border:1px solid #fcd8c8;
+    border-radius:8px; font-size:.72rem; color:#c2410c; text-align:center;
+  }
+
+  /* DASHBOARD */
+  #dashboard-screen { display:none; min-height:100vh; }
+
+  /* TOP BAR */
+  .topbar {
+    background:var(--ink); color:white; padding:.8rem 1.5rem;
+    display:flex; align-items:center; justify-content:space-between;
+    position:sticky; top:0; z-index:100; border-bottom:2px solid var(--accent);
+  }
+  .topbar-logo { font-size:1rem; font-weight:800; }
+  .topbar-logo span { color:var(--accent); }
+  .topbar-logo small { color:rgba(255,255,255,.4); font-size:.65rem; font-weight:400; display:block; }
+  .topbar-right { display:flex; align-items:center; gap:1rem; }
+  .admin-name { font-size:.82rem; color:rgba(255,255,255,.7); }
+  .btn-logout {
+    background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.2);
+    color:white; padding:.35rem .9rem; border-radius:100px; font-size:.78rem;
+    cursor:pointer; transition:background .2s;
+  }
+  .btn-logout:hover { background:rgba(255,255,255,.2); }
+
+  /* LAYOUT */
+  .dashboard-body { display:flex; }
+  .sidebar {
+    width:220px; min-height:calc(100vh - 52px); background:white;
+    border-right:1px solid var(--border); padding:1rem 0; flex-shrink:0;
+    position:sticky; top:52px; height:calc(100vh - 52px); overflow-y:auto;
+  }
+  .sidebar-item {
+    display:flex; align-items:center; gap:.7rem; padding:.75rem 1.2rem;
+    cursor:pointer; font-size:.85rem; font-weight:500; color:var(--muted);
+    border-left:3px solid transparent; transition:all .2s;
+  }
+  .sidebar-item:hover { background:var(--warm); color:var(--ink); }
+  .sidebar-item.active { background:#fff4f0; color:var(--accent); border-left-color:var(--accent); font-weight:700; }
+  .sidebar-section { font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:var(--muted); padding:.8rem 1.2rem .3rem; }
+
+  .main-content { flex:1; padding:2rem; min-width:0; }
+
+  /* CARDS */
+  .card { background:white; border-radius:14px; padding:1.2rem; border:1px solid var(--border); }
+  .stat-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:1rem; margin-bottom:1.5rem; }
+  .stat-card { background:white; border-radius:14px; padding:1.2rem; border:1px solid var(--border); border-left:4px solid var(--accent); }
+  .stat-label { font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); margin-bottom:.4rem; }
+  .stat-value { font-size:2rem; font-weight:800; }
+  .stat-sub { font-size:.75rem; color:var(--muted); margin-top:.2rem; }
+
+  /* TABLE */
+  .table-wrap { overflow-x:auto; border-radius:12px; border:1px solid var(--border); }
+  table { width:100%; border-collapse:collapse; font-size:.83rem; }
+  th { padding:.7rem 1rem; text-align:left; font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); border-bottom:2px solid var(--border); background:var(--warm); }
+  td { padding:.8rem 1rem; border-bottom:1px solid var(--border); vertical-align:middle; }
+  tr:last-child td { border-bottom:none; }
+  tr:hover td { background:var(--warm); }
+
+  /* BADGES */
+  .badge { display:inline-block; padding:.2rem .55rem; border-radius:100px; font-size:.7rem; font-weight:700; }
+  .badge-green  { background:#dcfce7; color:#166534; }
+  .badge-red    { background:#fee2e2; color:#991b1b; }
+  .badge-orange { background:#fff7ed; color:#c2410c; }
+  .badge-blue   { background:#dbeafe; color:#1e40af; }
+  .badge-purple { background:#f3e8ff; color:#6b21a8; }
+
+  /* BUTTONS */
+  .btn { padding:.4rem .9rem; border-radius:8px; font-size:.78rem; font-weight:600; cursor:pointer; border:1.5px solid transparent; transition:all .2s; }
+  .btn-primary { background:var(--accent); color:white; border-color:var(--accent); }
+  .btn-outline { background:transparent; border-color:var(--border); color:var(--ink); }
+  .btn-outline:hover { border-color:var(--accent); color:var(--accent); }
+  .btn-danger { background:var(--danger); color:white; }
+  .btn-success { background:var(--success); color:white; }
+  .btn-purple { background:#8b5cf6; color:white; }
+  .btn-sm { padding:.3rem .7rem; font-size:.72rem; }
+
+  /* SEARCH BAR */
+  .search-row { display:flex; gap:.8rem; margin-bottom:1.2rem; flex-wrap:wrap; align-items:center; }
+  .search-row input, .search-row select {
+    padding:.5rem .9rem; border:1.5px solid var(--border); border-radius:10px;
+    font-size:.83rem; outline:none; transition:border-color .2s;
+  }
+  .search-row input:focus, .search-row select:focus { border-color:var(--accent); }
+
+  /* PANEL */
+  .panel { display:none; }
+  .panel.active { display:block; }
+
+  /* TAB BUTTONS */
+  .tab-row { display:flex; gap:.5rem; margin-bottom:1.2rem; flex-wrap:wrap; }
+  .tab-btn { padding:.4rem 1rem; border-radius:100px; font-size:.8rem; font-weight:600; cursor:pointer; border:1.5px solid var(--border); background:white; color:var(--muted); transition:all .2s; }
+  .tab-btn.active { background:var(--accent); color:white; border-color:var(--accent); }
+
+  /* TOAST */
+  .toast { position:fixed; bottom:2rem; right:2rem; padding:.8rem 1.4rem; border-radius:12px; font-size:.85rem; font-weight:600; z-index:9999; transform:translateY(100px); opacity:0; transition:all .3s; pointer-events:none; }
+  .toast.show { transform:translateY(0); opacity:1; }
+  .toast-success { background:#166534; color:white; }
+  .toast-error   { background:var(--danger); color:white; }
+
+  /* SPINNER */
+  .spinner { width:18px; height:18px; border:2px solid rgba(255,255,255,.3); border-top-color:white; border-radius:50%; animation:spin .6s linear infinite; display:inline-block; vertical-align:middle; margin-right:.4rem; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  /* PROGRESS BAR */
+  .progress-bar { height:8px; background:var(--warm); border-radius:4px; overflow:hidden; margin:.3rem 0; }
+  .progress-fill { height:100%; border-radius:4px; transition:width .5s; }
+
+  /* RESPONSIVE */
+  @media (max-width:768px) {
+    .sidebar { display:none; }
+    .main-content { padding:1rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div id="login-screen">
+  <div class="login-box">
+    <span class="logo-admin">Aku<span>Bisa</span> Admin</span>
+    <h1>Masuk ke Panel Admin</h1>
+    <p>Akses terbatas untuk tim internal AkuBisa</p>
+    <div class="error-msg" id="login-error"></div>
+    <input class="form-input" id="admin-email" type="email" placeholder="Email admin" onkeydown="if(event.key==='Enter')doAdminLogin()">
+    <input class="form-input" id="admin-pass" type="password" placeholder="Password" onkeydown="if(event.key==='Enter')doAdminLogin()">
+    <button class="btn-login" id="login-btn" onclick="doAdminLogin()">Masuk</button>
+    <div class="security-note">🔒 Halaman ini tidak terdaftar di navigasi publik</div>
+  </div>
+</div>
+
+<!-- DASHBOARD SCREEN -->
+<div id="dashboard-screen">
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div>
+      <div class="topbar-logo">Aku<span>Bisa</span> <span style="color:var(--accent3)">Admin</span></div>
+      <small class="topbar-logo" style="font-size:.6rem;color:rgba(255,255,255,.3)">Panel Moderasi Internal</small>
+    </div>
+    <div class="topbar-right">
+      <span class="admin-name" id="admin-display-name">-</span>
+      <button class="btn-logout" onclick="adminLogout()">Keluar</button>
+    </div>
+  </div>
+
+  <div class="dashboard-body">
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="sidebar-section">Overview</div>
+      <div class="sidebar-item active" onclick="showPanel('overview')" id="nav-overview">📊 Dashboard</div>
+      <div class="sidebar-section">Konten</div>
+      <div class="sidebar-item" onclick="showPanel('users')" id="nav-users">👥 Manajemen User</div>
+      <div class="sidebar-item" onclick="showPanel('listings')" id="nav-listings">📋 Manajemen Listing</div>
+      <div class="sidebar-section">Moderasi</div>
+      <div class="sidebar-item" onclick="showPanel('reports')" id="nav-reports">
+        🚩 Laporan
+        <span id="report-count-badge" style="display:none;background:var(--danger);color:white;font-size:.65rem;padding:.1rem .4rem;border-radius:100px;margin-left:auto"></span>
+      </div>
+      <div class="sidebar-section">Sistem</div>
+      <div class="sidebar-item" onclick="window.open('/','_blank')">🌐 Buka Platform</div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+
+      <!-- OVERVIEW PANEL -->
+      <div class="panel active" id="panel-overview">
+        <h2 style="margin-bottom:1.5rem">📊 Overview Platform</h2>
+        <div class="stat-grid" id="stat-grid">
+          <div class="stat-card"><div class="stat-label">Loading...</div><div class="stat-value">-</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem">
+          <div class="card">
+            <div style="font-weight:700;margin-bottom:1rem">Komposisi User</div>
+            <div id="user-breakdown"></div>
+          </div>
+          <div class="card">
+            <div style="font-weight:700;margin-bottom:1rem">Status Platform</div>
+            <div id="platform-health"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+            <div style="font-weight:700">⚠️ Laporan Pending Terbaru</div>
+            <button class="btn btn-outline btn-sm" onclick="showPanel('reports')">Lihat Semua</button>
+          </div>
+          <div id="reports-preview"></div>
+        </div>
+      </div>
+
+      <!-- USERS PANEL -->
+      <div class="panel" id="panel-users">
+        <h2 style="margin-bottom:1.5rem">👥 Manajemen User</h2>
+        <div class="search-row">
+          <input id="user-search" placeholder="Cari nama atau email..." onkeydown="if(event.key==='Enter')loadUsers()">
+          <select id="user-role-filter" onchange="loadUsers()">
+            <option value="">Semua Role</option>
+            <option value="worker">Pekerja</option>
+            <option value="client">Pencari</option>
+          </select>
+          <button class="btn btn-primary" onclick="loadUsers()">Cari</button>
+          <span id="users-count" style="font-size:.82rem;color:var(--muted)"></span>
+        </div>
+        <div class="table-wrap"><div id="users-table"><p style="text-align:center;padding:2rem;color:var(--muted)">Memuat...</p></div></div>
+      </div>
+
+      <!-- LISTINGS PANEL -->
+      <div class="panel" id="panel-listings">
+        <h2 style="margin-bottom:1.5rem">📋 Manajemen Listing</h2>
+        <div class="search-row">
+          <input id="listing-search" placeholder="Cari judul penawaran..." onkeydown="if(event.key==='Enter')loadListings()">
+          <button class="btn btn-primary" onclick="loadListings()">Cari</button>
+          <span id="listings-count" style="font-size:.82rem;color:var(--muted)"></span>
+        </div>
+        <div class="table-wrap"><div id="listings-table"><p style="text-align:center;padding:2rem;color:var(--muted)">Memuat...</p></div></div>
+      </div>
+
+      <!-- REPORTS PANEL -->
+      <div class="panel" id="panel-reports">
+        <h2 style="margin-bottom:1.5rem">🚩 Laporan Pengguna</h2>
+        <div class="tab-row">
+          <button class="tab-btn active" onclick="loadReports('pending',this)">⏳ Pending</button>
+          <button class="tab-btn" onclick="loadReports('resolved',this)">✅ Resolved</button>
+          <button class="tab-btn" onclick="loadReports('dismissed',this)">🚫 Dismissed</button>
+        </div>
+        <div class="table-wrap"><div id="reports-table"><p style="text-align:center;padding:2rem;color:var(--muted)">Memuat...</p></div></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = '/api';
+let adminToken = sessionStorage.getItem('admin_token'); // sessionStorage, bukan localStorage!
+let adminUser  = JSON.parse(sessionStorage.getItem('admin_user') || 'null');
+
+// Auto-login jika token masih ada
+if (adminToken && adminUser?.role === 'admin') {
+  showDashboard();
+}
+
+// ===== AUTH =====
+async function doAdminLogin() {
+  const email = document.getElementById('admin-email').value.trim();
+  const pass  = document.getElementById('admin-pass').value;
+  const errEl = document.getElementById('login-error');
+  errEl.textContent = '';
+  if (!email || !pass) { errEl.textContent = 'Email dan password wajib diisi'; return; }
+  const btn = document.getElementById('login-btn');
+  btn.innerHTML = '<span class="spinner"></span>Memverifikasi...'; btn.disabled = true;
+  try {
+    const res = await fetch(`${API}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password: pass })
+    }).then(r => r.json());
+    btn.innerHTML = 'Masuk'; btn.disabled = false;
+    if (res.token && res.user?.role === 'admin') {
+      sessionStorage.setItem('admin_token', res.token);
+      sessionStorage.setItem('admin_user', JSON.stringify(res.user));
+      adminToken = res.token;
+      adminUser  = res.user;
+      showDashboard();
+    } else if (res.token) {
+      errEl.textContent = 'Akun ini tidak memiliki akses admin.';
+    } else {
+      errEl.textContent = res.message || 'Login gagal';
+    }
+  } catch(e) {
+    btn.innerHTML = 'Masuk'; btn.disabled = false;
+    errEl.textContent = 'Koneksi ke server gagal';
+  }
+}
+
+function adminLogout() {
+  sessionStorage.removeItem('admin_token');
+  sessionStorage.removeItem('admin_user');
+  adminToken = null; adminUser = null;
+  document.getElementById('dashboard-screen').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('admin-email').value = '';
+  document.getElementById('admin-pass').value = '';
+}
+
+function showDashboard() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('dashboard-screen').style.display = 'block';
+  document.getElementById('admin-display-name').textContent = adminUser?.full_name || 'Admin';
+  loadOverview();
+}
+
+// ===== HELPERS =====
+const h = () => ({ 'Content-Type':'application/json', 'Authorization':`Bearer ${adminToken}` });
+
+function showPanel(name) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.sidebar-item').forEach(s => s.classList.remove('active'));
+  document.getElementById(`panel-${name}`).classList.add('active');
+  document.getElementById(`nav-${name}`).classList.add('active');
+  if (name==='overview') loadOverview();
+  if (name==='users')    loadUsers();
+  if (name==='listings') loadListings();
+  if (name==='reports')  loadReports('pending');
+}
+
+function toast(msg, type='success') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = `toast toast-${type} show`;
+  setTimeout(() => el.classList.remove('show'), 3500);
+}
+
+function timeAgo(d) {
+  const diff = Date.now() - new Date(d).getTime();
+  const m = Math.floor(diff/60000);
+  if (m<1) return 'Baru saja';
+  if (m<60) return m+' menit lalu';
+  const h = Math.floor(m/60);
+  if (h<24) return h+' jam lalu';
+  return Math.floor(h/24)+' hari lalu';
+}
+
+// ===== OVERVIEW =====
+async function loadOverview() {
+  try {
+    const stats = await fetch(`${API}/admin/stats`, { headers:h() }).then(r=>r.json());
+
+    document.getElementById('stat-grid').innerHTML = `
+      <div class="stat-card" style="border-left-color:var(--accent)">
+        <div class="stat-label">Total User</div>
+        <div class="stat-value" style="color:var(--accent)">${stats.users?.total||0}</div>
+        <div class="stat-sub">+${stats.users?.new_week||0} minggu ini</div>
+      </div>
+      <div class="stat-card" style="border-left-color:var(--accent2)">
+        <div class="stat-label">Penawaran</div>
+        <div class="stat-value" style="color:var(--accent2)">${stats.listings?.total||0}</div>
+        <div class="stat-sub">${stats.listings?.active||0} aktif</div>
+      </div>
+      <div class="stat-card" style="border-left-color:var(--accent3)">
+        <div class="stat-label">Total Pesan</div>
+        <div class="stat-value" style="color:var(--accent3)">${stats.messages?.total||0}</div>
+        <div class="stat-sub">Percakapan</div>
+      </div>
+      <div class="stat-card" style="border-left-color:var(--danger)">
+        <div class="stat-label">Laporan</div>
+        <div class="stat-value" style="color:var(--danger)">${stats.reports?.pending||0}</div>
+        <div class="stat-sub">Pending moderasi</div>
+      </div>
+      <div class="stat-card" style="border-left-color:#8b5cf6">
+        <div class="stat-label">Rating Platform</div>
+        <div class="stat-value" style="color:#8b5cf6">${stats.reviews?.avg||'-'}</div>
+        <div class="stat-sub">${stats.reviews?.total||0} ulasan</div>
+      </div>`;
+
+    // Update report badge
+    const pending = parseInt(stats.reports?.pending||0);
+    const badge = document.getElementById('report-count-badge');
+    if (pending > 0) { badge.textContent = pending; badge.style.display='inline'; }
+    else badge.style.display = 'none';
+
+    // User breakdown
+    const total = parseInt(stats.users?.total||1);
+    const workers = parseInt(stats.users?.workers||0);
+    const clients = parseInt(stats.users?.clients||0);
+    document.getElementById('user-breakdown').innerHTML = `
+      <div style="margin-bottom:.8rem">
+        <div style="display:flex;justify-content:space-between;font-size:.83rem;margin-bottom:.3rem">
+          <span>⚡ Pekerja</span><strong>${workers} (${Math.round(workers/total*100)}%)</strong>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" style="width:${Math.round(workers/total*100)}%;background:var(--accent2)"></div></div>
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;font-size:.83rem;margin-bottom:.3rem">
+          <span>🔍 Pencari</span><strong>${clients} (${Math.round(clients/total*100)}%)</strong>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" style="width:${Math.round(clients/total*100)}%;background:var(--accent)"></div></div>
+      </div>
+      <div style="font-size:.75rem;color:var(--muted);margin-top:.8rem;padding:.5rem;background:var(--warm);border-radius:8px">
+        Rasio ideal Pekerja:Pencari = 60:40
+      </div>`;
+
+    // Platform health
+    document.getElementById('platform-health').innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:.6rem">
+        ${[
+          ['📋 Listing aktif', `${stats.listings?.active||0} / ${stats.listings?.total||0}`, ''],
+          ['⭐ Featured', `${stats.listings?.featured||0} listing`, ''],
+          ['⭐ Avg rating', `${stats.reviews?.avg||'-'} / 5.0`, ''],
+          ['🚩 Laporan pending', `${stats.reports?.pending||0}`, parseInt(stats.reports?.pending)>5?'color:var(--danger);font-weight:700':''],
+        ].map(([label,val,style]) => `
+          <div style="display:flex;justify-content:space-between;padding:.6rem .8rem;background:var(--warm);border-radius:8px;font-size:.83rem">
+            <span>${label}</span><span style="${style}">${val}</span>
+          </div>`).join('')}
+      </div>`;
+
+    // Reports preview
+    const reports = await fetch(`${API}/admin/reports?status=pending`, { headers:h() }).then(r=>r.json());
+    const previewEl = document.getElementById('reports-preview');
+    if (!reports.length) {
+      previewEl.innerHTML = '<p style="text-align:center;padding:1.5rem;color:var(--muted);font-size:.85rem">Tidak ada laporan pending 🎉</p>';
+    } else {
+      previewEl.innerHTML = `<table><thead><tr><th>Pelapor</th><th>Target</th><th>Alasan</th><th>Waktu</th><th>Aksi</th></tr></thead>
+        <tbody>${reports.slice(0,5).map(r=>`
+          <tr>
+            <td>${r.reporter_name}</td>
+            <td>${r.reported_user_name||r.reported_listing_title||'-'}</td>
+            <td><span class="badge badge-red">${r.reason}</span></td>
+            <td style="color:var(--muted)">${timeAgo(r.created_at)}</td>
+            <td><div style="display:flex;gap:.4rem">
+              <button class="btn btn-outline btn-sm" onclick="resolveReport(${r.id},'dismiss')">Abaikan</button>
+              <button class="btn btn-success btn-sm" onclick="resolveReport(${r.id},'resolved')">Proses</button>
+            </div></td>
+          </tr>`).join('')}
+        </tbody></table>`;
+    }
+  } catch(e) { toast('Gagal memuat statistik', 'error'); }
+}
+
+// ===== USERS =====
+async function loadUsers() {
+  const search = document.getElementById('user-search').value;
+  const role   = document.getElementById('user-role-filter').value;
+  document.getElementById('users-table').innerHTML = '<p style="text-align:center;padding:2rem;color:var(--muted)">Memuat...</p>';
+  let q = '';
+  if (search) q += `search=${encodeURIComponent(search)}&`;
+  if (role)   q += `role=${role}&`;
+  try {
+    const res = await fetch(`${API}/admin/users?${q}`, { headers:h() }).then(r=>r.json());
+    const users = res.users||[];
+    document.getElementById('users-count').textContent = `${res.total||users.length} user`;
+    document.getElementById('users-table').innerHTML = !users.length
+      ? '<p style="text-align:center;padding:2rem;color:var(--muted)">Tidak ada user</p>'
+      : `<table>
+          <thead><tr><th>User</th><th>Email</th><th>Role</th><th>Listing</th><th>Rating</th><th>Status</th><th>Join</th><th>Aksi</th></tr></thead>
+          <tbody>${users.map(u=>`
+            <tr>
+              <td><div style="font-weight:600">${u.full_name}</div><div style="font-size:.72rem;color:var(--muted)">${u.city||'-'}</div></td>
+              <td style="font-size:.8rem;color:var(--muted)">${u.email}</td>
+              <td><span class="badge ${u.role==='worker'?'badge-green':'badge-orange'}">${u.role}</span></td>
+              <td style="text-align:center">${u.listing_count||0}</td>
+              <td style="text-align:center">${u.avg_rating||'-'}</td>
+              <td>${u.is_verified?'<span class="badge badge-green">✓ Verified</span>':'<span class="badge badge-red">Unverified</span>'}</td>
+              <td style="font-size:.78rem;color:var(--muted)">${new Date(u.created_at).toLocaleDateString('id-ID')}</td>
+              <td><div style="display:flex;gap:.3rem;flex-wrap:wrap">
+                ${!u.is_verified?`<button class="btn btn-outline btn-sm" onclick="verifyUser(${u.id})">✓ Verify</button>`:''}
+                <button class="btn btn-danger btn-sm" onclick="deleteUser(${u.id},'${u.full_name.replace(/'/g,"\\'")}')">Hapus</button>
+              </div></td>
+            </tr>`).join('')}
+          </tbody></table>`;
+  } catch(e) { document.getElementById('users-table').innerHTML = '<p style="color:var(--danger);text-align:center;padding:2rem">Gagal memuat</p>'; }
+}
+
+async function verifyUser(id) {
+  const res = await fetch(`${API}/admin/users/${id}/verify`, { method:'PATCH', headers:h() }).then(r=>r.json());
+  toast(res.message); loadUsers();
+}
+async function deleteUser(id, name) {
+  if (!confirm(`Hapus user "${name}"? Semua data akan hilang permanen.`)) return;
+  const res = await fetch(`${API}/admin/users/${id}`, { method:'DELETE', headers:h() }).then(r=>r.json());
+  toast(res.message); loadUsers();
+}
+
+// ===== LISTINGS =====
+async function loadListings() {
+  const search = document.getElementById('listing-search').value;
+  document.getElementById('listings-table').innerHTML = '<p style="text-align:center;padding:2rem;color:var(--muted)">Memuat...</p>';
+  const q = search ? `search=${encodeURIComponent(search)}&` : '';
+  try {
+    const res = await fetch(`${API}/admin/listings?${q}`, { headers:h() }).then(r=>r.json());
+    const listings = res.listings||[];
+    document.getElementById('listings-count').textContent = `${res.total||listings.length} listing`;
+    document.getElementById('listings-table').innerHTML = !listings.length
+      ? '<p style="text-align:center;padding:2rem;color:var(--muted)">Tidak ada listing</p>'
+      : `<table>
+          <thead><tr><th>Judul</th><th>Pemilik</th><th>Kategori</th><th>Harga</th><th>Views</th><th>Status</th><th>Aksi</th></tr></thead>
+          <tbody>${listings.map(l=>`
+            <tr>
+              <td>
+                <div style="font-weight:600;max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${l.title}</div>
+                ${l.is_featured?'<span class="badge badge-purple">⭐ Featured</span>':''}
+              </td>
+              <td><div style="font-size:.83rem">${l.full_name}</div><div style="font-size:.72rem;color:var(--muted)">${l.email}</div></td>
+              <td>${l.category_icon||''} ${l.category_name||'-'}</td>
+              <td style="font-weight:600;color:var(--accent)">${l.price?'Rp '+parseInt(l.price).toLocaleString('id-ID'):'-'}</td>
+              <td style="text-align:center">${l.views||0}</td>
+              <td><span class="badge ${l.is_active?'badge-green':'badge-red'}">${l.is_active?'Aktif':'Nonaktif'}</span></td>
+              <td><div style="display:flex;gap:.3rem;flex-wrap:wrap">
+                <button class="btn btn-outline btn-sm" onclick="toggleListing(${l.id})">${l.is_active?'Nonaktifkan':'Aktifkan'}</button>
+                ${!l.is_featured?`<button class="btn btn-purple btn-sm" onclick="featureListing(${l.id})">⭐</button>`:''}
+                <button class="btn btn-danger btn-sm" onclick="deleteListing(${l.id})">Hapus</button>
+              </div></td>
+            </tr>`).join('')}
+          </tbody></table>`;
+  } catch(e) { document.getElementById('listings-table').innerHTML = '<p style="color:var(--danger);text-align:center;padding:2rem">Gagal memuat</p>'; }
+}
+
+async function toggleListing(id) {
+  const res = await fetch(`${API}/admin/listings/${id}/toggle`, { method:'PATCH', headers:h() }).then(r=>r.json());
+  toast(res.message); loadListings();
+}
+async function featureListing(id) {
+  const days = prompt('Featured berapa hari?', '7');
+  if (!days) return;
+  const res = await fetch(`${API}/admin/listings/${id}/feature`, { method:'PATCH', headers:h(), body:JSON.stringify({days:parseInt(days)}) }).then(r=>r.json());
+  toast(res.message); loadListings();
+}
+async function deleteListing(id) {
+  if (!confirm('Hapus listing ini secara permanen?')) return;
+  const res = await fetch(`${API}/admin/listings/${id}`, { method:'DELETE', headers:h() }).then(r=>r.json());
+  toast(res.message); loadListings();
+}
+
+// ===== REPORTS =====
+async function loadReports(status='pending', btn=null) {
+  if (btn) { document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); }
+  document.getElementById('reports-table').innerHTML = '<p style="text-align:center;padding:2rem;color:var(--muted)">Memuat...</p>';
+  try {
+    const reports = await fetch(`${API}/admin/reports?status=${status}`, { headers:h() }).then(r=>r.json());
+    document.getElementById('reports-table').innerHTML = !reports.length
+      ? `<div style="text-align:center;padding:3rem;color:var(--muted)"><div style="font-size:2rem;margin-bottom:.8rem">✅</div><p>Tidak ada laporan ${status}</p></div>`
+      : `<table>
+          <thead><tr><th>Pelapor</th><th>Target</th><th>Alasan</th><th>Deskripsi</th><th>Waktu</th><th>Aksi</th></tr></thead>
+          <tbody>${reports.map(r=>`
+            <tr>
+              <td><div style="font-weight:600">${r.reporter_name}</div><div style="font-size:.72rem;color:var(--muted)">${r.reporter_email}</div></td>
+              <td>${r.reported_user_name?`<div>${r.reported_user_name}</div>`:''}${r.reported_listing_title?`<div style="font-size:.78rem;color:var(--muted)">${r.reported_listing_title}</div>`:''}</td>
+              <td><span class="badge badge-red">${r.reason}</span></td>
+              <td style="font-size:.8rem;color:var(--muted);max-width:180px">${r.description||'-'}</td>
+              <td style="font-size:.78rem;color:var(--muted)">${timeAgo(r.created_at)}</td>
+              <td>${status==='pending'?`<div style="display:flex;gap:.4rem">
+                <button class="btn btn-outline btn-sm" onclick="resolveReport(${r.id},'dismiss')">🚫 Abaikan</button>
+                <button class="btn btn-success btn-sm" onclick="resolveReport(${r.id},'resolved')">✅ Proses</button>
+              </div>`:`<span class="badge ${status==='resolved'?'badge-green':'badge-blue'}">${status}</span>`}</td>
+            </tr>`).join('')}
+          </tbody></table>`;
+  } catch(e) { document.getElementById('reports-table').innerHTML = '<p style="color:var(--danger);text-align:center;padding:2rem">Gagal memuat laporan</p>'; }
+}
+
+async function resolveReport(id, action) {
+  const res = await fetch(`${API}/admin/reports/${id}/resolve`, { method:'PATCH', headers:h(), body:JSON.stringify({action}) }).then(r=>r.json());
+  toast(res.message);
+  loadReports('pending');
+  loadOverview();
+}
+</script>
+</body>
+</html>

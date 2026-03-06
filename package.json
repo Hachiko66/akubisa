@@ -1,0 +1,8 @@
+{
+  "name": "akubisa",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "cd backend && node server.js",
+    "install-deps": "cd backend && npm install"
+  }
+}

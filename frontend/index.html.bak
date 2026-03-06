@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AkuBisa — Platform Freelance Indonesia</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a class="logo" onclick="goTo('home')">Aku<span>Bisa</span></a>
+  <div class="nav-links" id="nav-links"></div>
+</nav>
+
+<!-- ========== PAGE: HOME ========== -->
+<div id="page-home" class="page">
+  <div style="background:var(--ink);padding:4rem 5vw 3rem;min-height:60vh;display:flex;align-items:center">
+    <div style="max-width:1200px;margin:0 auto;width:100%">
+      <div style="max-width:600px">
+        <div style="font-size:.8rem;font-weight:700;color:var(--accent);letter-spacing:.1em;text-transform:uppercase;margin-bottom:1rem">Platform Freelance Indonesia</div>
+        <h1 style="font-family:'Syne',sans-serif;font-size:clamp(2.5rem,5vw,4rem);font-weight:800;color:white;line-height:1.08;letter-spacing:-.04em;margin-bottom:1.2rem">
+          Apa yang bisa<br>kamu <span style="color:var(--accent)">tawarkan</span>?
+        </h1>
+        <p style="color:rgba(255,255,255,.6);font-size:1rem;line-height:1.7;max-width:440px;margin-bottom:2rem">
+          Dari bikin website, nyewain kost, hingga les memasak — semua kemampuan berharga. Posting apa yang bisa kamu lakukan dan temukan klienmu!
+        </p>
+        <div style="display:flex;gap:1rem;flex-wrap:wrap">
+          <button class="btn btn-primary" onclick="goTo('register')">🚀 Mulai Gratis</button>
+          <button class="btn btn-outline" style="color:white;border-color:rgba(255,255,255,.3)" onclick="goTo('explore')">Jelajahi Penawaran →</button>
+        </div>
+        <div style="display:flex;gap:2rem;margin-top:2.5rem;padding-top:2rem;border-top:1px solid rgba(255,255,255,.1)">
+          <div><div style="font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;color:white">2.4K+</div><div style="font-size:.75rem;color:rgba(255,255,255,.4)">Penawaran aktif</div></div>
+          <div><div style="font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;color:white">1.1K+</div><div style="font-size:.75rem;color:rgba(255,255,255,.4)">Pengguna</div></div>
+          <div><div style="font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;color:white">8+</div><div style="font-size:.75rem;color:rgba(255,255,255,.4)">Kategori</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CATEGORIES -->
+  <div class="section">
+    <div class="section-title">Semua Kategori</div>
+    <div class="section-sub">Tidak ada batas bidang — semua kemampuan diterima</div>
+    <div id="home-categories" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:1rem"></div>
+  </div>
+
+  <!-- LATEST LISTINGS -->
+  <div class="section" style="padding-top:0">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem">
+      <div><div class="section-title">Penawaran Terbaru</div><div class="section-sub" style="margin:0">Langsung dari pengguna kami</div></div>
+      <button class="btn btn-outline btn-sm" onclick="goTo('explore')">Lihat Semua →</button>
+    </div>
+    <div class="listings-grid" id="home-listings"></div>
+  </div>
+
+  <!-- HOW IT WORKS -->
+  <div class="dark-section">
+    <div style="max-width:1200px;margin:0 auto">
+      <h2>Cara kerjanya sederhana</h2>
+      <p>Tiga langkah untuk mulai menawarkan atau menemukan layanan</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1.5rem;margin-top:2rem">
+        <div style="padding:1.5rem;border:1px solid rgba(255,255,255,.1);border-radius:14px">
+          <div style="font-size:1.5rem;margin-bottom:.8rem">📝</div>
+          <div style="font-family:'Syne',sans-serif;color:white;font-weight:700;margin-bottom:.4rem">1. Tulis Kemampuanmu</div>
+          <p style="font-size:.83rem;color:rgba(255,255,255,.45);line-height:1.6">Buat postingan singkat tentang apa yang bisa kamu lakukan.</p>
+        </div>
+        <div style="padding:1.5rem;border:1px solid rgba(255,255,255,.1);border-radius:14px">
+          <div style="font-size:1.5rem;margin-bottom:.8rem">🔍</div>
+          <div style="font-family:'Syne',sans-serif;color:white;font-weight:700;margin-bottom:.4rem">2. Ditemukan Klien</div>
+          <p style="font-size:.83rem;color:rgba(255,255,255,.45);line-height:1.6">Calon klien mencarimu lewat pencarian atau kategori.</p>
+        </div>
+        <div style="padding:1.5rem;border:1px solid rgba(255,255,255,.1);border-radius:14px">
+          <div style="font-size:1.5rem;margin-bottom:.8rem">🤝</div>
+          <div style="font-family:'Syne',sans-serif;color:white;font-weight:700;margin-bottom:.4rem">3. Mulai Bekerja</div>
+          <p style="font-size:.83rem;color:rgba(255,255,255,.45);line-height:1.6">Chat, sepakati syarat, dan mulai berkolaborasi.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer style="background:var(--ink);padding:2rem 5vw;text-align:center;border-top:1px solid rgba(255,255,255,.05)">
+    <div style="font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:800;color:white;margin-bottom:.4rem">Aku<span style="color:var(--accent)">Bisa</span></div>
+    <p style="font-size:.78rem;color:rgba(255,255,255,.3)">© 2025 AkuBisa · Platform Freelance Indonesia</p>
+  </footer>
+</div>
+
+<!-- ========== PAGE: REGISTER ========== -->
+<div id="page-register" class="page" style="display:flex;align-items:center;justify-content:center;min-height:100vh;padding:2rem">
+  <div style="width:100%;max-width:480px">
+    <div style="text-align:center;margin-bottom:2rem">
+      <a class="logo" onclick="goTo('home')" style="font-size:1.8rem">Aku<span>Bisa</span></a>
+      <p style="color:var(--muted);margin-top:.5rem;font-size:.9rem">Buat akun gratis dan mulai hari ini</p>
+    </div>
+    <div class="card">
+      <!-- ROLE SWITCH -->
+      <div style="margin-bottom:1.5rem">
+        <div class="form-label" style="margin-bottom:.6rem">Kamu bergabung sebagai:</div>
+        <div class="switch-container">
+          <button id="reg-role-worker" class="switch-btn active" onclick="setRegRole('worker')">⚡ Pekerja / Penyedia</button>
+          <button id="reg-role-client" class="switch-btn" onclick="setRegRole('client')">🔍 Pencari Layanan</button>
+        </div>
+        <input type="hidden" id="reg-role-input" value="worker">
+        <div id="reg-worker-hint" style="font-size:.78rem;color:var(--accent2);margin-top:.5rem;padding:.5rem .8rem;background:#e8f4ee;border-radius:8px">
+          ⚡ Sebagai <strong>Pekerja</strong>, kamu bisa memposting kemampuan dan layananmu untuk ditemukan klien.
+        </div>
+        <div id="reg-client-hint" style="font-size:.78rem;color:#c07a00;margin-top:.5rem;padding:.5rem .8rem;background:#fff4e6;border-radius:8px;display:none">
+          🔍 Sebagai <strong>Pencari</strong>, kamu bisa menemukan dan menghubungi penyedia layanan yang kamu butuhkan.
+        </div>
+      </div>
+
+      <div id="reg-error" class="form-error" style="margin-bottom:.5rem"></div>
+
+      <div class="form-group">
+        <label class="form-label">Nama Lengkap *</label>
+        <input class="form-input" id="reg-name" placeholder="Nama lengkap kamu" type="text">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email *</label>
+        <input class="form-input" id="reg-email" placeholder="email@kamu.com" type="email">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Password *</label>
+          <input class="form-input" id="reg-pass" placeholder="Min. 6 karakter" type="password">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Konfirmasi Password *</label>
+          <input class="form-input" id="reg-confirm" placeholder="Ulangi password" type="password">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Kota</label>
+          <input class="form-input" id="reg-city" placeholder="Jakarta, Bandung..." type="text">
+        </div>
+        <div class="form-group">
+          <label class="form-label">No. WhatsApp</label>
+          <input class="form-input" id="reg-phone" placeholder="08xx..." type="tel">
+        </div>
+      </div>
+      <button class="btn btn-primary btn-block" id="reg-btn" onclick="doRegister()" style="margin-top:.5rem">Daftar Sekarang 🚀</button>
+      <p style="text-align:center;margin-top:1rem;font-size:.83rem;color:var(--muted)">
+        Sudah punya akun? <a onclick="goTo('login')" style="color:var(--accent);cursor:pointer;font-weight:600">Masuk di sini</a>
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ========== PAGE: LOGIN ========== -->
+<div id="page-login" class="page" style="display:flex;align-items:center;justify-content:center;min-height:100vh;padding:2rem">
+  <div style="width:100%;max-width:400px">
+    <div style="text-align:center;margin-bottom:2rem">
+      <a class="logo" onclick="goTo('home')" style="font-size:1.8rem">Aku<span>Bisa</span></a>
+      <p style="color:var(--muted);margin-top:.5rem;font-size:.9rem">Selamat datang kembali!</p>
+    </div>
+    <div class="card">
+      <div id="login-error" class="form-error" style="margin-bottom:.5rem"></div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input class="form-input" id="login-email" placeholder="email@kamu.com" type="email">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input class="form-input" id="login-pass" placeholder="Password kamu" type="password" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <button class="btn btn-primary btn-block" id="login-btn" onclick="doLogin()">Masuk</button>
+      <p style="text-align:center;margin-top:1rem;font-size:.83rem;color:var(--muted)">
+        Belum punya akun? <a onclick="goTo('register')" style="color:var(--accent);cursor:pointer;font-weight:600">Daftar gratis</a>
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ========== PAGE: EXPLORE ========== -->
+<div id="page-explore" class="page">
+  <div class="dark-section" style="padding:2rem 5vw">
+    <div style="max-width:1200px;margin:0 auto">
+      <h2 style="margin-bottom:1rem">Jelajahi Penawaran</h2>
+      <div class="search-bar-wrap">
+        <input type="text" id="explore-search" placeholder='Cari "Aku bisa bantu kamu..."' onkeydown="if(event.key==='Enter')doSearch()">
+        <button onclick="doSearch()">Cari</button>
+      </div>
+      <div class="chip-wrap" id="explore-chips"></div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="listings-grid" id="explore-grid">
+      <p style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--muted)">Memuat penawaran...</p>
+    </div>
+  </div>
+</div>
+
+<!-- ========== PAGE: DASHBOARD ========== -->
+<div id="page-dashboard" class="page">
+  <div class="dark-section">
+    <div style="max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem">
+      <div>
+        <h2>Halo, <span id="dash-name">-</span>! 👋</h2>
+        <p id="dash-role" style="color:rgba(255,255,255,.5)"></p>
+      </div>
+      <div style="display:flex;gap:.8rem;flex-wrap:wrap">
+        <button class="btn btn-outline" style="color:white;border-color:rgba(255,255,255,.2)" onclick="goTo('profile')">👤 Profil</button>
+        <button class="btn btn-primary" id="dash-post-btn" onclick="openPostModal()">+ Posting Penawaran</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- WORKER DASHBOARD -->
+  <div id="dash-worker" class="section hidden">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1rem;margin-bottom:2rem">
+      <div class="card" style="text-align:center">
+        <div style="font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;color:var(--accent)" id="dash-listing-count">-</div>
+        <div style="font-size:.8rem;color:var(--muted)">Penawaran Aktif</div>
+      </div>
+      <div class="card" style="text-align:center">
+        <div style="font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;color:var(--accent2)" id="dash-views">-</div>
+        <div style="font-size:.8rem;color:var(--muted)">Total Dilihat</div>
+      </div>
+    </div>
+    <div class="section-title" style="font-size:1.2rem;margin-bottom:1rem">Penawaran Saya</div>
+    <div class="listings-grid" id="dash-my-listings"></div>
+  </div>
+
+  <!-- CLIENT DASHBOARD -->
+  <div id="dash-client" class="section hidden">
+    <div class="card" style="margin-bottom:2rem;background:linear-gradient(135deg,#fff4e6,#fce8e4)">
+      <div style="font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;margin-bottom:.4rem">🔍 Kamu dalam Mode Pencari</div>
+      <p style="font-size:.85rem;color:var(--muted);margin-bottom:1rem">Temukan pekerja berbakat yang sesuai kebutuhanmu.</p>
+      <button class="btn btn-primary btn-sm" onclick="goTo('explore')">Jelajahi Semua Penawaran →</button>
+    </div>
+    <div class="section-title" style="font-size:1.2rem;margin-bottom:1rem">Penawaran Untukmu</div>
+    <div class="listings-grid" id="dash-client-listings"></div>
+  </div>
+</div>
+
+<!-- ========== PAGE: PROFILE ========== -->
+<div id="page-profile" class="page">
+  <div class="profile-header">
+    <div class="profile-inner">
+      <div class="profile-avatar-lg" id="profile-avatar" style="background:var(--accent);font-size:1.5rem;font-weight:800">AB</div>
+      <div style="flex:1">
+        <div class="profile-name" id="profile-name">Nama Pengguna</div>
+        <div class="profile-meta">
+          <span id="profile-email">email@mail.com</span> · <span id="profile-city">Kota</span>
+        </div>
+        <div style="margin-top:.6rem"><span id="profile-role-label" class="role-badge role-worker">⚡ Pekerja</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;max-width:700px">
+      <!-- SWITCH ROLE CARD -->
+      <div class="card" style="grid-column:1/-1">
+        <div style="font-family:'Syne',sans-serif;font-weight:700;margin-bottom:.3rem">🔄 Ganti Mode</div>
+        <p style="font-size:.83rem;color:var(--muted);margin-bottom:1rem">Kamu bisa switch kapan saja antara Pekerja dan Pencari layanan.</p>
+        <div class="switch-container">
+          <button id="sw-worker" class="switch-btn" onclick="doSwitchRole('worker')">⚡ Pekerja / Penyedia</button>
+          <button id="sw-client" class="switch-btn" onclick="doSwitchRole('client')">🔍 Pencari Layanan</button>
+        </div>
+        <p style="font-size:.75rem;color:var(--muted);margin-top:.8rem">💡 Sebagai Pekerja kamu bisa posting penawaran. Sebagai Pencari kamu bisa menemukan & menghubungi pekerja.</p>
+      </div>
+
+      <div class="card">
+        <div style="font-family:'Syne',sans-serif;font-weight:700;margin-bottom:1rem">Aksi Cepat</div>
+        <div style="display:flex;flex-direction:column;gap:.6rem">
+          <button class="btn btn-primary btn-sm" onclick="openPostModal();goTo('dashboard')">+ Buat Penawaran</button>
+          <button class="btn btn-outline btn-sm" onclick="goTo('dashboard')">📊 Dashboard</button>
+          <button class="btn btn-outline btn-sm" onclick="goTo('explore')">🔍 Jelajahi</button>
+          <button class="btn btn-danger btn-sm" onclick="logout()" style="margin-top:.4rem">Keluar</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="font-family:'Syne',sans-serif;font-weight:700;margin-bottom:1rem">Info Akun</div>
+        <div style="font-size:.83rem;line-height:2;color:var(--muted)">
+          <div>📧 <span id="profile-email2"></span></div>
+          <div>📍 <span id="profile-city2"></span></div>
+          <div>👤 Role: <strong id="profile-role2" style="color:var(--ink)"></strong></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- LISTING DETAIL MODAL -->
+<div class="modal-overlay" id="listing-modal" onclick="if(event.target===this)closeListingModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Detail Penawaran</div>
+      <button class="modal-close" onclick="closeListingModal()">✕</button>
+    </div>
+    <div id="listing-modal-body"></div>
+  </div>
+</div>
+
+<!-- POST LISTING MODAL -->
+<div class="modal-overlay" id="post-modal" onclick="if(event.target===this)closePostModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="post-modal-title">Aku Bisa…</div>
+      <button class="modal-close" onclick="closePostModal()">✕</button>
+    </div>
+    <form id="post-form" onsubmit="return false">
+      <div class="form-group">
+        <label class="form-label">Judul Penawaran *</label>
+        <input class="form-input" id="post-title" placeholder='Contoh: "Aku Bisa Bantu Kamu Buat Website"'>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Deskripsi *</label>
+        <textarea class="form-textarea" id="post-desc" placeholder="Jelaskan kemampuanmu, pengalaman, dan apa yang klien akan dapat..."></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Kategori</label>
+          <select class="form-select" id="post-category"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Kota</label>
+          <input class="form-input" id="post-city" placeholder="Jakarta...">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Harga</label>
+          <input class="form-input" id="post-price" placeholder="Rp 100.000">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Satuan Harga</label>
+          <input class="form-input" id="post-price-unit" placeholder="/project, /jam, /bulan">
+        </div>
+      </div>
+    </form>
+    <div style="display:flex;gap:.8rem;justify-content:flex-end;margin-top:1rem">
+      <button class="btn btn-outline" onclick="closePostModal()">Batal</button>
+      <button class="btn btn-primary" id="post-submit-btn" onclick="submitListing()">🚀 Posting Sekarang</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script src="/js/api.js"></script>
+<script src="/js/app.js"></script>
+<script src="/js/pages.js"></script>
+<script src="/js/auth.js"></script>
+<script>
+  // Sync profile info
+  const origRenderProfile = renderProfile;
+  renderProfile = async function() {
+    await origRenderProfile();
+    if(currentUser) {
+      document.getElementById('profile-email2').textContent = currentUser.email;
+      document.getElementById('profile-city2').textContent = currentUser.city || '-';
+      document.getElementById('profile-role2').textContent = currentUser.role === 'worker' ? 'Pekerja ⚡' : 'Pencari 🔍';
+    }
+  }
+</script>
+</body>
+</html>
