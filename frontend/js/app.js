@@ -347,3 +347,12 @@ function scrollToHow() {
 
 window.goTo = goTo;
 window.closeMobileMenu = closeMobileMenu;
+
+// Hamburger visibility on resize
+window.addEventListener('resize', () => {
+  const hamburger = document.getElementById('hamburger-btn');
+  if (hamburger) {
+    hamburger.style.display = window.innerWidth <= 768 ? 'flex' : 'none';
+  }
+  if (window.innerWidth > 768) closeMobileMenu();
+});
