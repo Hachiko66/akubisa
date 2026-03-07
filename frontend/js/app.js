@@ -85,6 +85,7 @@ function renderNav() {
   const links = document.getElementById('nav-links');
   const mobileLinks = document.getElementById('mobile-nav-links');
   if (!links) return;
+  if (mobileLinks) mobileLinks.innerHTML = '';
 
   let desktopHTML = '';
   let mobileHTML = '';
@@ -343,3 +344,6 @@ function scrollToHow() {
     if (el) el.scrollIntoView({ behavior: 'smooth' });
   }
 }
+
+window.goTo = goTo;
+window.closeMobileMenu = closeMobileMenu;
