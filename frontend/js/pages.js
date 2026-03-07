@@ -867,7 +867,13 @@ function jobRequestCardHTML(r) {
           <div class="avatar" style="background:${av};width:28px;height:28px;font-size:.7rem">${ini}</div>
           <span style="font-size:.78rem;font-weight:600">${r.full_name||'Anonim'}</span>
         </div>
-        <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();openApplyJobModal(${r.id},'${(r.title||'').replace(/'/g,"\\'")}')">Lamar →</button>
+        ${currentUser && currentUser.id === r.user_id
+          ? `<div style="display:flex;gap:.5rem" onclick="event.stopPropagation()">
+              <button class="btn btn-outline btn-sm" onclick="viewMyApplications(${r.id})">👥 ${r.application_count||0} Pelamar</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteJobRequest(${r.id})">🗑 Hapus</button>
+             </div>`
+          : `<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();openApplyJobModal(${r.id},'${(r.title||'').replace(/'/g,"\'")}')">Lamar →</button>`
+        }
       </div>
     </div>`;
 }
@@ -1038,5 +1044,16 @@ async function acceptApplicant(appId) {
   if (res.message) {
     showToast('Pelamar diterima! 🎉', 'success');
     document.getElementById('applicants-modal')?.remove();
+  }
+}
+
+async function deleteJobRequest(id) {
+  if (!confirm('Hapus kebutuhan ini?')) return;
+  const res = await api.deleteJobRequest(id);
+  if (res.message) {
+    showToast('Kebutuhan dihapus!', 'success');
+    fetchJobRequests(true);
+  } else {
+    showToast(res.message || 'Gagal menghapus', 'error');
   }
 }
