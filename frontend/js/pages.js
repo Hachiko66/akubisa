@@ -39,7 +39,7 @@ async function renderExplore() {
 
 async function fetchExplore() {
   document.getElementById('explore-grid').innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:3rem"><div style="width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite;display:inline-block"></div></div>`;
-  let params = 'limit=20';
+  let params = 'limit=100';
   if (exploreFilter !== 'semua') params += `&category=${exploreFilter}`;
   if (exploreSearch) params += `&search=${encodeURIComponent(exploreSearch)}`;
   try {
