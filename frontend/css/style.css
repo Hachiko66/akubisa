@@ -138,3 +138,95 @@ body.auth-mode #main-nav {
   grid-template-columns:1fr 1fr;
   min-height:100vh;
 }
+
+/* ===== MOBILE RESPONSIVE ===== */
+@media(max-width:768px){
+
+  /* NAV */
+  nav{padding:.8rem 4vw}
+  .logo{font-size:1.2rem}
+  .nav-links{gap:.8rem}
+  .nav-links a{font-size:.8rem}
+  .btn{font-size:.8rem;padding:.5rem 1rem}
+
+  /* AUTH PAGES */
+  #page-login.active,
+  #page-register.active{
+    grid-template-columns:1fr!important;
+  }
+  #page-login .auth-brand,
+  #page-register .auth-brand{
+    display:none!important;
+  }
+
+  /* HOME */
+  .section{padding:2rem 4vw}
+  .section-title{font-size:1.4rem}
+  .listings-grid{grid-template-columns:1fr}
+  .search-bar-wrap{border-radius:16px}
+  .chip-wrap{gap:.4rem}
+  .chip{font-size:.72rem;padding:.3rem .8rem}
+
+  /* DASHBOARD */
+  .profile-inner{flex-direction:column;text-align:center;gap:1rem}
+  .profile-header{padding:2rem 4vw}
+  .profile-name{font-size:1.3rem}
+
+  /* LISTING CARD */
+  .listing-card{padding:1rem}
+
+  /* MODAL */
+  .modal{padding:1.5rem;border-radius:16px;max-height:95vh}
+  .modal-title{font-size:1.1rem}
+  .form-row{grid-template-columns:1fr}
+
+  /* MESSAGES */
+  .messages-layout{flex-direction:column}
+  .messages-sidebar{width:100%!important;max-height:200px;overflow-y:auto}
+
+  /* DARK SECTION */
+  .dark-section{padding:2rem 4vw}
+  .dark-section h2{font-size:1.2rem}
+
+  /* SWITCH */
+  .switch-container{width:100%}
+
+  /* ADMIN TABLE */
+  .admin-table{font-size:.75rem}
+  .admin-table th,.admin-table td{padding:.5rem .6rem}
+
+  /* TOAST */
+  .toast{bottom:1rem;right:1rem;left:1rem;right:1rem;font-size:.8rem}
+
+  /* PROFILE PAGE */
+  .profile-avatar-lg{width:64px;height:64px;font-size:1.4rem}
+}
+
+@media(max-width:480px){
+  nav{padding:.7rem 3vw}
+  .logo{font-size:1.1rem}
+  .section{padding:1.5rem 3vw}
+  .section-title{font-size:1.2rem}
+  .btn{font-size:.75rem;padding:.45rem .9rem}
+  .listing-card{padding:.9rem}
+  .modal{padding:1.2rem}
+  .listings-grid{grid-template-columns:1fr}
+}
+
+/* HAMBURGER MENU */
+@media(max-width:768px){
+  #hamburger-btn{display:flex!important}
+  #nav-links{display:none!important}
+  #mobile-menu.open{display:flex!important}
+  #mobile-menu a{
+    color:white;
+    font-size:1.2rem;
+    font-weight:600;
+    text-decoration:none;
+    cursor:pointer;
+  }
+  #mobile-menu .btn{
+    font-size:1rem;
+    padding:.8rem 2rem;
+  }
+}

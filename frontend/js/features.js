@@ -408,3 +408,35 @@ async function purchaseAndDownload(listingId) {
     btn.innerHTML = '🛒 Dapatkan Sekarang';
   }
 }
+
+function toggleMobileMenu() {
+  const menu = document.getElementById('mobile-menu');
+  const btn = document.getElementById('hamburger-btn');
+  const lines = btn.querySelectorAll('.ham-line');
+  const isOpen = menu.classList.toggle('open');
+
+  // Animate hamburger to X
+  if (isOpen) {
+    lines[0].style.transform = 'translateY(7px) rotate(45deg)';
+    lines[1].style.opacity = '0';
+    lines[2].style.transform = 'translateY(-7px) rotate(-45deg)';
+    document.body.style.overflow = 'hidden';
+  } else {
+    lines[0].style.transform = '';
+    lines[1].style.opacity = '1';
+    lines[2].style.transform = '';
+    document.body.style.overflow = '';
+  }
+}
+
+function closeMobileMenu() {
+  const menu = document.getElementById('mobile-menu');
+  const btn = document.getElementById('hamburger-btn');
+  if (!menu) return;
+  menu.classList.remove('open');
+  const lines = btn.querySelectorAll('.ham-line');
+  lines[0].style.transform = '';
+  lines[1].style.opacity = '1';
+  lines[2].style.transform = '';
+  document.body.style.overflow = '';
+}

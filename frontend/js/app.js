@@ -83,30 +83,50 @@ function goTo(page) {
 // ===== NAV =====
 function renderNav() {
   const links = document.getElementById('nav-links');
+  const mobileLinks = document.getElementById('mobile-nav-links');
   if (!links) return;
+
+  let desktopHTML = '';
+  let mobileHTML = '';
+
   if (!currentUser) {
-    links.innerHTML = `
+    desktopHTML = `
       <a onclick="goTo('explore')">Jelajahi</a>
       <a onclick="scrollToHow()">Cara Kerja</a>
       <a onclick="goTo('login')" style="font-weight:600">Masuk</a>
       <button class="btn btn-primary btn-sm" onclick="goTo('register')">Daftar</button>`;
-    return;
+    mobileHTML = `
+      <a onclick="goTo('explore');closeMobileMenu()">Jelajahi</a>
+      <a onclick="scrollToHow();closeMobileMenu()">Cara Kerja</a>
+      <a onclick="goTo('login');closeMobileMenu()" style="font-weight:600">Masuk</a>
+      <button class="btn btn-primary" onclick="goTo('register');closeMobileMenu()">Daftar</button>`;
+  } else {
+    const roleBadge = `<span class="role-badge ${currentUser.role==='worker'?'role-worker':'role-client'}" onclick="goTo('profile')" style="cursor:pointer">
+      ${currentUser.role==='worker'?'⚡':'🔍'} ${currentUser.role==='worker'?'PEKERJA':'PENCARI'}
+    </span>`;
+    desktopHTML = `
+      <a onclick="goTo('explore')">Jelajahi</a>
+      <a onclick="goTo('dashboard')">Dashboard</a>
+      <a onclick="goTo('bookmarks')">🔖 Simpan</a>
+      <a onclick="goTo('messages')">💬 Pesan</a>
+      ${roleBadge}
+      <div style="position:relative;display:inline-flex;align-items:center">
+        <button onclick="toggleNotifPanel()" style="background:var(--warm);border:1.5px solid var(--border);border-radius:100px;padding:.35rem .8rem;cursor:pointer;font-size:.82rem;display:inline-flex;align-items:center;gap:.3rem;font-weight:600;color:var(--ink)">🔔 Notif</button>
+        <span id="notif-badge" style="display:none;position:absolute;top:-5px;right:-5px;background:var(--accent);color:white;font-size:.6rem;font-weight:800;min-width:17px;height:17px;border-radius:50%;align-items:center;justify-content:center;padding:0 3px;z-index:1"></span>
+      </div>
+      <button class="btn btn-outline btn-sm" onclick="goTo('profile')" style="font-weight:700">${initials(currentUser.full_name)}</button>
+      <button class="btn btn-primary btn-sm" onclick="logout()">Keluar</button>`;
+    mobileHTML = `
+      <a onclick="goTo('explore');closeMobileMenu()">Jelajahi</a>
+      <a onclick="goTo('dashboard');closeMobileMenu()">Dashboard</a>
+      <a onclick="goTo('bookmarks');closeMobileMenu()">🔖 Simpan</a>
+      <a onclick="goTo('messages');closeMobileMenu()">💬 Pesan</a>
+      <a onclick="goTo('profile');closeMobileMenu()">${initials(currentUser.full_name)} — Profil</a>
+      <button class="btn btn-primary" onclick="logout();closeMobileMenu()">Keluar</button>`;
   }
-  const roleBadge = `<span class="role-badge ${currentUser.role==='worker'?'role-worker':'role-client'}" onclick="goTo('profile')" style="cursor:pointer">
-    ${currentUser.role==='worker'?'⚡':'🔍'} ${currentUser.role==='worker'?'PEKERJA':'PENCARI'}
-  </span>`;
-  links.innerHTML = `
-    <a onclick="goTo('explore')">Jelajahi</a>
-    <a onclick="goTo('dashboard')">Dashboard</a>
-    <a onclick="goTo('bookmarks')">🔖 Simpan</a>
-    <a onclick="goTo('messages')">💬 Pesan</a>
-    ${roleBadge}
-    <div style="position:relative;display:inline-flex;align-items:center">
-      <button onclick="toggleNotifPanel()" style="background:var(--warm);border:1.5px solid var(--border);border-radius:100px;padding:.35rem .8rem;cursor:pointer;font-size:.82rem;display:inline-flex;align-items:center;gap:.3rem;font-weight:600;color:var(--ink)">🔔 Notif</button>
-      <span id="notif-badge" style="display:none;position:absolute;top:-5px;right:-5px;background:var(--accent);color:white;font-size:.6rem;font-weight:800;min-width:17px;height:17px;border-radius:50%;align-items:center;justify-content:center;padding:0 3px;z-index:1"></span>
-    </div>
-    <button class="btn btn-outline btn-sm" onclick="goTo('profile')" style="font-weight:700">${initials(currentUser.full_name)}</button>
-    <button class="btn btn-primary btn-sm" onclick="logout()">Keluar</button>`;
+
+  links.innerHTML = desktopHTML;
+  if (mobileLinks) mobileLinks.innerHTML = mobileHTML;
 }
 
 // ===== LOGOUT =====
