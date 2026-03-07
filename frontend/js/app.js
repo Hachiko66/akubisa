@@ -97,10 +97,10 @@ function renderNav() {
       <a onclick="goTo('login')" style="font-weight:600">Masuk</a>
       <button class="btn btn-primary btn-sm" onclick="goTo('register')">Daftar</button>`;
     mobileHTML = `
-      <a onclick="goTo('explore');closeMobileMenu()">Jelajahi</a>
+      <a onclick="closeMobileMenu();setTimeout(()=>goTo('explore'),100)">Jelajahi</a>
       <a onclick="scrollToHow();closeMobileMenu()">Cara Kerja</a>
-      <a onclick="goTo('login');closeMobileMenu()" style="font-weight:600">Masuk</a>
-      <button class="btn btn-primary" onclick="goTo('register');closeMobileMenu()">Daftar</button>`;
+      <a onclick="closeMobileMenu();setTimeout(()=>goTo('login'),100)" style="font-weight:600">Masuk</a>
+      <button class="btn btn-primary" onclick="closeMobileMenu();setTimeout(()=>goTo('register'),100)">Daftar</button>`;
   } else {
     const roleBadge = `<span class="role-badge ${currentUser.role==='worker'?'role-worker':'role-client'}" onclick="goTo('profile')" style="cursor:pointer">
       ${currentUser.role==='worker'?'⚡':'🔍'} ${currentUser.role==='worker'?'PEKERJA':'PENCARI'}
@@ -118,11 +118,11 @@ function renderNav() {
       <button class="btn btn-outline btn-sm" onclick="goTo('profile')" style="font-weight:700">${initials(currentUser.full_name)}</button>
       <button class="btn btn-primary btn-sm" onclick="logout()">Keluar</button>`;
     mobileHTML = `
-      <a onclick="goTo('explore');closeMobileMenu()">Jelajahi</a>
-      <a onclick="goTo('dashboard');closeMobileMenu()">Dashboard</a>
-      <a onclick="goTo('bookmarks');closeMobileMenu()">🔖 Simpan</a>
-      <a onclick="goTo('messages');closeMobileMenu()">💬 Pesan</a>
-      <a onclick="goTo('profile');closeMobileMenu()">${initials(currentUser.full_name)} — Profil</a>
+      <a onclick="closeMobileMenu();setTimeout(()=>goTo('explore'),100)">Jelajahi</a>
+      <a onclick="closeMobileMenu();setTimeout(()=>goTo('dashboard'),100)">Dashboard</a>
+      <a onclick="closeMobileMenu();setTimeout(()=>goTo('bookmarks'),100)">🔖 Simpan</a>
+      <a onclick="closeMobileMenu();setTimeout(()=>goTo('messages'),100)">💬 Pesan</a>
+      <a onclick="closeMobileMenu();setTimeout(()=>goTo('profile'),100)">${initials(currentUser.full_name)} — Profil</a>
       <button class="btn btn-primary" onclick="logout();closeMobileMenu()">Keluar</button>`;
   }
 
