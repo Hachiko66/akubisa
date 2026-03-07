@@ -5,6 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AkuBisa — One Stop Services</title>
 <link rel="stylesheet" href="/css/style.css">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.7/quill.snow.min.css" rel="stylesheet">
+<style>
+.ql-toolbar{border-radius:8px 8px 0 0!important;border-color:var(--border)!important;background:#fafafa}
+.ql-container{border-radius:0 0 8px 8px!important;border-color:var(--border)!important;font-size:.9rem;min-height:120px}
+.ql-editor{min-height:120px;font-family:inherit}
+.ql-editor img{max-width:100%;border-radius:8px;margin:.5rem 0}
+</style>
 <style>
 /* ===== LANDING PAGE SPECIFIC ===== */
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
@@ -961,7 +968,7 @@ body { font-family: var(--font-body); }
 
 <div id="page-messages" class="page">
   <div class="dark-section" style="padding:1.5rem 5vw"><div style="max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;align-items:center"><h2 style="margin:0">Pesan</h2><span id="msg-unread-badge" style="display:none;background:var(--accent);color:white;font-size:.75rem;font-weight:700;padding:.2rem .7rem;border-radius:100px"></span></div></div>
-  <div style="max-width:1200px;margin:0 auto;padding:2rem 5vw;display:grid;grid-template-columns:300px 1fr;gap:1.5rem;min-height:70vh">
+  <div class="messages-layout" style="max-width:1200px;margin:0 auto;padding:2rem 5vw;display:grid;grid-template-columns:300px 1fr;gap:1.5rem;min-height:70vh">
     <div class="card" style="padding:0;overflow:hidden;align-self:start">
       <div style="padding:1rem 1.2rem;border-bottom:1px solid var(--border);font-weight:700;font-size:.9rem">Percakapan</div>
       <div id="conversation-list" style="max-height:60vh;overflow-y:auto"></div>
@@ -1085,7 +1092,10 @@ body { font-family: var(--font-body); }
       </div>
 
       <div class="form-group"><label class="form-label">Judul *</label><input class="form-input" id="post-title" placeholder="Aku Bisa Bantu Kamu... / Nama Produk..."></div>
-      <div class="form-group"><label class="form-label">Deskripsi *</label><textarea class="form-textarea" id="post-desc" placeholder="Jelaskan kemampuanmu / produkmu..."></textarea></div>
+      <div class="form-group"><label class="form-label">Deskripsi *</label>
+<div id="post-desc-editor"></div>
+<input type="hidden" id="post-desc">
+</div>
       <div class="form-row">
         <div class="form-group"><label class="form-label">Kategori</label><select class="form-select" id="post-category"></select></div>
         <div class="form-group"><label class="form-label">Kota</label><input class="form-input" id="post-city" placeholder="Jakarta..."></div>
@@ -1249,6 +1259,7 @@ body { font-family: var(--font-body); }
 
 <div class="toast" id="toast"></div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.7/quill.min.js"></script>
 <script src="/js/api.js"></script>
 <script src="/js/features.js"></script>
 <script src="/js/pages.js"></script>

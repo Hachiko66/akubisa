@@ -21,6 +21,7 @@ app.use(cors({ origin: '*' }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads/digital', express.static(path.join(__dirname, 'uploads/digital')));
+app.use('/uploads/images', express.static(path.join(__dirname, 'uploads/images')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Auto-migrate schema

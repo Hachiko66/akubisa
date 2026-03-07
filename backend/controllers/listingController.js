@@ -98,7 +98,7 @@ exports.myListings = async (req, res) => {
     const result = await pool.query(
       `SELECT l.*, c.name as category_name, c.icon as category_icon
        FROM listings l LEFT JOIN categories c ON l.category_id = c.id
-       WHERE l.user_id=$1 ORDER BY l.is_featured DESC, RANDOM()`, [req.user.id]
+       WHERE l.user_id=$1 ORDER BY l.created_at DESC`, [req.user.id]
     );
     res.json(result.rows);
   } catch (err) {

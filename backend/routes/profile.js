@@ -1,7 +1,8 @@
+const fs = require('fs');
+const path = require('path');
 const router = require('express').Router();
 const auth = require('../middleware/auth');
 const multer = require('multer');
-const path = require('path');
 const pool = require('../config/db');
 
 // Setup multer untuk upload foto
@@ -83,3 +84,30 @@ router.get('/:id/reviews', async (req, res) => {
 });
 
 module.exports = router;
+
+// POST upload gambar untuk deskripsi listing
+const imgStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const dir = path.join(__dirname, '../uploads/images');
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    cb(null, dir);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    cb(null, `img_${req.user.id}_${Date.now()}${ext}`);
+  }
+});
+const uploadImg = multer({
+  storage: imgStorage,
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) cb(null, true);
+    else cb(new Error('Hanya file gambar'));
+  }
+});
+router.post('/upload-image', auth, uploadImg.single('image'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: 'File tidak ditemukan' });
+    res.json({ url: `/uploads/images/${req.file.filename}` });
+  } catch(e) { res.status(500).json({ message: e.message }); }
+});

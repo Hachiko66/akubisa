@@ -282,3 +282,24 @@ body.auth-mode #main-nav {
     padding:1.5rem 4vw!important;
   }
 }
+
+@media(max-width:768px){
+  .messages-layout{grid-template-columns:1fr!important;grid-template-rows:auto 1fr}
+  .messages-layout .card:first-child{max-height:200px;overflow-y:auto}
+  #chat-messages{max-height:40vh!important}
+}
+
+/* ===== RICH TEXT DESCRIPTION ===== */
+.listing-description img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin: .5rem 0;
+  display: block;
+}
+.listing-description p { margin-bottom: .6rem; line-height: 1.7; }
+.listing-description ul, .listing-description ol { padding-left: 1.5rem; margin-bottom: .6rem; }
+.listing-description li { margin-bottom: .3rem; line-height: 1.6; }
+.listing-description strong { font-weight: 700; }
+.listing-description em { font-style: italic; }
+

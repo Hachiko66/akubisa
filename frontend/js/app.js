@@ -159,6 +159,17 @@ function showToast(msg, type='success') {
 }
 
 // ===== LISTING CARD =====
+function extractImages(html) {
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html || '';
+  return Array.from(tmp.querySelectorAll('img')).map(img => img.src).filter(Boolean);
+}
+
+function stripHTML(html) {
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html || '';
+  return tmp.textContent || tmp.innerText || '';
+}
 function listingCardHTML(l) {
   const cs = catStyle[l.category_slug] || catStyle['jasa'];
   const av = avColor(l.full_name || '');
@@ -167,7 +178,8 @@ function listingCardHTML(l) {
     <div class="listing-card" onclick="openListingDetail(${l.id})">
       <span class="cat-tag" style="background:${cs.bg};color:${cs.color}">${l.category_icon||'📌'} ${l.category_name||'Umum'}</span>
       <div style="font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;line-height:1.3;margin-bottom:.5rem">${l.title}</div>
-      <p style="font-size:.82rem;color:var(--muted);line-height:1.55;margin-bottom:1rem">${l.description.slice(0,110)}${l.description.length>110?'…':''}</p>
+      <p style="font-size:.82rem;color:var(--muted);line-height:1.55;margin-bottom:1rem">${stripHTML(l.description).slice(0,110)}${stripHTML(l.description).length>110?'…':''}</p>
+      ${(()=>{const imgs=extractImages(l.description);if(!imgs.length)return '';const shown=imgs.slice(0,3);const extra=imgs.length-3;return `<div style="display:flex;gap:.4rem;margin-bottom:.8rem;overflow:hidden" onclick="event.stopPropagation();openImageSlider(${l.id},${JSON.stringify(imgs).replace(/"/g,'&quot;')},0)">${shown.map((src,i)=>`<div style="position:relative;flex:1;height:72px;border-radius:8px;overflow:hidden;cursor:pointer"><img src="${src}" style="width:100%;height:100%;object-fit:cover">${i===2&&extra>0?`<div style="position:absolute;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:1rem">+${extra}</div>`:''}</div>`).join('')}</div>`;})()}
       <div style="display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--border);padding-top:.8rem">
         <div style="display:flex;align-items:center;gap:.5rem">
           <div class="avatar" style="background:${av};width:28px;height:28px;font-size:.7rem">${ini}</div>
@@ -194,7 +206,7 @@ async function openListingDetail(id) {
   document.getElementById('listing-modal-body').innerHTML = `
     <span class="cat-tag" style="background:${cs.bg};color:${cs.color}">${l.category_icon} ${l.category_name}</span>
     <h2 style="font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;margin:.5rem 0 1rem;line-height:1.3">${l.title}</h2>
-    <p style="font-size:.9rem;line-height:1.7;color:#333;margin-bottom:1.5rem">${l.description}</p>
+    <div class="listing-description" style="font-size:.9rem;line-height:1.7;color:#333;margin-bottom:1.5rem">${l.description}</div>
     <div class="card" style="margin-bottom:1rem">
       <div style="display:flex;align-items:center;gap:1rem">
         <div class="avatar" style="background:${av};width:48px;height:48px;font-size:1rem;flex-shrink:0">${ini}</div>
@@ -278,15 +290,29 @@ function updateNavBadge(count) {
   if (old) old.remove();
   if (count <= 0) return;
   const allLinks = document.querySelectorAll('#nav-links a, #mobile-nav-links a');
+  let badgeAdded = false;
   allLinks.forEach(link => {
-    if (link.textContent.includes('Pesan')) {
+    if (link.textContent.trim().includes('Pesan')) {
       const badge = document.createElement('span');
-      badge.id = 'nav-msg-badge';
+      if (!badgeAdded) badge.id = 'nav-msg-badge';
+      badgeAdded = true;
       badge.textContent = count > 9 ? '9+' : count;
       badge.style.cssText = 'background:var(--accent);color:white;font-size:.6rem;font-weight:800;padding:.1rem .4rem;border-radius:100px;margin-left:.3rem;vertical-align:middle;display:inline-block';
       link.appendChild(badge);
     }
   });
+  // Fallback: cari di seluruh navbar
+  if (!badgeAdded) {
+    const navEl = document.getElementById('nav-links');
+    if (navEl) {
+      const badge = document.createElement('span');
+      badge.id = 'nav-msg-badge';
+      badge.textContent = count > 9 ? '9+' : count;
+      badge.style.cssText = 'background:var(--accent);color:white;font-size:.6rem;font-weight:800;padding:.1rem .4rem;border-radius:100px;margin-left:.3rem;cursor:pointer';
+      badge.onclick = () => goTo('messages');
+      navEl.appendChild(badge);
+    }
+  }
 }
 
 function showNotifPopup(senderName, preview, convId, senderId) {
@@ -361,4 +387,153 @@ window.addEventListener('resize', () => {
 // pollNotifBadge - alias checkUnreadMessages
 function pollNotifBadge() {
   checkUnreadMessages();
+}
+
+// ===== QUILL RICH TEXT EDITOR =====
+let quillEditor = null;
+
+function initQuillEditor() {
+  if (quillEditor) return;
+  if (!document.getElementById('post-desc-editor')) return;
+  
+  quillEditor = new Quill('#post-desc-editor', {
+    theme: 'snow',
+    placeholder: 'Jelaskan kemampuanmu / produkmu...',
+    modules: {
+      toolbar: [
+        ['bold', 'italic', 'underline'],
+        [{ 'align': [] }],
+        [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+        ['image', 'link'],
+        ['clean']
+      ],
+      clipboard: { matchVisual: false }
+    }
+  });
+
+  // Klik gambar → tampil tombol hapus
+  quillEditor.root.addEventListener('click', (e) => {
+    if (e.target.tagName === 'IMG') {
+      const existing = document.getElementById('quill-img-delete');
+      if (existing) existing.remove();
+      const btn = document.createElement('button');
+      btn.id = 'quill-img-delete';
+      btn.textContent = '✕ Hapus Gambar';
+      btn.style.cssText = 'position:fixed;background:#ef4444;color:white;border:none;border-radius:6px;padding:.3rem .8rem;font-size:.75rem;font-weight:700;cursor:pointer;z-index:9999;box-shadow:0 2px 8px rgba(0,0,0,.2)';
+      btn.style.left = (e.clientX + 8) + 'px';
+      btn.style.top = (e.clientY - 36) + 'px';
+      btn.onclick = () => {
+        e.target.remove();
+        btn.remove();
+      };
+      document.body.appendChild(btn);
+      setTimeout(() => { if (document.getElementById('quill-img-delete')) btn.remove(); }, 3000);
+    } else {
+      const existing = document.getElementById('quill-img-delete');
+      if (existing) existing.remove();
+    }
+  });
+
+  // Handle image upload
+  quillEditor.getModule('toolbar').addHandler('image', () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = async () => {
+      const file = input.files[0];
+      if (!file) return;
+      if (file.size > 5 * 1024 * 1024) { showToast('Gambar max 5MB', 'error'); return; }
+      const fd = new FormData();
+      fd.append('image', file);
+      showToast('Mengupload gambar...', 'info');
+      try {
+        const res = await fetch('/api/profile/upload-image', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + localStorage.getItem('akubisa_token') },
+          body: fd
+        });
+        const data = await res.json();
+        if (data.url) {
+          const range = quillEditor.getSelection();
+          quillEditor.insertEmbed(range ? range.index : 0, 'image', data.url);
+          showToast('Gambar berhasil diupload!', 'success');
+        }
+      } catch(e) { showToast('Gagal upload gambar', 'error'); }
+    };
+    input.click();
+  });
+}
+
+function getQuillContent() {
+  if (!quillEditor) return document.getElementById('post-desc').value;
+  return quillEditor.root.innerHTML === '<p><br></p>' ? '' : quillEditor.root.innerHTML;
+}
+
+function setQuillContent(html) {
+  if (!quillEditor) return;
+  quillEditor.root.innerHTML = html || '';
+}
+
+// ===== IMAGE SLIDER =====
+let sliderImages = [];
+let sliderIndex = 0;
+
+function openImageSlider(listingId, images, startIndex = 0) {
+  sliderImages = images;
+  sliderIndex = startIndex;
+
+  const existing = document.getElementById('img-slider-modal');
+  if (existing) existing.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'img-slider-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:1rem';
+  modal.onclick = (e) => { if (e.target === modal) closeImageSlider(); };
+
+  modal.innerHTML = `
+    <button onclick="closeImageSlider()" style="position:absolute;top:1rem;right:1rem;background:rgba(255,255,255,.15);border:none;color:white;width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:1.1rem">✕</button>
+    <div style="position:relative;max-width:90vw;max-height:80vh;display:flex;align-items:center;gap:1rem">
+      <button id="slider-prev" onclick="slideImage(-1)" style="background:rgba(255,255,255,.15);border:none;color:white;width:40px;height:40px;border-radius:50%;cursor:pointer;font-size:1.2rem;flex-shrink:0">‹</button>
+      <img id="slider-img" src="${images[startIndex]}" style="max-width:80vw;max-height:75vh;object-fit:contain;border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,.5)">
+      <button id="slider-next" onclick="slideImage(1)" style="background:rgba(255,255,255,.15);border:none;color:white;width:40px;height:40px;border-radius:50%;cursor:pointer;font-size:1.2rem;flex-shrink:0">›</button>
+    </div>
+    <div id="slider-dots" style="display:flex;gap:.5rem">
+      ${images.map((_, i) => `<div onclick="goToSlide(${i})" style="width:8px;height:8px;border-radius:50%;background:${i===startIndex?'white':'rgba(255,255,255,.3)'};cursor:pointer;transition:background .2s"></div>`).join('')}
+    </div>
+    <div style="color:rgba(255,255,255,.5);font-size:.78rem">${startIndex+1} / ${images.length}</div>
+  `;
+
+  document.body.appendChild(modal);
+
+  // Keyboard navigation
+  document.addEventListener('keydown', sliderKeyHandler);
+}
+
+function sliderKeyHandler(e) {
+  if (e.key === 'ArrowLeft') slideImage(-1);
+  if (e.key === 'ArrowRight') slideImage(1);
+  if (e.key === 'Escape') closeImageSlider();
+}
+
+function slideImage(dir) {
+  sliderIndex = (sliderIndex + dir + sliderImages.length) % sliderImages.length;
+  updateSlider();
+}
+
+function goToSlide(i) {
+  sliderIndex = i;
+  updateSlider();
+}
+
+function updateSlider() {
+  document.getElementById('slider-img').src = sliderImages[sliderIndex];
+  const dots = document.querySelectorAll('#slider-dots div');
+  dots.forEach((d, i) => d.style.background = i === sliderIndex ? 'white' : 'rgba(255,255,255,.3)');
+  document.querySelector('#img-slider-modal div:last-child').textContent = `${sliderIndex+1} / ${sliderImages.length}`;
+}
+
+function closeImageSlider() {
+  const modal = document.getElementById('img-slider-modal');
+  if (modal) modal.remove();
+  document.removeEventListener('keydown', sliderKeyHandler);
 }

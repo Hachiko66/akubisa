@@ -37,21 +37,68 @@ async function renderExplore() {
   await fetchExplore();
 }
 
-async function fetchExplore() {
-  document.getElementById('explore-grid').innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:3rem"><div style="width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite;display:inline-block"></div></div>`;
-  let params = 'limit=100';
+let explorePage = 1;
+let exploreLoading = false;
+let exploreHasMore = true;
+const EXPLORE_LIMIT = 12;
+
+async function fetchExplore(reset = true) {
+  if (reset) {
+    explorePage = 1;
+    exploreHasMore = true;
+    document.getElementById('explore-grid').innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:3rem"><div style="width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite;display:inline-block"></div></div>`;
+  }
+  if (exploreLoading || !exploreHasMore) return;
+  exploreLoading = true;
+
+  let params = `limit=${EXPLORE_LIMIT}&page=${explorePage}`;
   if (exploreFilter !== 'semua') params += `&category=${exploreFilter}`;
   if (exploreSearch) params += `&search=${encodeURIComponent(exploreSearch)}`;
+
   try {
     const res = await api.getListings(params);
     const listings = res.listings || [];
-    document.getElementById('explore-grid').innerHTML = listings.length
-      ? listings.map(listingCardHTML).join('')
-      : '<p style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--muted)">Tidak ada penawaran ditemukan.</p>';
+    const total = res.total || 0;
+    const grid = document.getElementById('explore-grid');
+
+    if (reset) grid.innerHTML = '';
+
+    if (listings.length === 0 && reset) {
+      grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--muted)">Tidak ada penawaran ditemukan.</p>';
+    } else {
+      listings.forEach(l => {
+        const div = document.createElement('div');
+        div.innerHTML = listingCardHTML(l);
+        grid.appendChild(div.firstElementChild);
+      });
+    }
+
+    exploreHasMore = (explorePage * EXPLORE_LIMIT) < total;
+    explorePage++;
+
+    // Update/hapus sentinel
+    const old = document.getElementById('scroll-sentinel');
+    if (old) old.remove();
+    if (exploreHasMore) {
+      const sentinel = document.createElement('div');
+      sentinel.id = 'scroll-sentinel';
+      sentinel.style.cssText = 'grid-column:1/-1;text-align:center;padding:1rem;color:var(--muted);font-size:.83rem';
+      sentinel.innerHTML = '<div style="width:24px;height:24px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite;display:inline-block"></div>';
+      grid.appendChild(sentinel);
+      scrollObserver.observe(sentinel);
+    }
   } catch(e) {
     document.getElementById('explore-grid').innerHTML = '<p style="grid-column:1/-1;text-align:center;padding:2rem;color:var(--danger)">Gagal memuat data.</p>';
   }
+  exploreLoading = false;
 }
+
+// Infinite scroll observer
+const scrollObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) fetchExplore(false);
+  });
+}, { threshold: 0.1 });
 
 function setExploreFilter(slug, el) {
   exploreFilter = slug;
@@ -138,20 +185,28 @@ async function renderDashboard() {
       const totalViews = Array.isArray(listings) ? listings.reduce((a,l)=>a+(l.views||0),0) : 0;
       document.getElementById('dash-views').textContent = totalViews;
       document.getElementById('dash-my-listings').innerHTML = Array.isArray(listings) && listings.length
-        ? listings.map(l=>`
-          <div class="listing-card" style="cursor:default">
+        ? listings.map(l => {
+            const imgs = extractImages(l.description);
+            const thumbs = imgs.slice(0,3);
+            const extra = imgs.length - 3;
+            const thumbHTML = thumbs.length ? `<div style="display:flex;gap:.4rem;margin-bottom:.8rem" onclick="event.stopPropagation();openImageSlider(${l.id},${JSON.stringify(imgs).replace(/"/g,'&quot;')},0)">${thumbs.map((src,i)=>`<div style="position:relative;flex:1;height:72px;border-radius:8px;overflow:hidden;cursor:pointer"><img src="${src}" style="width:100%;height:100%;object-fit:cover">${i===2&&extra>0?`<div style="position:absolute;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;color:white;font-weight:800">+${extra}</div>`:''}</div>`).join('')}</div>` : '';
+            return `
+          <div class="listing-card" style="cursor:pointer" onclick="openListingDetail(${l.id})">
             <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem;margin-bottom:.5rem">
-              <div style="font-weight:700;font-size:.95rem;flex:1">${l.title}</div>
+              <span class="cat-tag" style="font-size:.7rem">${l.category_icon||'📌'} ${l.category_name||'Umum'}</span>
               <span style="font-size:.72rem;color:${l.is_active?'var(--success)':'var(--muted)'};font-weight:700">● ${l.is_active?'Aktif':'Nonaktif'}</span>
             </div>
-            <p style="font-size:.8rem;color:var(--muted);margin-bottom:.8rem">${l.description.slice(0,80)}…</p>
-            <div style="font-size:.75rem;color:var(--muted);margin-bottom:.8rem">👁 ${l.views||0} dilihat · ${l.category_icon||''} ${l.category_name||''}</div>
-            <div style="display:flex;gap:.5rem;justify-content:flex-end">
+            <div style="font-weight:700;font-size:.95rem;margin-bottom:.4rem">${l.title}</div>
+            <p style="font-size:.8rem;color:var(--muted);margin-bottom:.8rem">${stripHTML(l.description).slice(0,100)}…</p>
+            ${thumbHTML}
+            <div style="font-size:.75rem;color:var(--muted);margin-bottom:.8rem">👁 ${l.views||0} dilihat</div>
+            <div style="display:flex;gap:.5rem;justify-content:flex-end" onclick="event.stopPropagation()">
               <button class="btn btn-outline btn-sm" onclick="openEditListing(${l.id})">✏️ Edit</button>
               <button class="btn btn-danger btn-sm" onclick="deleteListing(${l.id})">🗑 Hapus</button>
-        <button class="btn btn-sm" style="background:linear-gradient(135deg,#d4a017,#f59e0b);color:white;border:none;font-size:.75rem;padding:.3rem .8rem;border-radius:8px;cursor:pointer" onclick="openPromoteModal(${l.id}, 'listing')">⭐ Promosi</button>
+              <button class="btn btn-sm" style="background:linear-gradient(135deg,#d4a017,#f59e0b);color:white;border:none;font-size:.75rem;padding:.3rem .8rem;border-radius:8px;cursor:pointer" onclick="openPromoteModal(${l.id},'listing')">⭐ Promosi</button>
             </div>
-          </div>`).join('')
+          </div>`;
+          }).join('')
         : `<div style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--muted)">
             <div style="font-size:2rem;margin-bottom:.8rem">📭</div>
             <p>Belum ada penawaran.</p>
@@ -185,6 +240,7 @@ async function openPostModal() {
   document.getElementById('post-form').reset();
   document.getElementById('post-category').innerHTML = categories.map(c=>`<option value="${c.id}">${c.icon} ${c.name}</option>`).join('');
   document.getElementById('post-modal').classList.add('open');
+  setTimeout(initQuillEditor, 100);
 }
 
 async function openEditListing(id) {
@@ -194,6 +250,7 @@ async function openEditListing(id) {
   document.getElementById('post-category').innerHTML = categories.map(c=>`<option value="${c.id}" ${c.id==l.category_id?'selected':''}>${c.icon} ${c.name}</option>`).join('');
   document.getElementById('post-title').value = l.title;
   document.getElementById('post-desc').value = l.description;
+  if (typeof setQuillContent === 'function') setQuillContent(l.description);
   document.getElementById('post-price').value = l.price||'';
   document.getElementById('post-price-unit').value = l.price_unit||'';
   document.getElementById('post-city').value = l.city||'';
@@ -205,7 +262,7 @@ function closePostModal() { document.getElementById('post-modal').classList.remo
 async function submitListing() {
   const data = {
     title: document.getElementById('post-title').value.trim(),
-    description: document.getElementById('post-desc').value.trim(),
+    description: (typeof getQuillContent === 'function' ? getQuillContent() : document.getElementById('post-desc').value).trim(),
     category_id: document.getElementById('post-category').value,
     price: document.getElementById('post-price').value.trim(),
     price_unit: document.getElementById('post-price-unit').value.trim(),
