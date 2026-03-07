@@ -16,7 +16,7 @@ body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--
 .page.active{ display:block!important; }
 /* ===================================== */
 
-nav{display:flex;justify-content:space-between;align-items:center;padding:1rem 5vw;background:var(--cream);border-bottom:none;position:sticky;top:0;z-index:100}
+nav{display:flex;justify-content:space-between;align-items:center;padding:1rem 5vw;background:var(--cream);border-bottom:none;position:fixed;top:0;left:0;right:0;z-index:1000}
 .logo{font-family:Georgia,'Times New Roman',serif;font-size:1.4rem;font-weight:800;letter-spacing:-0.03em;cursor:pointer;text-decoration:none;color:var(--ink)}
 .logo span{color:var(--accent)}
 .nav-links{display:flex;gap:1.5rem;align-items:center}
@@ -229,4 +229,36 @@ body.auth-mode #main-nav {
     font-size:1rem;
     padding:.8rem 2rem;
   }
+}
+
+/* DASHBOARD MOBILE FIX */
+@media(max-width:768px){
+  #page-dashboard .dark-section > div{
+    flex-direction:column;
+    align-items:flex-start!important;
+  }
+  #page-dashboard .dark-section h2{
+    font-size:1.2rem;
+  }
+  #page-dashboard .dark-section > div > div:last-child{
+    width:100%;
+  }
+  #page-dashboard .dark-section > div > div:last-child .btn{
+    flex:1;
+    text-align:center;
+  }
+  /* Stats cards */
+  #page-dashboard .section > div:first-child{
+    grid-template-columns:1fr 1fr!important;
+  }
+  /* Nav links in hamburger fix */
+  #nav-links{
+    flex-wrap:wrap;
+    gap:.6rem;
+  }
+}
+
+/* NAVBAR CLEARANCE */
+.page.active:not(#page-home):not(#page-login):not(#page-register){
+  padding-top: 64px;
 }
