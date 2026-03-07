@@ -413,15 +413,16 @@ function toggleMobileMenu() {
   const menu = document.getElementById('mobile-menu');
   const btn = document.getElementById('hamburger-btn');
   const lines = btn.querySelectorAll('.ham-line');
-  const isOpen = menu.classList.toggle('open');
+  const isOpen = menu.style.display === 'flex';
 
-  // Animate hamburger to X
-  if (isOpen) {
+  if (!isOpen) {
+    menu.style.display = 'flex';
     lines[0].style.transform = 'translateY(7px) rotate(45deg)';
     lines[1].style.opacity = '0';
     lines[2].style.transform = 'translateY(-7px) rotate(-45deg)';
     document.body.style.overflow = 'hidden';
   } else {
+    menu.style.display = 'none';
     lines[0].style.transform = '';
     lines[1].style.opacity = '1';
     lines[2].style.transform = '';
@@ -433,10 +434,12 @@ function closeMobileMenu() {
   const menu = document.getElementById('mobile-menu');
   const btn = document.getElementById('hamburger-btn');
   if (!menu) return;
-  menu.classList.remove('open');
-  const lines = btn.querySelectorAll('.ham-line');
-  lines[0].style.transform = '';
-  lines[1].style.opacity = '1';
-  lines[2].style.transform = '';
+  menu.style.display = 'none';
+  if (btn) {
+    const lines = btn.querySelectorAll('.ham-line');
+    lines[0].style.transform = '';
+    lines[1].style.opacity = '1';
+    lines[2].style.transform = '';
+  }
   document.body.style.overflow = '';
 }

@@ -262,3 +262,23 @@ body.auth-mode #main-nav {
 .page.active:not(#page-home):not(#page-login):not(#page-register){
   padding-top: 64px;
 }
+
+/* PROFILE PAGE MOBILE FIX */
+@media(max-width:768px){
+  #page-profile .section > div:first-child{
+    grid-template-columns:1fr!important;
+  }
+  .profile-header{
+    padding:1.5rem 4vw!important;
+  }
+  .profile-inner{
+    gap:1rem!important;
+    padding-top:.5rem;
+  }
+  .profile-name{
+    font-size:1.2rem!important;
+  }
+  #page-profile .section{
+    padding:1.5rem 4vw!important;
+  }
+}

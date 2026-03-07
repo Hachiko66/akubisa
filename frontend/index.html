@@ -507,13 +507,13 @@ body { font-family: var(--font-body); }
 <nav id="main-nav" style="background:transparent;position:fixed;top:0;left:0;right:0;z-index:100;transition:background .3s,box-shadow .3s">
   <a class="logo" onclick="goTo('home');closeMobileMenu()" style="color:white;cursor:pointer">Aku<span>Bisa</span></a>
   <div class="nav-links" id="nav-links"></div>
-  <button id="hamburger-btn" onclick="toggleMobileMenu()" style="display:none;background:none;border:none;cursor:pointer;padding:.4rem;flex-direction:column;gap:5px;z-index:101">
+  <button id="hamburger-btn" onclick="toggleMobileMenu()" style="display:none;background:none;border:none;cursor:pointer;padding:.4rem;flex-direction:column;gap:5px;z-index:1002">
     <span class="ham-line" style="display:block;width:24px;height:2px;background:white;transition:all .3s;border-radius:2px"></span>
     <span class="ham-line" style="display:block;width:24px;height:2px;background:white;transition:all .3s;border-radius:2px"></span>
     <span class="ham-line" style="display:block;width:24px;height:2px;background:white;transition:all .3s;border-radius:2px"></span>
   </button>
 </nav>
-<div id="mobile-menu" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:var(--ink);z-index:100;flex-direction:column;align-items:center;justify-content:center;gap:2rem">
+<div id="mobile-menu" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:var(--ink);z-index:1001;flex-direction:column;align-items:center;justify-content:center;gap:2rem">
   <a class="logo" style="color:white;font-size:1.8rem">Aku<span>Bisa</span></a>
   <div id="mobile-nav-links" style="display:flex;flex-direction:column;align-items:center;gap:1.5rem"></div>
 </div>
