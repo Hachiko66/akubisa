@@ -3,7 +3,6 @@ let currentUser = null;
 let currentPage = 'home';
 let categories  = [];
 let currentCategory = null;
-let currentCategory = null;
 
 // ===== INIT =====
 document.addEventListener('DOMContentLoaded', async () => {
