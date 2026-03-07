@@ -83,7 +83,7 @@ async function loadNotifPanel() {
 }
 
 function notifIcon(type) {
-  const icons = { message:'💬', review:'⭐', bookmark:'🔖', system:'📢', listing:'📋' };
+  const icons = { message:'💬', review:'⭐', bookmark:'🔖', system:'📢', listing:'📋', transaction:'💳', wallet:'💰' };
   return icons[type] || '🔔';
 }
 
@@ -97,10 +97,26 @@ function timeAgo(dateStr) {
   return `${Math.floor(hrs/24)} hari lalu`;
 }
 
-async function clickNotif(id, link) {
+async function clickNotif(id, link, trxId, action) {
   await api.readNotif(id);
   closeNotifPanel();
-  if (link) {
+  if (action === 'approve' && trxId) {
+    // Langsung approve & buat invoice pelunasan
+    goTo('transactions');
+    setTimeout(async () => {
+      const res = await api.approveTransaction(trxId);
+      if (res.invoice_url) {
+        showToast('Mengarahkan ke halaman pelunasan...', 'success');
+        setTimeout(() => {
+          const tab = window.open(res.invoice_url, '_blank');
+          if (!tab || tab.closed) window.location.href = res.invoice_url;
+        }, 800);
+        renderTransactions();
+      } else {
+        showToast(res.message || 'Gagal membuat invoice', 'error');
+      }
+    }, 300);
+  } else if (link) {
     if (link.startsWith('#')) goTo(link.replace('#',''));
     else location.href = link;
   }

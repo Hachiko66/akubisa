@@ -21,6 +21,7 @@ app.use(cors({ origin: '*' }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads/digital', express.static(path.join(__dirname, 'uploads/digital')));
+app.use('/uploads/portfolio', require('express').static('/var/www/akubisa/frontend/uploads/portfolio'));
 app.use('/uploads/images', express.static(path.join(__dirname, 'uploads/images')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
@@ -41,12 +42,14 @@ app.use('/api/auth',          authLimiter, require('./routes/auth'));
 app.use('/api/listings',                   require('./routes/listings'));
 app.use('/api/categories',                 require('./routes/categories'));
 app.use('/api/profile',                    require('./routes/profile'));
+app.use('/api/wallet', require('./routes/wallet'));
+app.use('/api/transactions', require('./routes/transactions'));
 app.use('/api/job-requests', require('./routes/jobRequests'));
 app.use('/api/messages',      msgLimiter,  require('./routes/messages'));
 app.use('/api/reviews',                    require('./routes/reviews'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/bookmarks',                  require('./routes/bookmarks'));
-app.use('/api/notifications',              require('./routes/notifications'));
+app.use('/api/notifications', notifLimiter,              require('./routes/notifications'));
 app.use('/api/reports',                    require('./routes/reports'));
 
 // Health check

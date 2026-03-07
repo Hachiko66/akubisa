@@ -303,3 +303,21 @@ body.auth-mode #main-nav {
 .listing-description strong { font-weight: 700; }
 .listing-description em { font-style: italic; }
 
+
+/* Wallet */
+.wallet-tab {
+  background: none;
+  border: none;
+  padding: .6rem 1rem;
+  font-size: .83rem;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: all .2s;
+}
+.wallet-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}

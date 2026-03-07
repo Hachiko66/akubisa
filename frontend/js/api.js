@@ -124,3 +124,19 @@ api.myJobRequests     = ()           => fetch(`${API}/job-requests/my`, { header
 api.getApplications   = (id)         => fetch(`${API}/job-requests/${id}/applications`, { headers:headers(true) }).then(r=>r.json());
 api.applyJob          = (id, data)   => fetch(`${API}/job-requests/${id}/apply`, { method:'POST', headers:headers(true), body:JSON.stringify(data) }).then(r=>r.json());
 api.acceptApplication = (appId)      => fetch(`${API}/job-requests/applications/${appId}/accept`, { method:'PATCH', headers:headers(true) }).then(r=>r.json());
+
+// ===== TRANSACTIONS =====
+api.createTransaction  = (data)  => fetch(`${API}/transactions`, { method:'POST', headers:headers(true), body:JSON.stringify(data) }).then(r=>r.json());
+api.myTransactions     = ()      => fetch(`${API}/transactions/my`, { headers:headers(true) }).then(r=>r.json());
+api.getTransaction     = (id)    => fetch(`${API}/transactions/${id}`, { headers:headers(true) }).then(r=>r.json());
+api.submitTransaction  = (id)    => fetch(`${API}/transactions/${id}/submit`, { method:'PATCH', headers:headers(true) }).then(r=>r.json());
+api.approveTransaction = (id)    => fetch(`${API}/transactions/${id}/approve`, { method:'PATCH', headers:headers(true) }).then(r=>r.json());
+api.disputeTransaction = (id, reason) => fetch(`${API}/transactions/${id}/dispute`, { method:'PATCH', headers:headers(true), body:JSON.stringify({reason}) }).then(r=>r.json());
+
+// ===== WALLET =====
+api.getBalance      = ()           => fetch(`${API}/wallet/balance`, { headers:headers(true) }).then(r=>r.json());
+api.getEarnings     = ()           => fetch(`${API}/wallet/earnings`, { headers:headers(true) }).then(r=>r.json());
+api.getWithdrawals  = ()           => fetch(`${API}/wallet/withdrawals`, { headers:headers(true) }).then(r=>r.json());
+api.requestWithdraw = (data)       => fetch(`${API}/wallet/withdraw`, { method:'POST', headers:headers(true), body:JSON.stringify(data) }).then(r=>r.json());
+api.getPortfolio    = (userId)     => fetch(`${API}/wallet/portfolio/${userId}`, { headers:headers(false) }).then(r=>r.json());
+api.updatePortfolio = (id, data)   => fetch(`${API}/wallet/portfolio/${id}`, { method:'PATCH', headers:headers(true), body:JSON.stringify(data) }).then(r=>r.json());

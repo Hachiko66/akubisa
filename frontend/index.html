@@ -1119,6 +1119,141 @@ body { font-family: var(--font-body); }
   </div>
 </div>
 
+
+<!-- ===== HALAMAN TRANSAKSI ===== -->
+<div id="page-transactions" class="page" style="display:none">
+  <div class="dark-section" style="padding:2rem 5vw">
+    <div style="max-width:900px;margin:0 auto">
+      <h2 style="margin-bottom:.3rem">💳 Transaksi Saya</h2>
+      <p style="color:rgba(255,255,255,.6);font-size:.88rem">Riwayat dan status transaksi kamu</p>
+    </div>
+  </div>
+  <div class="section">
+    <div style="max-width:900px;margin:0 auto" id="transactions-list">
+      <div style="text-align:center;padding:3rem;color:var(--muted)">Memuat...</div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL BUAT TRANSAKSI -->
+<div class="modal-overlay" id="create-trx-modal" onclick="if(event.target===this)closeCreateTrxModal()">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-header">
+      <div class="modal-title">💳 Bayar via AkuBisa</div>
+      <button class="modal-close" onclick="closeCreateTrxModal()">✕</button>
+    </div>
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:.8rem;margin-bottom:1rem;font-size:.8rem;color:#166534">
+      🔒 Dana kamu aman — disimpan di escrow AkuBisa sampai pekerjaan selesai
+    </div>
+    <p style="font-size:.85rem;color:var(--muted);margin-bottom:1rem">Dengan: <strong id="trx-worker-name"></strong></p>
+    <input type="hidden" id="trx-worker-id">
+    <input type="hidden" id="trx-listing-id">
+    <input type="hidden" id="trx-type">
+    <div class="form-group">
+      <label class="form-label">Total Harga yang Disepakati (Rp) *</label>
+      <input class="form-input" id="trx-amount" type="number" placeholder="Contoh: 500000" min="10000">
+      <div style="font-size:.75rem;color:var(--muted);margin-top:.3rem">Minimum Rp 10.000</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Deskripsi Pekerjaan *</label>
+      <textarea class="form-textarea" id="trx-notes" style="min-height:70px" placeholder="Contoh: Desain logo untuk startup saya..."></textarea>
+    </div>
+    <div id="trx-breakdown" style="background:var(--warm);border-radius:10px;padding:1rem;margin-bottom:1rem;font-size:.83rem;display:none">
+      <div style="font-weight:700;margin-bottom:.6rem">Rincian Pembayaran:</div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:.3rem"><span>DP 50% (bayar sekarang)</span><span id="trx-dp-amount" style="font-weight:700;color:var(--accent)"></span></div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:.3rem"><span>Pelunasan 50% (setelah selesai)</span><span id="trx-final-amount"></span></div>
+      <div style="display:flex;justify-content:space-between;border-top:1px solid var(--border);padding-top:.5rem;margin-top:.5rem"><span>Fee platform (10%)</span><span id="trx-fee-amount" style="color:var(--muted)"></span></div>
+      <div style="display:flex;justify-content:space-between;font-weight:700;margin-top:.3rem"><span>Pekerja terima</span><span id="trx-worker-receive" style="color:var(--accent2)"></span></div>
+    </div>
+    <div id="trx-error" style="font-size:.82rem;color:var(--danger);min-height:1rem"></div>
+    <div style="display:flex;gap:.8rem;justify-content:flex-end;margin-top:1rem">
+      <button class="btn btn-outline" onclick="closeCreateTrxModal()">Batal</button>
+      <button class="btn btn-primary" id="trx-submit-btn" onclick="submitCreateTransaction()">Bayar DP Sekarang →</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DISPUTE -->
+<div class="modal-overlay" id="dispute-modal" onclick="if(event.target===this)closeDisputeModal()">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <div class="modal-title">⚠️ Ajukan Dispute</div>
+      <button class="modal-close" onclick="closeDisputeModal()">✕</button>
+    </div>
+    <input type="hidden" id="dispute-trx-id">
+    <p style="font-size:.85rem;color:var(--muted);margin-bottom:1rem">Jelaskan masalah yang terjadi. Admin akan menghubungi dalam 1x24 jam.</p>
+    <div class="form-group">
+      <label class="form-label">Alasan Dispute *</label>
+      <textarea class="form-textarea" id="dispute-reason" style="min-height:100px" placeholder="Jelaskan masalahnya..."></textarea>
+    </div>
+    <div style="display:flex;gap:.8rem;justify-content:flex-end">
+      <button class="btn btn-outline" onclick="closeDisputeModal()">Batal</button>
+      <button class="btn btn-danger" onclick="submitDispute()">Ajukan Dispute</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ===== HALAMAN WALLET ===== -->
+<div id="page-wallet" class="page" style="display:none">
+  <div class="dark-section" style="padding:2rem 5vw">
+    <div style="max-width:900px;margin:0 auto">
+      <h2 style="margin-bottom:.3rem">💰 Dompet Saya</h2>
+      <p style="color:rgba(255,255,255,.6);font-size:.88rem">Saldo, riwayat pendapatan & withdraw</p>
+    </div>
+  </div>
+  <div class="section">
+    <div style="max-width:900px;margin:0 auto">
+      <!-- Saldo Card -->
+      <div id="wallet-balance-card"></div>
+      <!-- Tabs -->
+      <div style="display:flex;gap:.5rem;margin-bottom:1.5rem;border-bottom:2px solid var(--border);padding-bottom:0">
+        <button class="wallet-tab active" onclick="switchWalletTab('earnings',this)">📈 Riwayat Pendapatan</button>
+        <button class="wallet-tab" onclick="switchWalletTab('withdrawals',this)">💸 Riwayat Withdraw</button>
+        <button class="wallet-tab" onclick="switchWalletTab('portfolio',this)">🗂 Portfolio Saya</button>
+      </div>
+      <div id="wallet-tab-content"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL WITHDRAW -->
+<div class="modal-overlay" id="withdraw-modal" onclick="if(event.target===this)closeWithdrawModal()">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-header">
+      <div class="modal-title">💸 Tarik Saldo</div>
+      <button class="modal-close" onclick="closeWithdrawModal()">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Jumlah Withdraw (Rp) *</label>
+      <input class="form-input" id="wd-amount" type="number" placeholder="Minimum Rp 50.000">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Nama Bank *</label>
+      <select class="form-select" id="wd-bank">
+        <option value="">-- Pilih Bank --</option>
+        <option>BCA</option><option>BNI</option><option>BRI</option>
+        <option>Mandiri</option><option>CIMB Niaga</option>
+        <option>Permata</option><option>Danamon</option><option>BSI</option>
+        <option>GoPay</option><option>OVO</option><option>Dana</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Nomor Rekening *</label>
+      <input class="form-input" id="wd-account-number" placeholder="Nomor rekening/e-wallet">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Nama Pemilik Rekening *</label>
+      <input class="form-input" id="wd-account-name" placeholder="Sesuai nama di rekening">
+    </div>
+    <div id="wd-error" style="font-size:.82rem;color:var(--danger);min-height:1rem"></div>
+    <div style="display:flex;gap:.8rem;justify-content:flex-end;margin-top:1rem">
+      <button class="btn btn-outline" onclick="closeWithdrawModal()">Batal</button>
+      <button class="btn btn-primary" id="wd-btn" onclick="submitWithdraw()">Tarik Saldo</button>
+    </div>
+  </div>
+</div>
+
 <!-- NOTIF PANEL -->
 <div id="notif-panel" style="display:none;position:fixed;top:64px;right:1rem;width:320px;max-height:480px;background:white;border:1.5px solid var(--border);border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.15);z-index:500;overflow:hidden;flex-direction:column">
   <div style="padding:.8rem 1rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">

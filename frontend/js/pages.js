@@ -120,6 +120,8 @@ function renderQuickActions() {
   el.innerHTML = isWorker ? `
     <button class="btn btn-primary btn-sm" onclick="openPostModal()">⚡ Buat Penawaran</button>
     <button class="btn btn-outline btn-sm" onclick="goTo('job-requests')">🙋 Lihat Kebutuhan Klien</button>
+    <button class="btn btn-outline btn-sm" onclick="goTo('wallet')">💰 Dompet & Portfolio</button>
+    <button class="btn btn-outline btn-sm" onclick="goTo('transactions')">💳 Transaksi Saya</button>
     <button class="btn btn-outline btn-sm" onclick="goTo('dashboard')">Dashboard</button>
     <button class="btn btn-outline btn-sm" onclick="goTo('explore')">Jelajahi</button>
     <button class="btn btn-outline btn-sm" onclick="openEditProfile()">Edit Profil</button>
@@ -128,6 +130,7 @@ function renderQuickActions() {
     <button class="btn btn-primary btn-sm" onclick="openPostJobModal()">🙋 Posting Kebutuhan</button>
     <button class="btn btn-outline btn-sm" onclick="goTo('job-requests')">Lihat Semua Kebutuhan</button>
     <button class="btn btn-outline btn-sm" onclick="goTo('explore')">Jelajahi Penawaran</button>
+    <button class="btn btn-outline btn-sm" onclick="goTo('transactions')">💳 Transaksi Saya</button>
     <button class="btn btn-outline btn-sm" onclick="goTo('dashboard')">Dashboard</button>
     <button class="btn btn-outline btn-sm" onclick="openEditProfile()">Edit Profil</button>
     <button class="btn btn-danger btn-sm" onclick="logout()">Keluar</button>
@@ -1055,5 +1058,307 @@ async function deleteJobRequest(id) {
     fetchJobRequests(true);
   } else {
     showToast(res.message || 'Gagal menghapus', 'error');
+  }
+}
+
+// ===== TRANSAKSI =====
+async function renderTransactions() {
+  if (!currentUser) { goTo('login'); return; }
+  const list = document.getElementById('transactions-list');
+  list.innerHTML = '<div style="text-align:center;padding:3rem"><div style="width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite;display:inline-block"></div></div>';
+  try {
+    const trxs = await api.myTransactions();
+    if (!Array.isArray(trxs) || trxs.length === 0) {
+      list.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--muted)"><div style="font-size:2.5rem;margin-bottom:1rem">💳</div><p>Belum ada transaksi.</p></div>';
+      return;
+    }
+    list.innerHTML = trxs.map(t => transactionCardHTML(t)).join('');
+  } catch(e) {
+    list.innerHTML = '<p style="text-align:center;padding:2rem;color:var(--danger)">Gagal memuat transaksi.</p>';
+  }
+}
+
+function transactionCardHTML(t) {
+  const isClient = currentUser.id === t.client_id;
+  const otherName = isClient ? t.worker_name : t.client_name;
+  const statusMap = {
+    'waiting_dp': { label:'Menunggu DP', color:'var(--muted)', bg:'#f8f9fa' },
+    'dp_paid': { label:'DP Dibayar • Dalam Pengerjaan', color:'#0891b2', bg:'#ecfeff' },
+    'submitted': { label:'Menunggu Review Klien', color:'#d97706', bg:'#fffbeb' },
+    'waiting_final': { label:'Menunggu Pelunasan', color:'#7c3aed', bg:'#f5f3ff' },
+    'completed': { label:'✅ Selesai', color:'var(--success)', bg:'#f0fdf4' },
+    'disputed': { label:'⚠️ Dispute', color:'var(--danger)', bg:'#fef2f2' },
+    'refunded': { label:'↩️ Refund', color:'var(--muted)', bg:'#f8f9fa' },
+    'cancelled': { label:'❌ Dibatalkan', color:'var(--danger)', bg:'#fef2f2' },
+  };
+  const st = statusMap[t.status] || { label: t.status, color:'var(--muted)', bg:'#f8f9fa' };
+  const title = t.listing_title || t.job_title || t.notes || 'Transaksi';
+  const date = new Date(t.created_at).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'});
+
+  return `
+    <div class="card" style="margin-bottom:1rem">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:.5rem;margin-bottom:.8rem">
+        <div>
+          <div style="font-weight:700;font-size:.95rem">${title}</div>
+          <div style="font-size:.78rem;color:var(--muted);margin-top:.2rem">${isClient?'Kepada':'Dari'}: ${otherName} · ${date}</div>
+        </div>
+        <span style="font-size:.75rem;font-weight:700;padding:.25rem .7rem;border-radius:100px;background:${st.bg};color:${st.color}">${st.label}</span>
+      </div>
+      <div style="display:flex;gap:1.5rem;font-size:.82rem;color:var(--muted);margin-bottom:1rem;flex-wrap:wrap">
+        <span>Total: <strong style="color:var(--ink)">Rp ${parseInt(t.total_amount).toLocaleString('id')}</strong></span>
+        <span>DP: <strong>Rp ${parseInt(t.dp_amount).toLocaleString('id')}</strong></span>
+        <span>Fee platform: <strong>Rp ${parseInt(t.platform_fee).toLocaleString('id')}</strong></span>
+      </div>
+      <div style="display:flex;gap:.6rem;flex-wrap:wrap">
+        ${t.status==='waiting_dp' && isClient ? `<a href="${t.xendit_dp_invoice_url}" target="_blank" class="btn btn-primary btn-sm">💳 Bayar DP Sekarang</a>` : ''}
+        ${t.status==='dp_paid' && !isClient ? `<button class="btn btn-primary btn-sm" onclick="submitWork(${t.id})">✅ Tandai Selesai</button>` : ''}
+        ${t.status==='submitted' && isClient ? `
+          <button class="btn btn-primary btn-sm" onclick="approveWork(${t.id})">✅ Approve & Lunasi</button>
+          <button class="btn btn-danger btn-sm" onclick="openDisputeModal(${t.id})">⚠️ Dispute</button>
+        ` : ''}
+        ${t.status==='waiting_final' && isClient ? `<a href="${t.xendit_final_invoice_url}" target="_blank" class="btn btn-primary btn-sm">💳 Bayar Pelunasan</a>` : ''}
+        ${t.status==='dp_paid' && isClient ? `<button class="btn btn-danger btn-sm" onclick="openDisputeModal(${t.id})">⚠️ Dispute</button>` : ''}
+      </div>
+    </div>`;
+}
+
+async function submitWork(id) {
+  if (!confirm('Tandai pekerjaan sebagai selesai? Klien akan mereview dalam 7 hari.')) return;
+  const res = await api.submitTransaction(id);
+  showToast(res.message || 'Berhasil!', res.message ? 'success' : 'error');
+  renderTransactions();
+}
+
+async function approveWork(id) {
+  const res = await api.approveTransaction(id);
+  if (res.invoice_url) {
+    showToast('Disetujui! Mengarahkan ke halaman pembayaran...', 'success');
+    setTimeout(() => window.open(res.invoice_url, '_blank'), 1000);
+    renderTransactions();
+  } else {
+    showToast(res.message || 'Gagal', 'error');
+  }
+}
+
+function openDisputeModal(id) {
+  document.getElementById('dispute-trx-id').value = id;
+  document.getElementById('dispute-reason').value = '';
+  document.getElementById('dispute-modal').classList.add('open');
+}
+
+function closeDisputeModal() { document.getElementById('dispute-modal').classList.remove('open'); }
+
+async function submitDispute() {
+  const id = document.getElementById('dispute-trx-id').value;
+  const reason = document.getElementById('dispute-reason').value.trim();
+  if (!reason) { showToast('Alasan wajib diisi!', 'error'); return; }
+  const res = await api.disputeTransaction(id, reason);
+  showToast(res.message || 'Dispute dikirim!', 'success');
+  closeDisputeModal();
+  renderTransactions();
+}
+
+// Modal buat transaksi
+function openCreateTrxModal(workerId, workerName, listingId = null, type = 'listing') {
+  if (!currentUser) { goTo('login'); return; }
+  document.getElementById('trx-worker-id').value = workerId;
+  document.getElementById('trx-worker-name').textContent = workerName;
+  document.getElementById('trx-listing-id').value = listingId || '';
+  document.getElementById('trx-type').value = type;
+  document.getElementById('trx-amount').value = '';
+  document.getElementById('trx-notes').value = '';
+  document.getElementById('trx-error').textContent = '';
+  document.getElementById('trx-breakdown').style.display = 'none';
+  document.getElementById('create-trx-modal').classList.add('open');
+
+  // Live calc breakdown
+  document.getElementById('trx-amount').oninput = function() {
+    const amt = parseInt(this.value) || 0;
+    if (amt >= 10000) {
+      const dp = Math.ceil(amt * 0.5);
+      const final = amt - dp;
+      const fee = Math.ceil(amt * 0.1);
+      document.getElementById('trx-dp-amount').textContent = 'Rp ' + dp.toLocaleString('id');
+      document.getElementById('trx-final-amount').textContent = 'Rp ' + final.toLocaleString('id');
+      document.getElementById('trx-fee-amount').textContent = 'Rp ' + fee.toLocaleString('id');
+      document.getElementById('trx-worker-receive').textContent = 'Rp ' + (amt - fee).toLocaleString('id');
+      document.getElementById('trx-breakdown').style.display = 'block';
+    } else {
+      document.getElementById('trx-breakdown').style.display = 'none';
+    }
+  };
+}
+
+function closeCreateTrxModal() { document.getElementById('create-trx-modal').classList.remove('open'); }
+
+async function submitCreateTransaction() {
+  const worker_id = parseInt(document.getElementById('trx-worker-id').value);
+  const listing_id = document.getElementById('trx-listing-id').value;
+  const type = document.getElementById('trx-type').value;
+  const total_amount = parseInt(document.getElementById('trx-amount').value);
+  const notes = document.getElementById('trx-notes').value.trim();
+  const errEl = document.getElementById('trx-error');
+
+  if (!total_amount || total_amount < 10000) { errEl.textContent = 'Minimum transaksi Rp 10.000'; return; }
+  if (!notes) { errEl.textContent = 'Deskripsi pekerjaan wajib diisi'; return; }
+
+  const btn = document.getElementById('trx-submit-btn');
+  btn.innerHTML = '<span class="spinner"></span>Memproses...'; btn.disabled = true;
+
+  const res = await api.createTransaction({
+    type, worker_id,
+    listing_id: listing_id || null,
+    total_amount, notes
+  });
+
+  btn.innerHTML = 'Bayar DP Sekarang →'; btn.disabled = false;
+
+  if (res.invoice_url) {
+    closeCreateTrxModal();
+    showToast('Transaksi dibuat! Mengarahkan ke pembayaran...', 'success');
+    goTo('transactions');
+    setTimeout(() => {
+      const newTab = window.open(res.invoice_url, '_blank');
+      if (!newTab || newTab.closed || typeof newTab.closed === 'undefined') {
+        // Popup diblokir - redirect di tab yang sama
+        window.location.href = res.invoice_url;
+      }
+    }, 800);
+  } else {
+    errEl.textContent = res.message || 'Gagal membuat transaksi';
+  }
+}
+
+// ===== WALLET =====
+let currentWalletTab = 'earnings';
+
+async function renderWallet() {
+  if (!currentUser) { goTo('login'); return; }
+  currentWalletTab = 'earnings';
+  await loadWalletBalance();
+  await switchWalletTab('earnings', document.querySelector('.wallet-tab'));
+}
+
+async function loadWalletBalance() {
+  const bal = await api.getBalance();
+  const card = document.getElementById('wallet-balance-card');
+  card.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:2rem">
+      <div class="card" style="background:linear-gradient(135deg,#667eea,#764ba2);color:white;text-align:center">
+        <div style="font-size:.78rem;opacity:.8;margin-bottom:.3rem">Saldo Tersedia</div>
+        <div style="font-size:1.6rem;font-weight:800">Rp ${parseInt(bal.balance||0).toLocaleString('id')}</div>
+        <button class="btn btn-sm" style="margin-top:.8rem;background:white;color:#667eea;font-weight:700" onclick="openWithdrawModal(${bal.balance||0})">💸 Tarik Saldo</button>
+      </div>
+      <div class="card" style="text-align:center">
+        <div style="font-size:.78rem;color:var(--muted);margin-bottom:.3rem">Total Pendapatan</div>
+        <div style="font-size:1.3rem;font-weight:800;color:var(--accent2)">Rp ${parseInt(bal.total_earned||0).toLocaleString('id')}</div>
+      </div>
+      <div class="card" style="text-align:center">
+        <div style="font-size:.78rem;color:var(--muted);margin-bottom:.3rem">Total Dicairkan</div>
+        <div style="font-size:1.3rem;font-weight:800;color:var(--muted)">Rp ${parseInt(bal.total_withdrawn||0).toLocaleString('id')}</div>
+      </div>
+      <div class="card" style="text-align:center">
+        <div style="font-size:.78rem;color:var(--muted);margin-bottom:.3rem">Transaksi Selesai</div>
+        <div style="font-size:1.3rem;font-weight:800;color:var(--ink)">${bal.total_transactions||0}</div>
+      </div>
+    </div>`;
+}
+
+async function switchWalletTab(tab, el) {
+  currentWalletTab = tab;
+  document.querySelectorAll('.wallet-tab').forEach(t => t.classList.remove('active'));
+  if (el) el.classList.add('active');
+  const content = document.getElementById('wallet-tab-content');
+  content.innerHTML = '<div style="text-align:center;padding:2rem"><div style="width:28px;height:28px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite;display:inline-block"></div></div>';
+
+  if (tab === 'earnings') {
+    const data = await api.getEarnings();
+    if (!data.length) { content.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--muted)">Belum ada pendapatan.</div>'; return; }
+    content.innerHTML = data.map(e => `
+      <div class="card" style="margin-bottom:.8rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem">
+        <div>
+          <div style="font-weight:700;font-size:.88rem">${e.notes||'Pekerjaan Selesai'}</div>
+          <div style="font-size:.75rem;color:var(--muted)">Dari: ${e.client_name} · ${new Date(e.paid_at).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'})}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-weight:800;color:var(--accent2)">+Rp ${parseInt(e.earned).toLocaleString('id')}</div>
+          <div style="font-size:.72rem;color:var(--muted)">Fee: Rp ${parseInt(e.platform_fee).toLocaleString('id')}</div>
+        </div>
+      </div>`).join('');
+
+  } else if (tab === 'withdrawals') {
+    const data = await api.getWithdrawals();
+    if (!data.length) { content.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--muted)">Belum ada riwayat withdraw.</div>'; return; }
+    const stMap = { pending:{label:'Menunggu',color:'#d97706',bg:'#fffbeb'}, approved:{label:'✅ Disetujui',color:'var(--success)',bg:'#f0fdf4'}, rejected:{label:'❌ Ditolak',color:'var(--danger)',bg:'#fef2f2'} };
+    content.innerHTML = data.map(w => {
+      const st = stMap[w.status]||stMap.pending;
+      return `
+      <div class="card" style="margin-bottom:.8rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem">
+        <div>
+          <div style="font-weight:700;font-size:.88rem">${w.bank_name} · ${w.account_number}</div>
+          <div style="font-size:.75rem;color:var(--muted)">a.n. ${w.account_name} · ${new Date(w.created_at).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'})}</div>
+          ${w.admin_note?`<div style="font-size:.75rem;color:var(--muted);margin-top:.2rem">Catatan: ${w.admin_note}</div>`:''}
+        </div>
+        <div style="text-align:right">
+          <div style="font-weight:800">Rp ${parseInt(w.amount).toLocaleString('id')}</div>
+          <span style="font-size:.72rem;font-weight:700;padding:.2rem .5rem;border-radius:100px;background:${st.bg};color:${st.color}">${st.label}</span>
+        </div>
+      </div>`;}).join('');
+
+  } else if (tab === 'portfolio') {
+    const data = await api.getPortfolio(currentUser.id);
+    if (!data.length) { content.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--muted)">Portfolio akan muncul otomatis setelah transaksi selesai.</div>'; return; }
+    content.innerHTML = `<div class="listings-grid">` + data.map(p => `
+      <div class="listing-card">
+        ${p.photos&&p.photos.length ? `<img src="${p.photos[0]}" style="width:100%;height:140px;object-fit:cover;border-radius:8px;margin-bottom:.8rem">` : ''}
+        <div style="font-weight:700;font-size:.92rem;margin-bottom:.4rem">${p.title}</div>
+        <p style="font-size:.8rem;color:var(--muted);line-height:1.5;margin-bottom:.8rem">${(p.description||'').slice(0,80)}${(p.description||'').length>80?'…':''}</p>
+        ${p.client_rating?`<div style="color:#f59e0b;font-size:.8rem">★ ${p.client_rating}/5</div>`:''}
+        <div style="display:flex;gap:.5rem;margin-top:.8rem">
+          <button class="btn btn-outline btn-sm" onclick="togglePortfolioVisibility(${p.id},${!p.is_public})">${p.is_public?'👁 Publik':'🔒 Privat'}</button>
+        </div>
+      </div>`).join('') + '</div>';
+  }
+}
+
+async function togglePortfolioVisibility(id, isPublic) {
+  const res = await api.updatePortfolio(id, { is_public: isPublic });
+  showToast(res.message||'Updated!', 'success');
+  switchWalletTab('portfolio', null);
+}
+
+function openWithdrawModal(balance) {
+  document.getElementById('wd-amount').value = '';
+  document.getElementById('wd-amount').max = balance;
+  document.getElementById('wd-bank').value = '';
+  document.getElementById('wd-account-number').value = '';
+  document.getElementById('wd-account-name').value = '';
+  document.getElementById('wd-error').textContent = '';
+  document.getElementById('withdraw-modal').classList.add('open');
+}
+
+function closeWithdrawModal() { document.getElementById('withdraw-modal').classList.remove('open'); }
+
+async function submitWithdraw() {
+  const amount = parseInt(document.getElementById('wd-amount').value);
+  const bank_name = document.getElementById('wd-bank').value;
+  const account_number = document.getElementById('wd-account-number').value.trim();
+  const account_name = document.getElementById('wd-account-name').value.trim();
+  const errEl = document.getElementById('wd-error');
+
+  if (!amount || amount < 50000) { errEl.textContent = 'Minimum withdraw Rp 50.000'; return; }
+  if (!bank_name || !account_number || !account_name) { errEl.textContent = 'Semua field wajib diisi'; return; }
+
+  const btn = document.getElementById('wd-btn');
+  btn.innerHTML = '<span class="spinner"></span>Memproses...'; btn.disabled = true;
+  const res = await api.requestWithdraw({ amount, bank_name, account_number, account_name });
+  btn.innerHTML = 'Tarik Saldo'; btn.disabled = false;
+
+  if (res.message && !res.message.includes('gagal')) {
+    closeWithdrawModal();
+    showToast(res.message, 'success');
+    renderWallet();
+  } else {
+    errEl.textContent = res.message || 'Gagal';
   }
 }

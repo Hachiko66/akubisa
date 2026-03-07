@@ -32,6 +32,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (hash === 'profile')   renderProfile();
   if (hash === 'messages')  renderMessages();
   if (hash === 'job-requests') renderJobRequests();
+  if (hash === 'transactions') renderTransactions();
+  if (hash === 'wallet') renderWallet();
   if (hash === 'bookmarks') renderBookmarks();
 });
 
@@ -45,6 +47,8 @@ window.addEventListener('hashchange', () => {
   if (page === 'profile')   renderProfile();
   if (page === 'messages')  renderMessages();
   if (page === 'job-requests') renderJobRequests();
+  if (page === 'transactions') renderTransactions();
+  if (page === 'wallet') renderWallet();
   if (page === 'bookmarks') renderBookmarks();
   if (page === 'admin')     renderAdmin();
 });
@@ -80,6 +84,8 @@ function goTo(page) {
   if (page === 'profile')   renderProfile();
   if (page === 'messages')  renderMessages();
   if (page === 'job-requests') renderJobRequests();
+  if (page === 'transactions') renderTransactions();
+  if (page === 'wallet') renderWallet();
   if (page === 'bookmarks') renderBookmarks();
   if (page === 'admin')     renderAdmin();
 }
@@ -231,7 +237,8 @@ async function openListingDetail(id) {
       </div>
       ${currentUser && currentUser.id !== l.user_id
         ? `<div style="display:flex;gap:.6rem;flex-wrap:wrap">
-        <button class="btn btn-primary btn-sm" onclick="contactSeller(${l.user_id},'${(l.full_name||'').replace(/'/g,"\\'")}',${l.id})">💬 Hubungi</button>
+        <button class="btn btn-primary btn-sm" onclick="contactSeller(${l.user_id},'${(l.full_name||'').replace(/'/g,"\'")}',${l.id})">💬 Hubungi</button>
+        <button class="btn btn-primary btn-sm" style="background:var(--accent2)" onclick="closeListingModal();openCreateTrxModal(${l.user_id},'${(l.full_name||'').replace(/'/g,"\'")}',${l.id},'listing')">💳 Bayar via AkuBisa</button>
         <button class="btn btn-outline btn-sm" onclick="openReviewModal(${l.user_id},'${(l.full_name||'').replace(/'/g,"\\'")}',${l.id})">⭐ Beri Ulasan</button>
         <button class="btn btn-outline btn-sm" onclick="closeListingModal();openPublicProfile(${l.user_id})">👤 Lihat Profil</button>
         <button class="btn btn-outline btn-sm" data-bookmarked="false" onclick="toggleBookmark(${l.id},this)" style="color:var(--muted)">🔖 Simpan</button>
@@ -262,7 +269,7 @@ function startNotifPoll() {
   notifPollInterval = setInterval(() => {
     checkUnreadMessages();
     pollNotifBadge();
-  }, 8000);
+  }, 30000);
 }
 
 function stopNotifPoll() {
@@ -391,9 +398,23 @@ window.addEventListener('resize', () => {
   if (window.innerWidth > 768) closeMobileMenu();
 });
 
-// pollNotifBadge - alias checkUnreadMessages
-function pollNotifBadge() {
+// pollNotifBadge - cek pesan + notifikasi
+async function pollNotifBadge() {
   checkUnreadMessages();
+  // Cek notif badge
+  try {
+    const res = await api.getNotifications();
+    const count = res.unread_count || 0;
+    const badge = document.getElementById('notif-badge');
+    if (badge) {
+      if (count > 0) {
+        badge.textContent = count > 9 ? '9+' : count;
+        badge.style.display = 'inline-flex';
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+  } catch(e) {}
 }
 
 // ===== QUILL RICH TEXT EDITOR =====
