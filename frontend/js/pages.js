@@ -318,6 +318,7 @@ let activeConvId = null;
 let chatPollInterval = null;
 
 async function renderMessages() {
+  lastUnreadCount = 0;
   if (!currentUser) { goTo('login'); return; }
   stopChatPoll();
   await loadConversations();

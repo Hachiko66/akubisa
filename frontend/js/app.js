@@ -3,6 +3,7 @@ let currentUser = null;
 let currentPage = 'home';
 let categories  = [];
 let currentCategory = null;
+let currentCategory = null;
 
 // ===== INIT =====
 document.addEventListener('DOMContentLoaded', async () => {
@@ -357,3 +358,8 @@ window.addEventListener('resize', () => {
   }
   if (window.innerWidth > 768) closeMobileMenu();
 });
+
+// pollNotifBadge - alias checkUnreadMessages
+function pollNotifBadge() {
+  checkUnreadMessages();
+}
