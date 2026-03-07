@@ -12,9 +12,9 @@ const app = express();
 app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
 
 // Rate limiters
-const globalLimiter = rateLimit({ windowMs: 15*60*1000, max: 200, message: { message: 'Terlalu banyak request.' } });
-const authLimiter   = rateLimit({ windowMs: 15*60*1000, max: 10,  message: { message: 'Terlalu banyak percobaan login.' } });
-const msgLimiter    = rateLimit({ windowMs: 60*1000,    max: 20,  message: { message: 'Terlalu banyak pesan.' } });
+const globalLimiter = rateLimit({ windowMs: 15*60*1000, max: 500, message: { message: 'Terlalu banyak request.' } });
+const authLimiter   = rateLimit({ windowMs: 15*60*1000, max: 20,  message: { message: 'Terlalu banyak percobaan login.' } });
+const msgLimiter    = rateLimit({ windowMs: 60*1000,    max: 120,  message: { message: 'Terlalu banyak pesan.' } });
 
 app.use(globalLimiter);
 app.use(cors({ origin: '*' }));
