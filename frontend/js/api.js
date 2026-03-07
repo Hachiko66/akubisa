@@ -115,3 +115,12 @@ api.adminFeatureListing = (id,days)=> fetch(`${API}/admin/listings/${id}/feature
 api.adminDeleteListing = (id)      => fetch(`${API}/admin/listings/${id}`, { method:'DELETE', headers:adminHeaders() }).then(r=>r.json());
 api.adminGetReports  = (status)    => fetch(`${API}/admin/reports?status=${status||'pending'}`, { headers:adminHeaders() }).then(r=>r.json());
 api.adminResolveReport = (id,action)=> fetch(`${API}/admin/reports/${id}/resolve`, { method:'PATCH', headers:adminHeaders(), body:JSON.stringify({action}) }).then(r=>r.json());
+// ===== JOB REQUESTS =====
+api.getJobRequests    = (params='')  => fetch(`${API}/job-requests?${params}`, { headers:headers(false) }).then(r=>r.json());
+api.getJobRequest     = (id)         => fetch(`${API}/job-requests/${id}`, { headers:headers(false) }).then(r=>r.json());
+api.createJobRequest  = (data)       => fetch(`${API}/job-requests`, { method:'POST', headers:headers(true), body:JSON.stringify(data) }).then(r=>r.json());
+api.deleteJobRequest  = (id)         => fetch(`${API}/job-requests/${id}`, { method:'DELETE', headers:headers(true) }).then(r=>r.json());
+api.myJobRequests     = ()           => fetch(`${API}/job-requests/my`, { headers:headers(true) }).then(r=>r.json());
+api.getApplications   = (id)         => fetch(`${API}/job-requests/${id}/applications`, { headers:headers(true) }).then(r=>r.json());
+api.applyJob          = (id, data)   => fetch(`${API}/job-requests/${id}/apply`, { method:'POST', headers:headers(true), body:JSON.stringify(data) }).then(r=>r.json());
+api.acceptApplication = (appId)      => fetch(`${API}/job-requests/applications/${appId}/accept`, { method:'PATCH', headers:headers(true) }).then(r=>r.json());

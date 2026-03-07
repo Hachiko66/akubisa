@@ -879,8 +879,12 @@ body { font-family: var(--font-body); }
   <div id="dash-client" class="section hidden">
     <div class="card" style="margin-bottom:2rem;background:linear-gradient(135deg,#fff4e6,#fce8e4)">
       <div style="font-weight:700;font-size:1rem;margin-bottom:.4rem">Kamu dalam Mode Pencari</div>
-      <p style="font-size:.85rem;color:var(--muted);margin-bottom:1rem">Temukan pekerja berbakat yang sesuai kebutuhanmu.</p>
-      <button class="btn btn-primary btn-sm" onclick="goTo('explore')">Jelajahi Semua Penawaran</button>
+      <p style="font-size:.85rem;color:var(--muted);margin-bottom:1rem">Temukan pekerja berbakat atau posting kebutuhanmu langsung.</p>
+      <div style="display:flex;gap:.6rem;flex-wrap:wrap">
+        <button class="btn btn-primary btn-sm" onclick="goTo('explore')">Jelajahi Penawaran</button>
+        <button class="btn btn-outline btn-sm" onclick="openPostJobModal()">🙋 Posting Kebutuhanku</button>
+        <button class="btn btn-outline btn-sm" onclick="goTo('job-requests')">Lihat Semua Kebutuhan</button>
+      </div>
     </div>
     <div style="font-weight:700;font-size:1.1rem;margin-bottom:1rem">Penawaran Untukmu</div>
     <div class="listings-grid" id="dash-client-listings"></div>
@@ -921,14 +925,10 @@ body { font-family: var(--font-body); }
           <div>Mode: <span id="profile-role2" style="color:var(--ink);font-weight:600"></span></div>
         </div>
       </div>
-      <div class="card">
+      <div class="card" id="profile-quick-actions">
         <div style="font-weight:700;margin-bottom:1rem">Aksi Cepat</div>
-        <div style="display:flex;flex-direction:column;gap:.6rem">
-          <button class="btn btn-primary btn-sm" onclick="openPostModal()">+ Buat Penawaran</button>
-          <button class="btn btn-outline btn-sm" onclick="goTo('dashboard')">Dashboard</button>
-          <button class="btn btn-outline btn-sm" onclick="goTo('explore')">Jelajahi</button>
-          <button class="btn btn-outline btn-sm" onclick="openEditProfile()">Edit Profil</button>
-          <button class="btn btn-danger btn-sm" onclick="logout()">Keluar</button>
+        <div style="display:flex;flex-direction:column;gap:.6rem" id="quick-action-buttons">
+          <!-- Diisi oleh JS berdasarkan role -->
         </div>
       </div>
     </div>
@@ -1030,6 +1030,91 @@ body { font-family: var(--font-body); }
         </div>
       </div>
       <div id="pub-reviews-list"></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ===== HALAMAN AKU BUTUH ===== -->
+<div id="page-job-requests" class="page" style="display:none">
+  <div class="dark-section" style="padding:2rem 5vw">
+    <div style="max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem">
+      <div>
+        <h2 style="margin-bottom:.3rem">🙋 Aku Butuh</h2>
+        <p style="color:rgba(255,255,255,.6);font-size:.88rem">Klien posting kebutuhan, pekerja melamar</p>
+      </div>
+      <button class="btn btn-primary" onclick="openPostJobModal()">+ Posting Kebutuhan</button>
+    </div>
+    <div style="max-width:1200px;margin:1rem auto 0">
+      <div class="search-bar-wrap">
+        <input type="text" id="job-search" placeholder="Cari kebutuhan..." onkeydown="if(event.key==='Enter')fetchJobRequests(true)">
+        <button onclick="fetchJobRequests(true)">Cari</button>
+      </div>
+      <div class="chip-wrap" id="job-chips"></div>
+    </div>
+  </div>
+  <div class="section">
+    <div style="max-width:1200px;margin:0 auto">
+      <div class="listings-grid" id="job-requests-grid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL POST JOB REQUEST -->
+<div class="modal-overlay" id="post-job-modal" onclick="if(event.target===this)closePostJobModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">🙋 Aku Butuh...</div>
+      <button class="modal-close" onclick="closePostJobModal()">✕</button>
+    </div>
+    <div class="form-group"><label class="form-label">Judul Kebutuhan *</label><input class="form-input" id="job-title" placeholder="Contoh: Aku butuh desainer logo untuk startup saya"></div>
+    <div class="form-group"><label class="form-label">Deskripsi *</label><textarea class="form-textarea" id="job-desc" style="min-height:100px" placeholder="Jelaskan kebutuhanmu secara detail..."></textarea></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Kategori</label><select class="form-select" id="job-category"></select></div>
+      <div class="form-group"><label class="form-label">Kota</label><input class="form-input" id="job-city" placeholder="Jakarta..."></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Budget Min (Rp)</label><input class="form-input" id="job-budget-min" type="number" placeholder="100000"></div>
+      <div class="form-group"><label class="form-label">Budget Max (Rp)</label><input class="form-input" id="job-budget-max" type="number" placeholder="500000"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Deadline</label><input class="form-input" id="job-deadline" type="date"></div>
+    <div id="job-post-error" style="font-size:.82rem;color:var(--danger);min-height:1rem"></div>
+    <div style="display:flex;gap:.8rem;justify-content:flex-end;margin-top:1rem">
+      <button class="btn btn-outline" onclick="closePostJobModal()">Batal</button>
+      <button class="btn btn-primary" id="job-post-btn" onclick="submitJobRequest()">Posting Sekarang</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DETAIL JOB REQUEST -->
+<div class="modal-overlay" id="job-detail-modal" onclick="if(event.target===this)closeJobDetailModal()">
+  <div class="modal" style="max-width:600px">
+    <div class="modal-header">
+      <div class="modal-title">Detail Kebutuhan</div>
+      <button class="modal-close" onclick="closeJobDetailModal()">✕</button>
+    </div>
+    <div id="job-detail-body"></div>
+  </div>
+</div>
+
+<!-- MODAL APPLY JOB -->
+<div class="modal-overlay" id="apply-job-modal" onclick="if(event.target===this)closeApplyJobModal()">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <div class="modal-title">📝 Kirim Lamaran</div>
+      <button class="modal-close" onclick="closeApplyJobModal()">✕</button>
+    </div>
+    <p style="font-size:.85rem;color:var(--muted);margin-bottom:1rem">Untuk: <strong id="apply-job-title"></strong></p>
+    <input type="hidden" id="apply-job-id">
+    <div class="form-group"><label class="form-label">Cover Letter *</label><textarea class="form-textarea" id="apply-cover-letter" style="min-height:100px" placeholder="Kenapa kamu cocok untuk pekerjaan ini?"></textarea></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Tawaran Harga (Rp)</label><input class="form-input" id="apply-price" type="number" placeholder="Opsional"></div>
+      <div class="form-group"><label class="form-label">Estimasi Hari</label><input class="form-input" id="apply-days" type="number" placeholder="Opsional"></div>
+    </div>
+    <div id="apply-error" style="font-size:.82rem;color:var(--danger);min-height:1rem"></div>
+    <div style="display:flex;gap:.8rem;justify-content:flex-end;margin-top:1rem">
+      <button class="btn btn-outline" onclick="closeApplyJobModal()">Batal</button>
+      <button class="btn btn-primary" id="apply-btn" onclick="submitJobApplication()">Kirim Lamaran</button>
     </div>
   </div>
 </div>

@@ -113,7 +113,29 @@ function doSearch() {
 }
 
 // ===== PROFILE PAGE =====
+function renderQuickActions() {
+  const el = document.getElementById('quick-action-buttons');
+  if (!el || !currentUser) return;
+  const isWorker = currentUser.role === 'worker';
+  el.innerHTML = isWorker ? `
+    <button class="btn btn-primary btn-sm" onclick="openPostModal()">⚡ Buat Penawaran</button>
+    <button class="btn btn-outline btn-sm" onclick="goTo('job-requests')">🙋 Lihat Kebutuhan Klien</button>
+    <button class="btn btn-outline btn-sm" onclick="goTo('dashboard')">Dashboard</button>
+    <button class="btn btn-outline btn-sm" onclick="goTo('explore')">Jelajahi</button>
+    <button class="btn btn-outline btn-sm" onclick="openEditProfile()">Edit Profil</button>
+    <button class="btn btn-danger btn-sm" onclick="logout()">Keluar</button>
+  ` : `
+    <button class="btn btn-primary btn-sm" onclick="openPostJobModal()">🙋 Posting Kebutuhan</button>
+    <button class="btn btn-outline btn-sm" onclick="goTo('job-requests')">Lihat Semua Kebutuhan</button>
+    <button class="btn btn-outline btn-sm" onclick="goTo('explore')">Jelajahi Penawaran</button>
+    <button class="btn btn-outline btn-sm" onclick="goTo('dashboard')">Dashboard</button>
+    <button class="btn btn-outline btn-sm" onclick="openEditProfile()">Edit Profil</button>
+    <button class="btn btn-danger btn-sm" onclick="logout()">Keluar</button>
+  `;
+}
+
 async function renderProfile() {
+  renderQuickActions();
   if (!currentUser) { goTo('login'); return; }
   const u = currentUser;
   const ini = initials(u.full_name);
@@ -733,3 +755,288 @@ async function deleteMyReview(reviewId) {
 }
 
 function loadExplore(cat) { if(cat) exploreFilter = cat; renderExplore(); }
+
+// ===== AKU BUTUH / JOB REQUESTS =====
+let jobPage = 1;
+let jobLoading = false;
+let jobHasMore = true;
+let jobSearch = '';
+let jobFilter = 'semua';
+
+async function renderJobRequests() {
+  jobPage = 1; jobHasMore = true; jobSearch = ''; jobFilter = 'semua';
+  
+  // Render category chips
+  const chipsEl = document.getElementById('job-chips');
+  if (chipsEl && categories.length) {
+    chipsEl.innerHTML = `<span class="chip active" onclick="setJobFilter('semua',this)">Semua</span>` +
+      categories.map(c => `<span class="chip" onclick="setJobFilter('${c.slug}',this)">${c.icon} ${c.name}</span>`).join('');
+  }
+  await fetchJobRequests(true);
+}
+
+async function fetchJobRequests(reset = true) {
+  if (reset) { jobPage = 1; jobHasMore = true; }
+  if (jobLoading || !jobHasMore) return;
+  jobLoading = true;
+
+  const grid = document.getElementById('job-requests-grid');
+  if (reset) grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:3rem"><div style="width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite;display:inline-block"></div></div>`;
+
+  let params = `limit=12&page=${jobPage}`;
+  if (jobFilter !== 'semua') params += `&category=${jobFilter}`;
+  jobSearch = document.getElementById('job-search')?.value || '';
+  if (jobSearch) params += `&search=${encodeURIComponent(jobSearch)}`;
+
+  try {
+    const res = await api.getJobRequests(params);
+    const requests = res.requests || [];
+    const total = res.total || 0;
+
+    if (reset) grid.innerHTML = '';
+
+    if (requests.length === 0 && reset) {
+      grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--muted)">
+        <div style="font-size:2.5rem;margin-bottom:1rem">🔍</div>
+        <p>Belum ada kebutuhan yang diposting.</p>
+        ${currentUser ? `<button class="btn btn-primary btn-sm" style="margin-top:1rem" onclick="openPostJobModal()">+ Posting Kebutuhanmu</button>` : ''}
+      </div>`;
+    } else {
+      requests.forEach(r => {
+        const div = document.createElement('div');
+        div.innerHTML = jobRequestCardHTML(r);
+        grid.appendChild(div.firstElementChild);
+      });
+    }
+
+    jobHasMore = (jobPage * 12) < total;
+    jobPage++;
+
+    const oldSentinel = document.getElementById('job-scroll-sentinel');
+    if (oldSentinel) oldSentinel.remove();
+    if (jobHasMore) {
+      const sentinel = document.createElement('div');
+      sentinel.id = 'job-scroll-sentinel';
+      sentinel.style.cssText = 'grid-column:1/-1;text-align:center;padding:1rem';
+      sentinel.innerHTML = '<div style="width:24px;height:24px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite;display:inline-block"></div>';
+      grid.appendChild(sentinel);
+      jobScrollObserver.observe(sentinel);
+    }
+  } catch(e) {
+    grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;padding:2rem;color:var(--danger)">Gagal memuat data.</p>';
+  }
+  jobLoading = false;
+}
+
+const jobScrollObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => { if (entry.isIntersecting) fetchJobRequests(false); });
+}, { threshold: 0.1 });
+
+function setJobFilter(slug, el) {
+  jobFilter = slug;
+  document.querySelectorAll('#job-chips .chip').forEach(c => c.classList.remove('active'));
+  if (el) el.classList.add('active');
+  fetchJobRequests(true);
+}
+
+function jobRequestCardHTML(r) {
+  const cs = catStyle[r.category_slug] || catStyle['jasa'];
+  const av = avColor(r.full_name || '');
+  const ini = initials(r.full_name || '?');
+  const budget = r.budget_min && r.budget_max
+    ? `Rp ${parseInt(r.budget_min).toLocaleString('id')} – Rp ${parseInt(r.budget_max).toLocaleString('id')}`
+    : r.budget_min ? `Dari Rp ${parseInt(r.budget_min).toLocaleString('id')}`
+    : r.budget_max ? `Hingga Rp ${parseInt(r.budget_max).toLocaleString('id')}` : 'Budget Nego';
+  const deadline = r.deadline ? new Date(r.deadline).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'}) : null;
+  return `
+    <div class="listing-card" onclick="openJobDetail(${r.id})" style="cursor:pointer;border-left:3px solid var(--accent2)">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.5rem">
+        <span class="cat-tag" style="background:${cs.bg};color:${cs.color}">${r.category_icon||'🙋'} ${r.category_name||'Umum'}</span>
+        <span style="font-size:.7rem;color:var(--accent2);font-weight:700;background:#f0fdf4;padding:.15rem .5rem;border-radius:100px">BUTUH JASA</span>
+      </div>
+      <div style="font-weight:700;font-size:.95rem;margin-bottom:.4rem;line-height:1.3">${r.title}</div>
+      <p style="font-size:.8rem;color:var(--muted);margin-bottom:.8rem;line-height:1.55">${r.description.slice(0,100)}${r.description.length>100?'…':''}</p>
+      <div style="display:flex;gap:1rem;font-size:.75rem;color:var(--muted);margin-bottom:.8rem;flex-wrap:wrap">
+        <span>💰 ${budget}</span>
+        ${deadline ? `<span>⏰ ${deadline}</span>` : ''}
+        ${r.city ? `<span>📍 ${r.city}</span>` : ''}
+        <span>👥 ${r.application_count||0} pelamar</span>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--border);padding-top:.8rem">
+        <div style="display:flex;align-items:center;gap:.5rem">
+          <div class="avatar" style="background:${av};width:28px;height:28px;font-size:.7rem">${ini}</div>
+          <span style="font-size:.78rem;font-weight:600">${r.full_name||'Anonim'}</span>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();openApplyJobModal(${r.id},'${(r.title||'').replace(/'/g,"\\'")}')">Lamar →</button>
+      </div>
+    </div>`;
+}
+
+async function openJobDetail(id) {
+  const r = await api.getJobRequest(id);
+  if (!r || !r.id) { showToast('Gagal memuat detail', 'error'); return; }
+  const budget = r.budget_min && r.budget_max
+    ? `Rp ${parseInt(r.budget_min).toLocaleString('id')} – Rp ${parseInt(r.budget_max).toLocaleString('id')}`
+    : 'Nego';
+  const deadline = r.deadline ? new Date(r.deadline).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'}) : 'Fleksibel';
+  const av = avColor(r.full_name||'');
+  const ini = initials(r.full_name||'?');
+
+  document.getElementById('job-detail-body').innerHTML = `
+    <div style="margin-bottom:1rem">
+      <h3 style="font-size:1.1rem;font-weight:800;margin-bottom:.5rem">${r.title}</h3>
+      <div style="display:flex;gap:1rem;font-size:.78rem;color:var(--muted);flex-wrap:wrap;margin-bottom:1rem">
+        <span>💰 ${budget}</span>
+        <span>⏰ Deadline: ${deadline}</span>
+        ${r.city?`<span>📍 ${r.city}</span>`:''}
+        <span>👥 ${r.application_count||0} pelamar</span>
+      </div>
+      <div style="font-size:.88rem;line-height:1.7;color:#333;margin-bottom:1.5rem;white-space:pre-wrap">${r.description}</div>
+      <div class="card" style="margin-bottom:1rem">
+        <div style="display:flex;align-items:center;gap:.8rem">
+          <div class="avatar" style="background:${av};width:40px;height:40px">${ini}</div>
+          <div>
+            <div style="font-weight:700;font-size:.88rem">${r.full_name||'Anonim'}</div>
+            <div style="font-size:.75rem;color:var(--muted)">${r.user_city||''}</div>
+          </div>
+        </div>
+      </div>
+      ${currentUser && currentUser.id !== r.user_id
+        ? `<button class="btn btn-primary btn-block" onclick="closeJobDetailModal();openApplyJobModal(${r.id},'${(r.title||'').replace(/'/g,"\\'")}')">📝 Lamar Sekarang</button>`
+        : currentUser && currentUser.id === r.user_id
+        ? `<button class="btn btn-outline btn-block" onclick="viewMyApplications(${r.id})">👥 Lihat Pelamar (${r.application_count||0})</button>`
+        : `<button class="btn btn-primary btn-block" onclick="goTo('login');closeJobDetailModal()">Masuk untuk Melamar</button>`
+      }
+    </div>`;
+  document.getElementById('job-detail-modal').classList.add('open');
+}
+
+function closeJobDetailModal() { document.getElementById('job-detail-modal').classList.remove('open'); }
+
+function openPostJobModal() {
+  if (!currentUser) { goTo('login'); return; }
+  // Populate kategori
+  const sel = document.getElementById('job-category');
+  sel.innerHTML = '<option value="">-- Pilih Kategori --</option>' +
+    categories.map(c => `<option value="${c.id}">${c.icon} ${c.name}</option>`).join('');
+  document.getElementById('job-title').value = '';
+  document.getElementById('job-desc').value = '';
+  document.getElementById('job-budget-min').value = '';
+  document.getElementById('job-budget-max').value = '';
+  document.getElementById('job-deadline').value = '';
+  document.getElementById('job-post-error').textContent = '';
+  document.getElementById('post-job-modal').classList.add('open');
+}
+
+function closePostJobModal() { document.getElementById('post-job-modal').classList.remove('open'); }
+
+async function submitJobRequest() {
+  const title = document.getElementById('job-title').value.trim();
+  const description = document.getElementById('job-desc').value.trim();
+  const category_id = document.getElementById('job-category').value;
+  const city = document.getElementById('job-city').value.trim();
+  const budget_min = document.getElementById('job-budget-min').value;
+  const budget_max = document.getElementById('job-budget-max').value;
+  const deadline = document.getElementById('job-deadline').value;
+  const errEl = document.getElementById('job-post-error');
+
+  if (!title || !description) { errEl.textContent = 'Judul dan deskripsi wajib diisi!'; return; }
+
+  const btn = document.getElementById('job-post-btn');
+  btn.innerHTML = '<span class="spinner"></span>Memposting...'; btn.disabled = true;
+  const res = await api.createJobRequest({ title, description, category_id: category_id||null, city, budget_min: budget_min||null, budget_max: budget_max||null, deadline: deadline||null });
+  btn.innerHTML = 'Posting Sekarang'; btn.disabled = false;
+
+  if (res.data) {
+    closePostJobModal();
+    showToast('Kebutuhan berhasil diposting! 🎉', 'success');
+    fetchJobRequests(true);
+  } else {
+    errEl.textContent = res.message || 'Gagal memposting';
+  }
+}
+
+function openApplyJobModal(jobId, jobTitle) {
+  if (!currentUser) { goTo('login'); return; }
+  document.getElementById('apply-job-id').value = jobId;
+  document.getElementById('apply-job-title').textContent = jobTitle;
+  document.getElementById('apply-cover-letter').value = '';
+  document.getElementById('apply-price').value = '';
+  document.getElementById('apply-days').value = '';
+  document.getElementById('apply-error').textContent = '';
+  document.getElementById('apply-job-modal').classList.add('open');
+}
+
+function closeApplyJobModal() { document.getElementById('apply-job-modal').classList.remove('open'); }
+
+async function submitJobApplication() {
+  const jobId = document.getElementById('apply-job-id').value;
+  const cover_letter = document.getElementById('apply-cover-letter').value.trim();
+  const offered_price = document.getElementById('apply-price').value;
+  const estimated_days = document.getElementById('apply-days').value;
+  const errEl = document.getElementById('apply-error');
+
+  if (!cover_letter) { errEl.textContent = 'Cover letter wajib diisi!'; return; }
+
+  const btn = document.getElementById('apply-btn');
+  btn.innerHTML = '<span class="spinner"></span>Mengirim...'; btn.disabled = true;
+  const res = await api.applyJob(jobId, { cover_letter, offered_price: offered_price||null, estimated_days: estimated_days||null });
+  btn.innerHTML = 'Kirim Lamaran'; btn.disabled = false;
+
+  if (res.data) {
+    closeApplyJobModal();
+    showToast('Lamaran terkirim! 🎉', 'success');
+  } else {
+    errEl.textContent = res.message || 'Gagal mengirim lamaran';
+  }
+}
+
+async function viewMyApplications(jobId) {
+  closeJobDetailModal();
+  const apps = await api.getApplications(jobId);
+  if (!Array.isArray(apps) || apps.length === 0) { showToast('Belum ada pelamar', 'info'); return; }
+  
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay open';
+  modal.id = 'applicants-modal';
+  modal.onclick = (e) => { if(e.target===modal) modal.remove(); };
+  modal.innerHTML = `
+    <div class="modal" style="max-width:560px">
+      <div class="modal-header">
+        <div class="modal-title">👥 Pelamar (${apps.length})</div>
+        <button class="modal-close" onclick="document.getElementById('applicants-modal').remove()">✕</button>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:1rem;max-height:60vh;overflow-y:auto">
+        ${apps.map(a => `
+          <div class="card" style="padding:1rem">
+            <div style="display:flex;align-items:center;gap:.8rem;margin-bottom:.8rem">
+              <div class="avatar" style="background:${avColor(a.full_name)};width:40px;height:40px">${initials(a.full_name)}</div>
+              <div style="flex:1">
+                <div style="font-weight:700;font-size:.88rem">${a.full_name}</div>
+                <div style="font-size:.72rem;color:var(--muted)">${a.city||''} ${a.avg_rating>0?`· ⭐ ${parseFloat(a.avg_rating).toFixed(1)}`:''}</div>
+              </div>
+              <span style="font-size:.72rem;font-weight:700;padding:.2rem .6rem;border-radius:100px;background:${a.status==='accepted'?'#f0fdf4':a.status==='rejected'?'#fef2f2':'#f8f9fa'};color:${a.status==='accepted'?'var(--success)':a.status==='rejected'?'var(--danger)':'var(--muted)'}">${a.status==='accepted'?'✓ Diterima':a.status==='rejected'?'✗ Ditolak':'Menunggu'}</span>
+            </div>
+            <p style="font-size:.82rem;color:#444;line-height:1.6;margin-bottom:.8rem">${a.cover_letter}</p>
+            <div style="display:flex;gap:1rem;font-size:.75rem;color:var(--muted);margin-bottom:.8rem">
+              ${a.offered_price?`<span>💰 Rp ${parseInt(a.offered_price).toLocaleString('id')}</span>`:''}
+              ${a.estimated_days?`<span>📅 ${a.estimated_days} hari</span>`:''}
+            </div>
+            ${a.status==='pending'?`
+            <div style="display:flex;gap:.6rem;justify-content:flex-end">
+              <button class="btn btn-outline btn-sm" onclick="contactSeller(${a.applicant_id},'${(a.full_name||'').replace(/'/g,"\\'")}',null)">💬 Chat</button>
+              <button class="btn btn-primary btn-sm" onclick="acceptApplicant(${a.id})">✓ Terima</button>
+            </div>`:''}
+          </div>`).join('')}
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+}
+
+async function acceptApplicant(appId) {
+  const res = await api.acceptApplication(appId);
+  if (res.message) {
+    showToast('Pelamar diterima! 🎉', 'success');
+    document.getElementById('applicants-modal')?.remove();
+  }
+}

@@ -41,6 +41,7 @@ app.use('/api/auth',          authLimiter, require('./routes/auth'));
 app.use('/api/listings',                   require('./routes/listings'));
 app.use('/api/categories',                 require('./routes/categories'));
 app.use('/api/profile',                    require('./routes/profile'));
+app.use('/api/job-requests', require('./routes/jobRequests'));
 app.use('/api/messages',      msgLimiter,  require('./routes/messages'));
 app.use('/api/reviews',                    require('./routes/reviews'));
 app.use('/api/admin', require('./routes/admin'));

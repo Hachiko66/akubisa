@@ -31,6 +31,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (hash === 'explore')   { renderExplore(); loadExplore(); }
   if (hash === 'profile')   renderProfile();
   if (hash === 'messages')  renderMessages();
+  if (hash === 'job-requests') renderJobRequests();
   if (hash === 'bookmarks') renderBookmarks();
 });
 
@@ -43,6 +44,7 @@ window.addEventListener('hashchange', () => {
   if (page === 'dashboard') renderDashboard();
   if (page === 'profile')   renderProfile();
   if (page === 'messages')  renderMessages();
+  if (page === 'job-requests') renderJobRequests();
   if (page === 'bookmarks') renderBookmarks();
   if (page === 'admin')     renderAdmin();
 });
@@ -77,6 +79,7 @@ function goTo(page) {
   if (page === 'dashboard') renderDashboard();
   if (page === 'profile')   renderProfile();
   if (page === 'messages')  renderMessages();
+  if (page === 'job-requests') renderJobRequests();
   if (page === 'bookmarks') renderBookmarks();
   if (page === 'admin')     renderAdmin();
 }
@@ -94,11 +97,13 @@ function renderNav() {
   if (!currentUser) {
     desktopHTML = `
       <a onclick="goTo('explore')">Jelajahi</a>
+      <a onclick="goTo('job-requests')">🙋 Aku Butuh</a>
       <a onclick="scrollToHow()">Cara Kerja</a>
       <a onclick="goTo('login')" style="font-weight:600">Masuk</a>
       <button class="btn btn-primary btn-sm" onclick="goTo('register')">Daftar</button>`;
     mobileHTML = `
       <a onclick="closeMobileMenu();setTimeout(()=>goTo('explore'),100)">Jelajahi</a>
+      <a onclick="closeMobileMenu();setTimeout(()=>goTo('job-requests'),100)">🙋 Aku Butuh</a>
       <a onclick="scrollToHow();closeMobileMenu()">Cara Kerja</a>
       <a onclick="closeMobileMenu();setTimeout(()=>goTo('login'),100)" style="font-weight:600">Masuk</a>
       <button class="btn btn-primary" onclick="closeMobileMenu();setTimeout(()=>goTo('register'),100)">Daftar</button>`;
@@ -108,6 +113,7 @@ function renderNav() {
     </span>`;
     desktopHTML = `
       <a onclick="goTo('explore')">Jelajahi</a>
+      <a onclick="goTo('job-requests')">🙋 Aku Butuh</a>
       <a onclick="goTo('dashboard')">Dashboard</a>
       <a onclick="goTo('bookmarks')">🔖 Simpan</a>
       <a onclick="goTo('messages')">💬 Pesan</a>
@@ -120,6 +126,7 @@ function renderNav() {
       <button class="btn btn-primary btn-sm" onclick="logout()">Keluar</button>`;
     mobileHTML = `
       <a onclick="closeMobileMenu();setTimeout(()=>goTo('explore'),100)">Jelajahi</a>
+      <a onclick="closeMobileMenu();setTimeout(()=>goTo('job-requests'),100)">🙋 Aku Butuh</a>
       <a onclick="closeMobileMenu();setTimeout(()=>goTo('dashboard'),100)">Dashboard</a>
       <a onclick="closeMobileMenu();setTimeout(()=>goTo('bookmarks'),100)">🔖 Simpan</a>
       <a onclick="closeMobileMenu();setTimeout(()=>goTo('messages'),100)">💬 Pesan</a>
