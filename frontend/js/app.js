@@ -274,19 +274,19 @@ async function checkUnreadMessages() {
 }
 
 function updateNavBadge(count) {
-  // Hapus badge lama
   const old = document.getElementById('nav-msg-badge');
   if (old) old.remove();
-
-  if (count > 0) {
-    const msgLink = document.querySelector('[onclick="goTo(\'messages\')"]');
-    if (msgLink) {
-      msgLink.style.position = 'relative';
-      msgLink.insertAdjacentHTML('afterend',
-        `<span id="nav-msg-badge" onclick="goTo('messages')" style="background:var(--accent);color:white;font-size:.65rem;font-weight:800;padding:.15rem .45rem;border-radius:100px;cursor:pointer;margin-left:-.3rem;vertical-align:top">${count > 9 ? '9+' : count}</span>`
-      );
+  if (count <= 0) return;
+  const allLinks = document.querySelectorAll('#nav-links a, #mobile-nav-links a');
+  allLinks.forEach(link => {
+    if (link.textContent.includes('Pesan')) {
+      const badge = document.createElement('span');
+      badge.id = 'nav-msg-badge';
+      badge.textContent = count > 9 ? '9+' : count;
+      badge.style.cssText = 'background:var(--accent);color:white;font-size:.6rem;font-weight:800;padding:.1rem .4rem;border-radius:100px;margin-left:.3rem;vertical-align:middle;display:inline-block';
+      link.appendChild(badge);
     }
-  }
+  });
 }
 
 function showNotifPopup(senderName, preview, convId, senderId) {
