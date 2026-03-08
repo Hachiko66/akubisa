@@ -1016,6 +1016,11 @@ body { font-family: var(--font-body); }
     <div>
       <div style="font-weight:700;font-size:1.1rem;margin-bottom:1rem">Penawaran</div>
       <div class="listings-grid" id="pub-listings-grid"></div>
+      <!-- PORTFOLIO SECTION -->
+      <div id="pub-portfolio-section" style="margin-top:2rem;display:none">
+        <div style="font-weight:700;font-size:1.1rem;margin-bottom:1rem">🗂️ Portfolio Pekerjaan</div>
+        <div id="pub-portfolio-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem"></div>
+      </div>
     </div>
     <div>
       <div class="card" style="margin-bottom:1.5rem">
@@ -1250,6 +1255,36 @@ body { font-family: var(--font-body); }
     <div style="display:flex;gap:.8rem;justify-content:flex-end;margin-top:1rem">
       <button class="btn btn-outline" onclick="closeWithdrawModal()">Batal</button>
       <button class="btn btn-primary" id="wd-btn" onclick="submitWithdraw()">Tarik Saldo</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ===== ADMIN PAGE ===== -->
+<div id="page-admin" class="page" style="display:none">
+  <div class="dark-section" style="padding:1.5rem 5vw">
+    <div style="max-width:1200px;margin:0 auto">
+      <h2 style="margin-bottom:.3rem">⚙️ Admin Panel</h2>
+      <div id="admin-tab-bar" style="display:flex;gap:.3rem;flex-wrap:wrap;margin-top:1rem">
+        <button class="admin-tab active" id="atab-overview" onclick="adminTab('overview')">📊 Overview</button>
+        <button class="admin-tab" id="atab-users" onclick="adminTab('users')">👥 Users</button>
+        <button class="admin-tab" id="atab-listings" onclick="adminTab('listings')">📋 Listings</button>
+        <button class="admin-tab" id="atab-reports" onclick="adminTab('reports')">🚩 Laporan</button>
+        <button class="admin-tab" id="atab-withdrawals" onclick="adminTab('withdrawals')">💸 Withdraw</button>
+        <button class="admin-tab" id="atab-disputes" onclick="adminTab('disputes')">⚠️ Dispute</button>
+        <button class="admin-tab" id="atab-transactions" onclick="adminTab('transactions')">💳 Transaksi</button>
+      </div>
+    </div>
+  </div>
+  <div class="section">
+    <div style="max-width:1200px;margin:0 auto">
+      <div id="admin-overview" class="admin-panel"></div>
+      <div id="admin-users" class="admin-panel" style="display:none"></div>
+      <div id="admin-listings" class="admin-panel" style="display:none"></div>
+      <div id="admin-reports" class="admin-panel" style="display:none"></div>
+      <div id="admin-withdrawals" class="admin-panel" style="display:none"></div>
+      <div id="admin-disputes" class="admin-panel" style="display:none"></div>
+      <div id="admin-transactions" class="admin-panel" style="display:none"></div>
     </div>
   </div>
 </div>
@@ -1574,5 +1609,39 @@ document.addEventListener('DOMContentLoaded', () => {
   loadHeroStats();
 });
 </script>
+<!-- ===== MODAL BUAT PORTFOLIO ===== -->
+<div class="modal-overlay" id="portfolio-modal" onclick="if(event.target===this)closePortfolioModal()">
+  <div class="modal-box" style="max-width:560px;background:white">
+    <div class="modal-header">
+      <div class="modal-title">🗂️ Tambah Portfolio</div>
+      <button class="modal-close" onclick="closePortfolioModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Judul Pekerjaan *</label>
+        <input type="text" id="porto-title" class="form-input" placeholder="Contoh: Desain Logo untuk Brand Kopi" maxlength="100">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Deskripsi</label>
+        <textarea id="porto-desc" class="form-input" rows="4" placeholder="Ceritakan tentang pekerjaan ini, tools yang digunakan, hasil yang dicapai..." style="resize:vertical"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Foto Hasil Pekerjaan</label>
+        <div id="porto-photo-preview" style="display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;margin-bottom:.7rem"></div>
+        <label for="porto-photos" style="display:flex;align-items:center;gap:.5rem;padding:.8rem 1rem;border:2px dashed var(--border);border-radius:10px;cursor:pointer;font-size:.85rem;color:var(--muted)">
+          <span style="font-size:1.2rem">📷</span>
+          <span>Klik untuk upload foto (maks. 5 foto, JPG/PNG)</span>
+        </label>
+        <input type="file" id="porto-photos" accept="image/*" multiple style="display:none" onchange="previewPortoPhotos(this)">
+      </div>
+      <div id="porto-error" style="color:var(--danger);font-size:.82rem;margin-bottom:.5rem"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closePortfolioModal()">Batal</button>
+      <button class="btn btn-primary" onclick="submitPortfolio()" id="porto-submit-btn">Simpan Portfolio</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

@@ -49,7 +49,7 @@ app.use('/api/messages',      msgLimiter,  require('./routes/messages'));
 app.use('/api/reviews',                    require('./routes/reviews'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/bookmarks',                  require('./routes/bookmarks'));
-app.use('/api/notifications', notifLimiter,              require('./routes/notifications'));
+app.use('/api/notifications',              require('./routes/notifications'));
 app.use('/api/reports',                    require('./routes/reports'));
 
 // Health check

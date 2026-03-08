@@ -201,6 +201,9 @@
         <span id="report-count-badge" style="display:none;background:var(--danger);color:white;font-size:.65rem;padding:.1rem .4rem;border-radius:100px;margin-left:auto"></span>
       </div>
       <div class="sidebar-section">Sistem</div>
+      <div class="sidebar-item" onclick="showPanel('withdrawals')" id="nav-withdrawals">💸 Withdraw</div>
+      <div class="sidebar-item" onclick="showPanel('disputes')" id="nav-disputes">⚠️ Dispute</div>
+      <div class="sidebar-item" onclick="showPanel('transactions')" id="nav-transactions">💳 Transaksi</div>
       <div class="sidebar-item" onclick="window.open('/','_blank')">🌐 Buka Platform</div>
     </div>
 
@@ -270,6 +273,24 @@
         <div class="table-wrap"><div id="reports-table"><p style="text-align:center;padding:2rem;color:var(--muted)">Memuat...</p></div></div>
       </div>
 
+      <!-- PANEL WITHDRAWALS -->
+      <div id="panel-withdrawals" class="panel">
+        <h2 style="margin-bottom:1.5rem">💸 Kelola Withdraw</h2>
+        <div id="withdrawals-content"><div style="text-align:center;padding:2rem;color:var(--muted)">Memuat...</div></div>
+      </div>
+
+      <!-- PANEL DISPUTES -->
+      <div id="panel-disputes" class="panel">
+        <h2 style="margin-bottom:1.5rem">⚠️ Kelola Dispute</h2>
+        <div id="disputes-content"><div style="text-align:center;padding:2rem;color:var(--muted)">Memuat...</div></div>
+      </div>
+
+      <!-- PANEL TRANSACTIONS -->
+      <div id="panel-transactions" class="panel">
+        <h2 style="margin-bottom:1.5rem">💳 Semua Transaksi</h2>
+        <div id="transactions-stats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:.8rem;margin-bottom:1.5rem"></div>
+        <div id="transactions-content"><div style="text-align:center;padding:2rem;color:var(--muted)">Memuat...</div></div>
+      </div>
     </div>
   </div>
 </div>
@@ -339,15 +360,26 @@ function showDashboard() {
 // ===== HELPERS =====
 const h = () => ({ 'Content-Type':'application/json', 'Authorization':`Bearer ${adminToken}` });
 
+function showToast(msg, type='success') {
+  const t = document.createElement('div');
+  t.style.cssText = `position:fixed;bottom:1.5rem;right:1.5rem;padding:.8rem 1.2rem;border-radius:10px;font-size:.85rem;font-weight:600;color:white;z-index:9999;background:${type==='success'?'#16a34a':'#dc2626'}`;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
 function showPanel(name) {
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.sidebar-item').forEach(s => s.classList.remove('active'));
   document.getElementById(`panel-${name}`).classList.add('active');
   document.getElementById(`nav-${name}`).classList.add('active');
-  if (name==='overview') loadOverview();
-  if (name==='users')    loadUsers();
-  if (name==='listings') loadListings();
-  if (name==='reports')  loadReports('pending');
+  if (name==='overview')     loadOverview();
+  if (name==='users')        loadUsers();
+  if (name==='listings')     loadListings();
+  if (name==='reports')      loadReports('pending');
+  if (name==='withdrawals')  { console.log('calling loadWithdrawals'); loadWithdrawals(); }
+  if (name==='disputes')     loadDisputes();
+  if (name==='transactions') loadTransactions();
 }
 
 function toast(msg, type='success') {
@@ -588,6 +620,131 @@ async function resolveReport(id, action) {
   toast(res.message);
   loadReports('pending');
   loadOverview();
+}
+
+// Helper apiFetch
+async function apiFetch(path, method='GET', body=null) {
+  const opts = { method, headers: h() };
+  if (body) opts.body = JSON.stringify(body);
+  return fetch(`${API}${path}`, opts).then(r=>r.json());
+}
+
+// ===== WITHDRAWALS =====
+async function loadWithdrawals() {
+  const el = document.getElementById('withdrawals-content');
+  el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted)">Memuat...</div>';
+  try {
+    const res = await apiFetch('/admin/withdrawals');
+    if (!res || !Array.isArray(res) || !res.length) {
+      el.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--muted)">Tidak ada request withdraw.</div>';
+      return;
+    }
+    const stColor = { pending:'#d97706', approved:'var(--success)', rejected:'var(--danger)' };
+    el.innerHTML = `<table class="table">
+      <thead><tr><th>User</th><th>Bank</th><th>No. Rekening</th><th>Jumlah</th><th>Status</th><th>Tanggal</th><th>Aksi</th></tr></thead>
+      <tbody>${res.map(w => `<tr>
+        <td><strong>${w.full_name}</strong><br><small style="color:var(--muted)">${w.email}</small></td>
+        <td>${w.bank_name}</td>
+        <td>${w.account_number}<br><small>${w.account_name}</small></td>
+        <td><strong>Rp ${parseInt(w.amount).toLocaleString('id')}</strong></td>
+        <td><span style="color:${stColor[w.status]||'#888'};font-weight:700">${w.status}</span>${w.admin_note?`<br><small>${w.admin_note}</small>`:''}</td>
+        <td>${new Date(w.created_at).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'})}</td>
+        <td>${w.status==='pending'?`
+          <button class="btn btn-sm" style="background:var(--success);color:white;margin-bottom:.3rem" onclick="approveWithdraw(${w.id})">✅ Approve</button><br>
+          <button class="btn btn-sm" style="background:var(--danger);color:white" onclick="rejectWithdraw(${w.id})">❌ Tolak</button>
+        `:'-'}</td>
+      </tr>`).join('')}</tbody></table>`;
+  } catch(e) {
+    el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--danger)">Error: ' + e.message + '</div>';
+  }
+}
+
+async function approveWithdraw(id) {
+  const note = prompt('Catatan (opsional):') || '';
+  if (!confirm('Approve withdraw ini?')) return;
+  const res = await apiFetch(`/admin/withdrawals/${id}/approve`, 'PATCH', { admin_note: note });
+  showToast(res.message || 'Berhasil!', 'success');
+  loadWithdrawals();
+}
+
+async function rejectWithdraw(id) {
+  const note = prompt('Alasan penolakan (wajib):');
+  if (!note) { showToast('Alasan wajib diisi', 'error'); return; }
+  if (!confirm('Tolak withdraw ini?')) return;
+  const res = await apiFetch(`/admin/withdrawals/${id}/reject`, 'PATCH', { admin_note: note });
+  showToast(res.message || 'Berhasil!', 'success');
+  loadWithdrawals();
+}
+
+// ===== DISPUTES =====
+async function loadDisputes() {
+  const el = document.getElementById('disputes-content');
+  el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted)">Memuat...</div>';
+  try {
+    const res = await apiFetch('/admin/disputes');
+    if (!res || !Array.isArray(res) || !res.length) {
+      el.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--muted)">Tidak ada dispute aktif. 🎉</div>';
+      return;
+    }
+    el.innerHTML = `<table class="table">
+      <thead><tr><th>ID</th><th>Klien</th><th>Pekerja</th><th>Nilai</th><th>Alasan</th><th>Tanggal</th><th>Keputusan</th></tr></thead>
+      <tbody>${res.map(d => `<tr>
+        <td>#${d.id}</td>
+        <td>${d.client_name}<br><small style="color:var(--muted)">${d.client_email}</small></td>
+        <td>${d.worker_name}<br><small style="color:var(--muted)">${d.worker_email}</small></td>
+        <td>Rp ${parseInt(d.total_amount).toLocaleString('id')}</td>
+        <td style="max-width:180px;font-size:.8rem">${d.dispute_reason||'-'}</td>
+        <td>${new Date(d.dispute_at).toLocaleDateString('id-ID',{day:'numeric',month:'short'})}</td>
+        <td>
+          <button class="btn btn-sm" style="background:var(--danger);color:white;margin-bottom:.3rem" onclick="resolveDispute(${d.id},'refund')">↩️ Refund Klien</button><br>
+          <button class="btn btn-sm" style="background:var(--success);color:white" onclick="resolveDispute(${d.id},'release')">💰 Lepas ke Pekerja</button>
+        </td>
+      </tr>`).join('')}</tbody></table>`;
+  } catch(e) {
+    el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--danger)">Error: ' + e.message + '</div>';
+  }
+}
+
+async function resolveDispute(id, decision) {
+  const label = decision === 'refund' ? 'refund ke klien' : 'lepas dana ke pekerja';
+  const note = prompt(`Catatan keputusan (${label}):`);
+  if (!confirm(`Yakin ${label} untuk dispute #${id}?`)) return;
+  const res = await apiFetch(`/admin/disputes/${id}/resolve`, 'PATCH', { decision, admin_note: note||'' });
+  showToast(res.message || 'Berhasil!', 'success');
+  loadDisputes();
+}
+
+// ===== TRANSACTIONS =====
+async function loadTransactions() {
+  const statsEl = document.getElementById('transactions-stats');
+  const el = document.getElementById('transactions-content');
+  el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted)">Memuat...</div>';
+  try {
+    const res = await apiFetch('/admin/transactions');
+    if (!res) return;
+    const { transactions, stats } = res;
+    const stColor = { waiting_dp:'#94a3b8', dp_paid:'#0891b2', submitted:'#d97706', waiting_final:'#7c3aed', completed:'var(--success)', disputed:'var(--danger)', refunded:'#94a3b8', cancelled:'#94a3b8' };
+    statsEl.innerHTML = `
+      <div class="stat-card"><div class="stat-value">${stats.total||0}</div><div class="stat-label">Total</div></div>
+      <div class="stat-card"><div class="stat-value" style="color:var(--success)">${stats.completed||0}</div><div class="stat-label">Selesai</div></div>
+      <div class="stat-card"><div class="stat-value" style="color:var(--danger)">${stats.disputed||0}</div><div class="stat-label">Dispute</div></div>
+      <div class="stat-card"><div class="stat-value" style="color:#d97706">${stats.pending||0}</div><div class="stat-label">Menunggu DP</div></div>
+      <div class="stat-card"><div class="stat-value" style="color:var(--accent2);font-size:1rem">Rp ${parseInt(stats.total_fee||0).toLocaleString('id')}</div><div class="stat-label">Total Fee</div></div>`;
+    if (!transactions.length) { el.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--muted)">Belum ada transaksi.</div>'; return; }
+    el.innerHTML = `<table class="table">
+      <thead><tr><th>ID</th><th>Klien</th><th>Pekerja</th><th>Nilai</th><th>Fee</th><th>Status</th><th>Tanggal</th></tr></thead>
+      <tbody>${transactions.map(t => `<tr>
+        <td>#${t.id}</td>
+        <td>${t.client_name}</td>
+        <td>${t.worker_name}</td>
+        <td>Rp ${parseInt(t.total_amount).toLocaleString('id')}</td>
+        <td>Rp ${parseInt(t.platform_fee).toLocaleString('id')}</td>
+        <td><span style="font-size:.75rem;font-weight:700;color:${stColor[t.status]||'#888'}">${t.status}</span></td>
+        <td>${new Date(t.created_at).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'})}</td>
+      </tr>`).join('')}</tbody></table>`;
+  } catch(e) {
+    el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--danger)">Error: ' + e.message + '</div>';
+  }
 }
 </script>
 </body>

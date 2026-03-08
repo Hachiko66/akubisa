@@ -108,6 +108,36 @@ router.get('/portfolio/:userId', async (req, res) => {
   } catch(e) { res.status(500).json({ message: e.message }); }
 });
 
+// GET portfolio milik sendiri (include private)
+router.get('/my-portfolio', auth, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT pi.*, l.title as listing_title
+      FROM portfolio_items pi
+      LEFT JOIN listings l ON pi.transaction_id IS NOT NULL AND l.id = (
+        SELECT listing_id FROM transactions WHERE id = pi.transaction_id
+      )
+      WHERE pi.worker_id=$1
+      ORDER BY pi.created_at DESC
+    `, [req.user.id]);
+    res.json(result.rows);
+  } catch(e) { res.status(500).json({ message: e.message }); }
+});
+
+// POST buat portfolio manual
+router.post('/portfolio', auth, async (req, res) => {
+  try {
+    const { title, description } = req.body;
+    if (!title) return res.status(400).json({ message: 'Judul wajib diisi' });
+    const result = await pool.query(`
+      INSERT INTO portfolio_items (worker_id, title, description, is_public)
+      VALUES ($1, $2, $3, true)
+      RETURNING *
+    `, [req.user.id, title, description || '']);
+    res.json(result.rows[0]);
+  } catch(e) { res.status(500).json({ message: e.message }); }
+});
+
 // POST upload foto ke portfolio item
 router.post('/portfolio/:id/photos', auth, upload.array('photos', 5), async (req, res) => {
   try {
@@ -119,6 +149,16 @@ router.post('/portfolio/:id/photos', auth, upload.array('photos', 5), async (req
     await pool.query('UPDATE portfolio_items SET photos=$1 WHERE id=$2', [[...existing, ...photos], req.params.id]);
 
     res.json({ message: 'Foto berhasil diupload!', photos });
+  } catch(e) { res.status(500).json({ message: e.message }); }
+});
+
+// DELETE portfolio item
+router.delete('/portfolio/:id', auth, async (req, res) => {
+  try {
+    const item = await pool.query('SELECT * FROM portfolio_items WHERE id=$1 AND worker_id=$2', [req.params.id, req.user.id]);
+    if (!item.rows[0]) return res.status(404).json({ message: 'Tidak ditemukan' });
+    await pool.query('DELETE FROM portfolio_items WHERE id=$1', [req.params.id]);
+    res.json({ message: 'Portfolio dihapus' });
   } catch(e) { res.status(500).json({ message: e.message }); }
 });
 

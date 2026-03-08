@@ -62,6 +62,7 @@ nav{display:flex;justify-content:space-between;align-items:center;padding:1rem 5
 .spinner{display:inline-block;width:18px;height:18px;border:2px solid rgba(255,255,255,.3);border-top-color:white;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:.4rem}
 @keyframes spin{to{transform:rotate(360deg)}}
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(15,14,13,.7);z-index:999;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(4px)}
+.modal-box{background:white;border-radius:16px;padding:2rem;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}
 .modal-overlay.open{display:flex}
 .modal{background:var(--card);border-radius:20px;padding:2rem;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;animation:slideUp .3s ease}
 @keyframes slideUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}

@@ -174,3 +174,152 @@ router.patch('/reports/:id/resolve', admin, async (req, res) => {
 });
 
 module.exports = router;
+
+// ===== WITHDRAW MANAGEMENT =====
+router.get('/withdrawals', admin, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT wr.*, u.full_name, u.email, u.avatar
+      FROM withdraw_requests wr
+      LEFT JOIN users u ON wr.worker_id = u.id
+      ORDER BY wr.created_at DESC
+    `);
+    res.json(result.rows);
+  } catch(e) { res.status(500).json({ message: e.message }); }
+});
+
+router.patch('/withdrawals/:id/approve', admin, async (req, res) => {
+  const { admin_note } = req.body;
+  try {
+    const wr = await pool.query('SELECT * FROM withdraw_requests WHERE id=$1', [req.params.id]);
+    if (!wr.rows[0]) return res.status(404).json({ message: 'Tidak ditemukan' });
+    if (wr.rows[0].status !== 'pending') return res.status(400).json({ message: 'Sudah diproses' });
+
+    await pool.query(`
+      UPDATE withdraw_requests SET status='approved', admin_note=$1, processed_at=NOW() WHERE id=$2
+    `, [admin_note||null, req.params.id]);
+
+    await pool.query(`
+      UPDATE worker_balances SET total_withdrawn=total_withdrawn+$1 WHERE worker_id=$2
+    `, [wr.rows[0].amount, wr.rows[0].worker_id]);
+
+    await pool.query(`
+      INSERT INTO notifications (user_id, type, title, message, link)
+      VALUES ($1,'wallet','✅ Withdraw Disetujui!','Withdraw Rp ${parseInt(wr.rows[0].amount).toLocaleString()} telah disetujui dan sedang ditransfer.','#wallet')
+    `, [wr.rows[0].worker_id]);
+
+    res.json({ message: 'Withdraw disetujui!' });
+  } catch(e) { res.status(500).json({ message: e.message }); }
+});
+
+router.patch('/withdrawals/:id/reject', admin, async (req, res) => {
+  const { admin_note } = req.body;
+  try {
+    const wr = await pool.query('SELECT * FROM withdraw_requests WHERE id=$1', [req.params.id]);
+    if (!wr.rows[0]) return res.status(404).json({ message: 'Tidak ditemukan' });
+    if (wr.rows[0].status !== 'pending') return res.status(400).json({ message: 'Sudah diproses' });
+
+    await pool.query(`
+      UPDATE withdraw_requests SET status='rejected', admin_note=$1, processed_at=NOW() WHERE id=$2
+    `, [admin_note||null, req.params.id]);
+
+    // Kembalikan saldo
+    await pool.query(`
+      UPDATE worker_balances SET balance=balance+$1 WHERE worker_id=$2
+    `, [wr.rows[0].amount, wr.rows[0].worker_id]);
+
+    await pool.query(`
+      INSERT INTO notifications (user_id, type, title, message, link)
+      VALUES ($1,'wallet','❌ Withdraw Ditolak','Withdraw kamu ditolak. Saldo dikembalikan. Alasan: ${admin_note||'Tidak ada keterangan'}','#wallet')
+    `, [wr.rows[0].worker_id]);
+
+    res.json({ message: 'Withdraw ditolak, saldo dikembalikan.' });
+  } catch(e) { res.status(500).json({ message: e.message }); }
+});
+
+// ===== DISPUTE MANAGEMENT =====
+router.get('/disputes', admin, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT t.*,
+        uc.full_name as client_name, uc.email as client_email,
+        uw.full_name as worker_name, uw.email as worker_email
+      FROM transactions t
+      LEFT JOIN users uc ON t.client_id = uc.id
+      LEFT JOIN users uw ON t.worker_id = uw.id
+      WHERE t.status = 'disputed'
+      ORDER BY t.dispute_at DESC
+    `);
+    res.json(result.rows);
+  } catch(e) { res.status(500).json({ message: e.message }); }
+});
+
+router.patch('/disputes/:id/resolve', admin, async (req, res) => {
+  const { decision, admin_note } = req.body;
+  // decision: 'refund' | 'release'
+  if (!decision) return res.status(400).json({ message: 'Keputusan wajib diisi' });
+  try {
+    const t = await pool.query('SELECT * FROM transactions WHERE id=$1', [req.params.id]);
+    if (!t.rows[0]) return res.status(404).json({ message: 'Tidak ditemukan' });
+    const trx = t.rows[0];
+
+    if (decision === 'refund') {
+      await pool.query(`UPDATE transactions SET status='refunded' WHERE id=$1`, [trx.id]);
+      await pool.query(`
+        INSERT INTO notifications (user_id, type, title, message, link)
+        VALUES ($1,'transaction','↩️ Dispute Selesai - Refund','Admin memutuskan refund untuk transaksi #${trx.id}. Dana akan dikembalikan.','#transactions')
+      `, [trx.client_id]);
+      await pool.query(`
+        INSERT INTO notifications (user_id, type, title, message, link)
+        VALUES ($1,'transaction','↩️ Dispute Selesai','Admin memutuskan refund untuk klien pada transaksi #${trx.id}.','#transactions')
+      `, [trx.worker_id]);
+    } else if (decision === 'release') {
+      const workerEarning = trx.total_amount - trx.platform_fee;
+      await pool.query(`UPDATE transactions SET status='completed' WHERE id=$1`, [trx.id]);
+      await pool.query(`
+        INSERT INTO worker_balances (worker_id, total_earned, balance)
+        VALUES ($1,$2,$2)
+        ON CONFLICT (worker_id) DO UPDATE SET
+          total_earned=worker_balances.total_earned+$2,
+          balance=worker_balances.balance+$2,
+          updated_at=NOW()
+      `, [trx.worker_id, workerEarning]);
+      await pool.query(`
+        INSERT INTO notifications (user_id, type, title, message, link)
+        VALUES ($1,'transaction','✅ Dispute Selesai','Admin memutuskan dana dilepas ke pekerja untuk transaksi #${trx.id}.','#transactions')
+      `, [trx.client_id]);
+      await pool.query(`
+        INSERT INTO notifications (user_id, type, title, message, link)
+        VALUES ($1,'transaction','💰 Dispute Selesai - Dana Cair!','Admin memutuskan dana dilepas ke kamu. Cek dompetmu.','#wallet')
+      `, [trx.worker_id]);
+    }
+
+    res.json({ message: `Dispute diselesaikan: ${decision}` });
+  } catch(e) { res.status(500).json({ message: e.message }); }
+});
+
+// ===== TRANSACTION OVERVIEW =====
+router.get('/transactions', admin, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT t.*,
+        uc.full_name as client_name,
+        uw.full_name as worker_name
+      FROM transactions t
+      LEFT JOIN users uc ON t.client_id = uc.id
+      LEFT JOIN users uw ON t.worker_id = uw.id
+      ORDER BY t.created_at DESC
+      LIMIT 100
+    `);
+    const stats = await pool.query(`
+      SELECT
+        COUNT(*) as total,
+        COUNT(*) FILTER (WHERE status='completed') as completed,
+        COUNT(*) FILTER (WHERE status='disputed') as disputed,
+        COUNT(*) FILTER (WHERE status='waiting_dp') as pending,
+        SUM(platform_fee) FILTER (WHERE status='completed') as total_fee
+      FROM transactions
+    `);
+    res.json({ transactions: result.rows, stats: stats.rows[0] });
+  } catch(e) { res.status(500).json({ message: e.message }); }
+});

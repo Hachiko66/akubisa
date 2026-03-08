@@ -604,8 +604,11 @@ async function renderPublicProfile(userId) {
       revBtn.style.display = 'block';
       revBtn.onclick = () => openReviewModal(userId, profile.full_name, null);
 
-      // Tambah report button
+      // Tambah report button (hapus dulu jika sudah ada)
+      const existing = document.getElementById('pub-report-btn');
+      if (existing) existing.remove();
       const reportBtn = document.createElement('button');
+      reportBtn.id = 'pub-report-btn';
       reportBtn.className = 'btn btn-sm';
       reportBtn.style.cssText = 'color:var(--danger);border:1.5px solid var(--danger);border-radius:100px;padding:.4rem 1rem;font-size:.8rem;cursor:pointer;background:transparent';
       reportBtn.textContent = '🚩 Laporkan';
@@ -622,8 +625,123 @@ async function renderPublicProfile(userId) {
 
     // Reviews
     renderReviewList(reviewData.reviews || []);
-
+    // Portfolio
+    loadPublicPortfolio(userId);
   } catch(e) { console.error('renderPublicProfile error:', e); }
+}
+
+async function loadPublicPortfolio(userId) {
+  try {
+    const items = await api.getPortfolio(userId);
+    const section = document.getElementById('pub-portfolio-section');
+    const grid = document.getElementById('pub-portfolio-grid');
+    if (!section || !grid) return;
+    if (!items || !items.length) { section.style.display='none'; return; }
+    section.style.display = 'block';
+    grid.innerHTML = items.map((p,pi) => {
+      const photosJson = JSON.stringify(p.photos||[]).replace(/"/g,'&quot;');
+      return `
+      <div style="background:white;border:1.5px solid var(--border);border-radius:14px;overflow:hidden;transition:box-shadow .2s;cursor:pointer" onclick="openPortoViewer(${pi})" onmouseover="this.style.boxShadow='0 4px 20px rgba(0,0,0,.1)'" onmouseout="this.style.boxShadow='none'">
+        ${p.photos&&p.photos.length
+          ? `<div style="position:relative;height:180px;overflow:hidden">
+              <img src="${p.photos[0]}" style="width:100%;height:100%;object-fit:cover">
+              ${p.photos.length>1?`<span style="position:absolute;bottom:.4rem;right:.4rem;background:rgba(0,0,0,.55);color:white;font-size:.65rem;padding:.2rem .45rem;border-radius:100px">+${p.photos.length-1} foto</span>`:''}
+            </div>`
+          : `<div style="height:90px;background:linear-gradient(135deg,var(--warm),#e8e0d5);display:flex;align-items:center;justify-content:center;font-size:2.5rem">🗂️</div>`}
+        <div style="padding:.9rem 1rem 1rem">
+          <div style="font-weight:700;font-size:.92rem;margin-bottom:.3rem;line-height:1.3">${p.title}</div>
+          ${p.description?`<p style="font-size:.78rem;color:var(--muted);line-height:1.5;margin-bottom:.5rem;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden">${p.description}</p>`:''}
+          ${p.client_rating?`<div style="font-size:.78rem;color:#f59e0b">★ ${p.client_rating}/5</div>`:''}
+          <div style="font-size:.7rem;color:var(--muted);margin-top:.4rem">${new Date(p.created_at).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}</div>
+        </div>
+      </div>`;
+    }).join('');
+    window._portoItems = items;
+  } catch(e) { console.error('portfolio publik error:', e); }
+}
+
+function openPortoViewer(idx) {
+  const items = window._portoItems || [];
+  const p = items[idx];
+  if (!p) return;
+  let photoIdx = 0;
+  const photos = p.photos || [];
+
+  // Buat overlay
+  const overlay = document.createElement('div');
+  overlay.id = 'porto-viewer-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1rem';
+  overlay.onclick = (e) => { if(e.target===overlay) closePortoViewer(); };
+
+  window._portoViewerIdx = 0;
+  window._portoViewerPhotos = photos;
+  window._portoViewerItem = p;
+
+  const renderViewer = () => {
+    const ci = window._portoViewerIdx;
+    const ph = window._portoViewerPhotos;
+    const item = window._portoViewerItem;
+    // Update hanya gambar aktif dan thumbnail
+    const imgEl = document.getElementById('porto-main-img');
+    const counterEl = document.getElementById('porto-counter');
+    const thumbsEl = document.getElementById('porto-thumbs');
+    if (imgEl) imgEl.src = ph[ci] || '';
+    if (counterEl) counterEl.textContent = `${ci+1}/${ph.length}`;
+    if (thumbsEl) thumbsEl.querySelectorAll('img').forEach((img,i) => {
+      img.style.opacity = i===ci ? '1' : '0.5';
+      img.style.border = i===ci ? '2px solid white' : '2px solid transparent';
+    });
+  };
+
+  // Build HTML sekali saja
+  const ph = photos;
+  const item = p;
+  overlay.innerHTML = `
+    <button onclick="closePortoViewer()" style="position:absolute;top:1rem;right:1rem;background:rgba(255,255,255,.15);border:none;color:white;width:36px;height:36px;border-radius:50%;font-size:1.2rem;cursor:pointer;z-index:10">×</button>
+    <div style="max-width:700px;width:100%">
+      ${ph.length ? `
+        <div style="position:relative;background:#111;border-radius:12px;overflow:hidden;margin-bottom:1rem;min-height:200px;max-height:60vh;display:flex;align-items:center;justify-content:center">
+          <img id="porto-main-img" src="${ph[0]}" style="max-width:100%;max-height:60vh;object-fit:contain">
+          ${ph.length>1?`
+            <button onclick="event.stopPropagation();prevPortoPhoto()" style="position:absolute;left:.5rem;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.25);border:none;color:white;width:44px;height:44px;border-radius:50%;font-size:1.6rem;cursor:pointer;z-index:10">‹</button>
+            <button onclick="event.stopPropagation();nextPortoPhoto()" style="position:absolute;right:.5rem;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.25);border:none;color:white;width:44px;height:44px;border-radius:50%;font-size:1.6rem;cursor:pointer;z-index:10">›</button>
+            <span id="porto-counter" style="position:absolute;bottom:.5rem;right:.7rem;background:rgba(0,0,0,.5);color:white;font-size:.72rem;padding:.2rem .5rem;border-radius:100px">1/${ph.length}</span>
+          `:''}
+        </div>
+        ${ph.length>1?`<div id="porto-thumbs" style="display:flex;gap:.4rem;justify-content:center;margin-bottom:1rem">${ph.map((photo,i)=>`<img src="${photo}" onclick="event.stopPropagation();setPortoPhoto(${i})" style="width:48px;height:48px;object-fit:cover;border-radius:6px;cursor:pointer;opacity:${i===0?1:.5};border:${i===0?'2px solid white':'2px solid transparent'}">`).join('')}</div>`:''}`
+      : ''}
+      <div style="background:rgba(255,255,255,.08);border-radius:12px;padding:1.2rem;color:white">
+        <div style="font-weight:700;font-size:1.1rem;margin-bottom:.5rem">${item.title}</div>
+        ${item.description?`<p style="font-size:.85rem;color:rgba(255,255,255,.7);line-height:1.6;margin-bottom:.7rem">${item.description}</p>`:''}
+        ${item.client_rating?`<div style="color:#f59e0b;font-size:.85rem">★ ${item.client_rating}/5</div>`:''}
+      </div>
+    </div>`;
+
+  window._portoViewerRender = renderViewer;
+  renderViewer();
+  document.body.appendChild(overlay);
+}
+
+function closePortoViewer() {
+  const el = document.getElementById('porto-viewer-overlay');
+  if (el) el.remove();
+}
+
+function nextPortoPhoto() {
+  const photos = window._portoViewerPhotos || [];
+  window._portoViewerIdx = (window._portoViewerIdx + 1) % photos.length;
+  window._portoViewerRender && window._portoViewerRender();
+}
+
+function prevPortoPhoto() {
+  const photos = window._portoViewerPhotos || [];
+  window._portoViewerIdx = (window._portoViewerIdx - 1 + photos.length) % photos.length;
+  window._portoViewerRender && window._portoViewerRender();
+}
+
+function setPortoPhoto(i) {
+  window._portoViewerIdx = i;
+  window._portoViewerRender && window._portoViewerRender();
 }
 
 function renderRatingBars(stats) {
@@ -1306,19 +1424,126 @@ async function switchWalletTab(tab, el) {
       </div>`;}).join('');
 
   } else if (tab === 'portfolio') {
-    const data = await api.getPortfolio(currentUser.id);
-    if (!data.length) { content.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--muted)">Portfolio akan muncul otomatis setelah transaksi selesai.</div>'; return; }
-    content.innerHTML = `<div class="listings-grid">` + data.map(p => `
-      <div class="listing-card">
-        ${p.photos&&p.photos.length ? `<img src="${p.photos[0]}" style="width:100%;height:140px;object-fit:cover;border-radius:8px;margin-bottom:.8rem">` : ''}
-        <div style="font-weight:700;font-size:.92rem;margin-bottom:.4rem">${p.title}</div>
-        <p style="font-size:.8rem;color:var(--muted);line-height:1.5;margin-bottom:.8rem">${(p.description||'').slice(0,80)}${(p.description||'').length>80?'…':''}</p>
-        ${p.client_rating?`<div style="color:#f59e0b;font-size:.8rem">★ ${p.client_rating}/5</div>`:''}
-        <div style="display:flex;gap:.5rem;margin-top:.8rem">
-          <button class="btn btn-outline btn-sm" onclick="togglePortfolioVisibility(${p.id},${!p.is_public})">${p.is_public?'👁 Publik':'🔒 Privat'}</button>
-        </div>
-      </div>`).join('') + '</div>';
+    const data = await api.getMyPortfolio();
+    content.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.5rem">
+        <div style="font-size:.85rem;color:var(--muted)">Portfolio otomatis dari transaksi selesai + manual.</div>
+        <button class="btn btn-primary btn-sm" onclick="openCreatePortfolioModal()">+ Tambah Portfolio</button>
+      </div>` +
+      (!data||!data.length
+        ? `<div style="text-align:center;padding:4rem 2rem">
+            <div style="font-size:3rem;margin-bottom:1rem">🗂️</div>
+            <div style="font-weight:700;margin-bottom:.5rem">Belum ada portfolio</div>
+            <div style="color:var(--muted);font-size:.85rem;margin-bottom:1.5rem">Portfolio otomatis muncul setelah transaksi selesai,<br>atau kamu bisa tambah manual.</div>
+            <button class="btn btn-primary" onclick="openCreatePortfolioModal()">+ Tambah Portfolio Manual</button>
+          </div>`
+        : `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1rem">` +
+          data.map(p => `
+            <div style="background:white;border:1.5px solid var(--border);border-radius:14px;overflow:hidden;transition:box-shadow .2s;position:relative" onmouseover="this.style.boxShadow='0 4px 20px rgba(0,0,0,.1)'" onmouseout="this.style.boxShadow='none'">
+              <div style="position:relative">
+                ${p.photos&&p.photos.length
+                  ? `<img src="${p.photos[0]}" style="width:100%;height:160px;object-fit:cover">`
+                  : `<div style="height:100px;background:linear-gradient(135deg,var(--warm),#e8e0d5);display:flex;align-items:center;justify-content:center;font-size:2.5rem">🗂️</div>`}
+                <span style="position:absolute;top:.6rem;left:.6rem;font-size:.65rem;font-weight:700;padding:.25rem .6rem;border-radius:100px;${p.transaction_id?'background:var(--accent2);color:white':'background:var(--accent);color:white'}">${p.transaction_id?'✅ Transaksi':'✏️ Manual'}</span>
+                ${!p.is_public?'<span style="position:absolute;top:.6rem;right:.6rem;font-size:.65rem;font-weight:700;padding:.25rem .6rem;border-radius:100px;background:rgba(0,0,0,.5);color:white">🔒 Privat</span>':''}
+                ${p.photos&&p.photos.length>1?`<span style="position:absolute;bottom:.4rem;right:.4rem;background:rgba(0,0,0,.55);color:white;font-size:.65rem;padding:.2rem .45rem;border-radius:100px">+${p.photos.length-1} foto</span>`:''}
+              </div>
+              <div style="padding:.9rem 1rem 1rem">
+                <div style="font-weight:700;font-size:.92rem;margin-bottom:.3rem;line-height:1.3">${p.title}</div>
+                ${p.description?`<p style="font-size:.78rem;color:var(--muted);line-height:1.5;margin-bottom:.6rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${p.description}</p>`:''}
+                ${p.client_rating?`<div style="font-size:.78rem;color:#f59e0b;margin-bottom:.6rem">★ ${p.client_rating}/5${p.client_review?` <span style="color:var(--muted);font-style:italic">"${p.client_review.slice(0,40)}${p.client_review.length>40?'...':''}"</span>`:''}</div>`:''}
+                <div style="font-size:.72rem;color:var(--muted);margin-bottom:.7rem">${new Date(p.created_at).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}</div>
+                <div style="display:flex;gap:.4rem;flex-wrap:wrap">
+                  <button onclick="togglePortfolioVisibility(${p.id},${!p.is_public})" style="flex:1;padding:.35rem .6rem;border-radius:100px;font-size:.72rem;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:white;color:var(--ink)">${p.is_public?'👁 Publik':'🔒 Privat'}</button>
+                  <button onclick="deletePortfolio(${p.id})" style="padding:.35rem .7rem;border-radius:100px;font-size:.72rem;font-weight:600;cursor:pointer;border:1.5px solid var(--danger);background:white;color:var(--danger)">🗑</button>
+                </div>
+              </div>
+            </div>`).join('') + '</div>');
   }
+}
+
+function openCreatePortfolioModal() {
+  document.getElementById('porto-title').value = '';
+  document.getElementById('porto-desc').value = '';
+  document.getElementById('porto-photos').value = '';
+  document.getElementById('porto-photo-preview').innerHTML = '';
+  document.getElementById('porto-error').textContent = '';
+  document.getElementById('porto-submit-btn').disabled = false;
+  document.getElementById('portfolio-modal').classList.add('open');
+}
+
+function closePortfolioModal() {
+  document.getElementById('portfolio-modal').classList.remove('open');
+}
+
+function previewPortoPhotos(input) {
+  const files = Array.from(input.files).slice(0, 5);
+  const preview = document.getElementById('porto-photo-preview');
+  preview.innerHTML = files.map((f, i) => {
+    const url = URL.createObjectURL(f);
+    return `<div style="position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden;background:var(--warm)">
+      <img src="${url}" style="width:100%;height:100%;object-fit:cover">
+      <button onclick="removePortoPhoto(${i})" style="position:absolute;top:.2rem;right:.2rem;background:rgba(0,0,0,.6);color:white;border:none;border-radius:50%;width:20px;height:20px;font-size:.7rem;cursor:pointer;display:flex;align-items:center;justify-content:center">×</button>
+    </div>`;
+  }).join('');
+}
+
+function removePortoPhoto(idx) {
+  const input = document.getElementById('porto-photos');
+  const dt = new DataTransfer();
+  Array.from(input.files).forEach((f, i) => { if (i !== idx) dt.items.add(f); });
+  input.files = dt.files;
+  previewPortoPhotos(input);
+}
+
+async function submitPortfolio() {
+  const title = document.getElementById('porto-title').value.trim();
+  const desc = document.getElementById('porto-desc').value.trim();
+  const errEl = document.getElementById('porto-error');
+  const btn = document.getElementById('porto-submit-btn');
+  if (!title) { errEl.textContent = 'Judul wajib diisi'; return; }
+  btn.disabled = true;
+  btn.textContent = 'Menyimpan...';
+  try {
+    // 1. Buat portfolio item
+    const res = await api.createPortfolio({ title, description: desc });
+    if (!res.id) { errEl.textContent = res.message || 'Gagal membuat portfolio'; btn.disabled = false; btn.textContent = 'Simpan Portfolio'; return; }
+    // 2. Upload foto jika ada
+    const photos = document.getElementById('porto-photos').files;
+    if (photos.length > 0) {
+      const form = new FormData();
+      Array.from(photos).forEach(f => form.append('photos', f));
+      await fetch(`/api/wallet/portfolio/${res.id}/photos`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('akubisa_token')}` },
+        body: form
+      });
+    }
+    closePortfolioModal();
+    showToast('Portfolio berhasil ditambahkan!', 'success');
+    switchWalletTab('portfolio', null);
+  } catch(e) {
+    errEl.textContent = 'Error: ' + e.message;
+    btn.disabled = false;
+    btn.textContent = 'Simpan Portfolio';
+  }
+}
+
+async function createPortfolio(title, desc) {
+  const res = await api.createPortfolio({ title, description: desc });
+  if (res.id) {
+    showToast('Portfolio dibuat!', 'success');
+    switchWalletTab('portfolio', null);
+  } else {
+    showToast(res.message || 'Gagal', 'error');
+  }
+}
+
+async function deletePortfolio(id) {
+  if (!confirm('Hapus portfolio ini?')) return;
+  const res = await api.deletePortfolio(id);
+  showToast(res.message || 'Dihapus!', 'success');
+  switchWalletTab('portfolio', null);
 }
 
 async function togglePortfolioVisibility(id, isPublic) {

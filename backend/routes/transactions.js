@@ -259,12 +259,17 @@ router.post('/webhook/xendit', async (req, res) => {
             updated_at = NOW()
         `, [trx.worker_id, workerEarning]);
 
-        // Auto buat portfolio item
+        // Auto buat portfolio item - ambil judul listing
+        let portfolioTitle = 'Pekerjaan Selesai';
+        if (trx.listing_id) {
+          const listingRes = await pool.query('SELECT title FROM listings WHERE id=$1', [trx.listing_id]);
+          if (listingRes.rows[0]) portfolioTitle = listingRes.rows[0].title;
+        }
         await pool.query(`
-          INSERT INTO portfolio_items (transaction_id, worker_id, title, description)
-          VALUES ($1, $2, $3, $4)
+          INSERT INTO portfolio_items (transaction_id, worker_id, title, description, is_public)
+          VALUES ($1, $2, $3, $4, true)
           ON CONFLICT DO NOTHING
-        `, [trx.id, trx.worker_id, trx.notes || 'Pekerjaan Selesai', trx.notes]);
+        `, [trx.id, trx.worker_id, portfolioTitle, trx.notes || '']);
 
         await pool.query(`
           INSERT INTO notifications (user_id, type, title, message, link)

@@ -139,4 +139,15 @@ api.getEarnings     = ()           => fetch(`${API}/wallet/earnings`, { headers:
 api.getWithdrawals  = ()           => fetch(`${API}/wallet/withdrawals`, { headers:headers(true) }).then(r=>r.json());
 api.requestWithdraw = (data)       => fetch(`${API}/wallet/withdraw`, { method:'POST', headers:headers(true), body:JSON.stringify(data) }).then(r=>r.json());
 api.getPortfolio    = (userId)     => fetch(`${API}/wallet/portfolio/${userId}`, { headers:headers(false) }).then(r=>r.json());
+api.getMyPortfolio  = ()           => fetch(`${API}/wallet/my-portfolio`, { headers:headers(true) }).then(r=>r.json());
+api.createPortfolio = (data)       => fetch(`${API}/wallet/portfolio`, { method:'POST', headers:headers(true), body:JSON.stringify(data) }).then(r=>r.json());
+api.deletePortfolio = (id)         => fetch(`${API}/wallet/portfolio/${id}`, { method:'DELETE', headers:headers(true) }).then(r=>r.json());
 api.updatePortfolio = (id, data)   => fetch(`${API}/wallet/portfolio/${id}`, { method:'PATCH', headers:headers(true), body:JSON.stringify(data) }).then(r=>r.json());
+
+// ===== ADMIN EXTRAS =====
+api.adminGetWithdrawals     = ()              => fetch(`${API}/admin/withdrawals`, { headers:headers(true) }).then(r=>r.json());
+api.adminApproveWithdrawal  = (id, note)      => fetch(`${API}/admin/withdrawals/${id}/approve`, { method:'PATCH', headers:headers(true), body:JSON.stringify({admin_note:note}) }).then(r=>r.json());
+api.adminRejectWithdrawal   = (id, note)      => fetch(`${API}/admin/withdrawals/${id}/reject`, { method:'PATCH', headers:headers(true), body:JSON.stringify({admin_note:note}) }).then(r=>r.json());
+api.adminGetDisputes        = ()              => fetch(`${API}/admin/disputes`, { headers:headers(true) }).then(r=>r.json());
+api.adminResolveDispute     = (id, decision, note) => fetch(`${API}/admin/disputes/${id}/resolve`, { method:'PATCH', headers:headers(true), body:JSON.stringify({decision, admin_note:note}) }).then(r=>r.json());
+api.adminGetTransactions    = ()              => fetch(`${API}/admin/transactions`, { headers:headers(true) }).then(r=>r.json());

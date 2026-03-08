@@ -21,10 +21,13 @@ function adminTab(tab) {
   const panel = document.getElementById(`admin-${tab}`);
   if (btn) btn.classList.add('active');
   if (panel) panel.style.display = 'block';
-  if (tab === 'overview') loadAdminOverview();
-  if (tab === 'users')    loadAdminUsers();
-  if (tab === 'listings') loadAdminListings();
-  if (tab === 'reports')  loadAdminReports('pending');
+  if (tab === 'overview')     loadAdminOverview();
+  if (tab === 'users')        loadAdminUsers();
+  if (tab === 'listings')     loadAdminListings();
+  if (tab === 'reports')      loadAdminReports('pending');
+  if (tab === 'withdrawals')  loadAdminWithdrawals();
+  if (tab === 'disputes')     loadAdminDisputes();
+  if (tab === 'transactions') loadAdminTransactions();
 }
 
 // ===== OVERVIEW =====
@@ -309,4 +312,119 @@ async function resolveReport(id, action) {
   showToast(res.message, 'success');
   if (adminCurrentTab === 'reports') loadAdminReports('pending');
   else loadAdminReportsPreview();
+}
+
+// ===== WITHDRAW TAB =====
+async function loadAdminWithdrawals() {
+  const el = document.getElementById('admin-withdrawals');
+  if (!el) return;
+  el.innerHTML = '<div style="padding:2rem;text-align:center;color:var(--muted)">Memuat...</div>';
+  const data = await api.adminGetWithdrawals();
+  if (!data.length) { el.innerHTML = '<div style="padding:2rem;text-align:center;color:var(--muted)">Tidak ada request withdraw.</div>'; return; }
+  const stColor = { pending:'#d97706', approved:'var(--success)', rejected:'var(--danger)' };
+  el.innerHTML = `<table class="admin-table">
+    <thead><tr><th>User</th><th>Bank</th><th>No. Rek</th><th>Jumlah</th><th>Status</th><th>Tanggal</th><th>Aksi</th></tr></thead>
+    <tbody>${data.map(w => `
+      <tr>
+        <td><strong>${w.full_name}</strong><br><small style="color:var(--muted)">${w.email}</small></td>
+        <td>${w.bank_name}</td>
+        <td>${w.account_number}<br><small>${w.account_name}</small></td>
+        <td><strong>Rp ${parseInt(w.amount).toLocaleString('id')}</strong></td>
+        <td><span style="color:${stColor[w.status]||'var(--muted)'};font-weight:700">${w.status}</span></td>
+        <td>${new Date(w.created_at).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'})}</td>
+        <td>${w.status==='pending' ? `
+          <div style="display:flex;gap:.4rem;flex-wrap:wrap">
+            <button class="btn btn-primary btn-sm" onclick="adminApproveWithdraw(${w.id})">✅ Approve</button>
+            <button class="btn btn-danger btn-sm" onclick="adminRejectWithdraw(${w.id})">❌ Tolak</button>
+          </div>` : w.admin_note || '-'}
+        </td>
+      </tr>`).join('')}
+    </tbody></table>`;
+}
+
+async function adminApproveWithdraw(id) {
+  const note = prompt('Catatan (opsional):') || '';
+  if (!confirm('Approve withdraw ini?')) return;
+  const res = await api.adminApproveWithdrawal(id, note);
+  showToast(res.message || 'Berhasil!', 'success');
+  loadAdminWithdrawals();
+}
+
+async function adminRejectWithdraw(id) {
+  const note = prompt('Alasan penolakan:');
+  if (!note) { showToast('Alasan wajib diisi', 'error'); return; }
+  const res = await api.adminRejectWithdrawal(id, note);
+  showToast(res.message || 'Berhasil!', 'success');
+  loadAdminWithdrawals();
+}
+
+// ===== DISPUTE TAB =====
+async function loadAdminDisputes() {
+  const el = document.getElementById('admin-disputes');
+  if (!el) return;
+  el.innerHTML = '<div style="padding:2rem;text-align:center;color:var(--muted)">Memuat...</div>';
+  const data = await api.adminGetDisputes();
+  if (!data.length) { el.innerHTML = '<div style="padding:2rem;text-align:center;color:var(--muted)">Tidak ada dispute aktif. 🎉</div>'; return; }
+  el.innerHTML = `<table class="admin-table">
+    <thead><tr><th>ID</th><th>Klien</th><th>Pekerja</th><th>Nilai</th><th>Alasan</th><th>Tanggal</th><th>Aksi</th></tr></thead>
+    <tbody>${data.map(d => `
+      <tr>
+        <td>#${d.id}</td>
+        <td>${d.client_name}<br><small style="color:var(--muted)">${d.client_email}</small></td>
+        <td>${d.worker_name}<br><small style="color:var(--muted)">${d.worker_email}</small></td>
+        <td>Rp ${parseInt(d.total_amount).toLocaleString('id')}</td>
+        <td style="max-width:200px;font-size:.8rem">${d.dispute_reason||'-'}</td>
+        <td>${new Date(d.dispute_at).toLocaleDateString('id-ID',{day:'numeric',month:'short'})}</td>
+        <td>
+          <div style="display:flex;gap:.4rem;flex-wrap:wrap">
+            <button class="btn btn-danger btn-sm" onclick="adminResolveDispute(${d.id},'refund')">↩️ Refund Klien</button>
+            <button class="btn btn-primary btn-sm" onclick="adminResolveDispute(${d.id},'release')">💰 Lepas ke Pekerja</button>
+          </div>
+        </td>
+      </tr>`).join('')}
+    </tbody></table>`;
+}
+
+async function adminResolveDispute(id, decision) {
+  const label = decision === 'refund' ? 'refund ke klien' : 'lepas dana ke pekerja';
+  const note = prompt(`Catatan keputusan (${label}):`);
+  if (!confirm(`Yakin ${label} untuk dispute #${id}?`)) return;
+  const res = await api.adminResolveDispute(id, decision, note||'');
+  showToast(res.message || 'Berhasil!', 'success');
+  loadAdminDisputes();
+}
+
+// ===== TRANSACTIONS TAB =====
+async function loadAdminTransactions() {
+  const el = document.getElementById('admin-transactions');
+  if (!el) return;
+  el.innerHTML = '<div style="padding:2rem;text-align:center;color:var(--muted)">Memuat...</div>';
+  const { transactions, stats } = await api.adminGetTransactions();
+  const stColor = {
+    waiting_dp:'#94a3b8', dp_paid:'#0891b2', submitted:'#d97706',
+    waiting_final:'#7c3aed', completed:'var(--success)',
+    disputed:'var(--danger)', refunded:'#94a3b8', cancelled:'#94a3b8'
+  };
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.8rem;margin-bottom:1.5rem">
+      <div class="card" style="text-align:center"><div style="font-size:.75rem;color:var(--muted)">Total Transaksi</div><div style="font-size:1.4rem;font-weight:800">${stats.total||0}</div></div>
+      <div class="card" style="text-align:center"><div style="font-size:.75rem;color:var(--muted)">Selesai</div><div style="font-size:1.4rem;font-weight:800;color:var(--success)">${stats.completed||0}</div></div>
+      <div class="card" style="text-align:center"><div style="font-size:.75rem;color:var(--muted)">Dispute</div><div style="font-size:1.4rem;font-weight:800;color:var(--danger)">${stats.disputed||0}</div></div>
+      <div class="card" style="text-align:center"><div style="font-size:.75rem;color:var(--muted)">Menunggu</div><div style="font-size:1.4rem;font-weight:800;color:#d97706">${stats.pending||0}</div></div>
+      <div class="card" style="text-align:center"><div style="font-size:.75rem;color:var(--muted)">Total Fee</div><div style="font-size:1.1rem;font-weight:800;color:var(--accent2)">Rp ${parseInt(stats.total_fee||0).toLocaleString('id')}</div></div>
+    </div>
+    <table class="admin-table">
+      <thead><tr><th>ID</th><th>Klien</th><th>Pekerja</th><th>Nilai</th><th>Fee</th><th>Status</th><th>Tanggal</th></tr></thead>
+      <tbody>${transactions.map(t => `
+        <tr>
+          <td>#${t.id}</td>
+          <td>${t.client_name}</td>
+          <td>${t.worker_name}</td>
+          <td>Rp ${parseInt(t.total_amount).toLocaleString('id')}</td>
+          <td>Rp ${parseInt(t.platform_fee).toLocaleString('id')}</td>
+          <td><span style="font-size:.75rem;font-weight:700;color:${stColor[t.status]||'var(--muted)'}">${t.status}</span></td>
+          <td>${new Date(t.created_at).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'})}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
 }
