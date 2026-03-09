@@ -28,6 +28,7 @@ router.get('/:id', async (req, res) => {
   try {
     const u = await pool.query(
       `SELECT u.id, u.full_name, u.avatar, u.bio, u.city, u.is_verified, u.created_at,
+              u.social_twitter, u.social_linkedin, u.social_github, u.social_tiktok, u.social_youtube, u.social_telegram,
               COUNT(l.id) as listing_count,
               COALESCE(AVG(r.rating),0) as avg_rating,
               COUNT(r.id) as review_count
@@ -44,13 +45,18 @@ router.get('/:id', async (req, res) => {
 
 // PUT update profile
 router.put('/me', auth, async (req, res) => {
-  const { full_name, bio, city, phone } = req.body;
+  const { full_name, bio, city, phone, social_twitter, social_linkedin, social_github, social_tiktok, social_youtube, social_telegram } = req.body;
   if (!full_name) return res.status(400).json({ message: 'Nama wajib diisi' });
   try {
     const result = await pool.query(
-      `UPDATE users SET full_name=$1, bio=$2, city=$3, phone=$4, updated_at=NOW()
-       WHERE id=$5 RETURNING id, full_name, email, role, avatar, bio, city, phone, is_verified`,
-      [full_name, bio||null, city||null, phone||null, req.user.id]
+      `UPDATE users SET full_name=$1, bio=$2, city=$3, phone=$4,
+       social_twitter=$5, social_linkedin=$6, social_github=$7, social_tiktok=$8, social_youtube=$9, social_telegram=$10,
+       updated_at=NOW()
+       WHERE id=$11 RETURNING id, full_name, email, role, avatar, bio, city, phone, is_verified,
+       social_twitter, social_linkedin, social_github, social_tiktok, social_youtube, social_telegram`,
+      [full_name, bio||null, city||null, phone||null,
+       social_twitter||null, social_linkedin||null, social_github||null, social_tiktok||null, social_youtube||null, social_telegram||null,
+       req.user.id]
     );
     const user = result.rows[0];
     const jwt = require('jsonwebtoken');

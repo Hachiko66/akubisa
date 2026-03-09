@@ -147,7 +147,7 @@ exports.me = async (req, res) => {
   try {
     const result = await pool.query(
       `SELECT id, full_name, email, role, avatar, bio, city, phone,
-              is_verified, email_verified, created_at
+              is_verified, email_verified, created_at, social_twitter, social_linkedin, social_github, social_tiktok, social_youtube, social_telegram
        FROM users WHERE id=$1`,
       [req.user.id]
     );

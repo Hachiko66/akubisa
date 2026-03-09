@@ -1,3 +1,26 @@
+
+function renderSocialLinks(profile, darkMode=false) {
+  const socials = [
+    { key:'social_twitter',  icon:'𝕏', label:'Twitter/X',  url: u => 'https://twitter.com/'+u },
+    { key:'social_linkedin', icon:'💼', label:'LinkedIn',   url: u => u.startsWith('http') ? u : 'https://linkedin.com/in/'+u },
+    { key:'social_github',   icon:'🐙', label:'GitHub',     url: u => 'https://github.com/'+u },
+    { key:'social_tiktok',   icon:'🎵', label:'TikTok',     url: u => 'https://tiktok.com/@'+u },
+    { key:'social_youtube',  icon:'▶️', label:'YouTube',    url: u => u.startsWith('http') ? u : 'https://youtube.com/@'+u },
+    { key:'social_telegram', icon:'✈️', label:'Telegram',   url: u => 'https://t.me/'+u },
+  ];
+  const links = socials.filter(s => profile[s.key]);
+  if (!links.length) return '';
+  const color = darkMode ? 'rgba(255,255,255,.7)' : 'var(--muted)';
+  const hoverColor = darkMode ? 'white' : 'var(--ink)';
+  return `<div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.6rem">
+    ${links.map(s => `<a href="${s.url(profile[s.key])}" target="_blank" rel="noopener"
+      style="display:inline-flex;align-items:center;gap:.3rem;font-size:.75rem;color:${color};text-decoration:none;background:${darkMode?'rgba(255,255,255,.08)':'var(--warm)'};padding:.25rem .6rem;border-radius:100px;transition:all .2s"
+      onmouseover="this.style.color='${hoverColor}';this.style.background='${darkMode?'rgba(255,255,255,.15)':'var(--border)'}'"
+      onmouseout="this.style.color='${color}';this.style.background='${darkMode?'rgba(255,255,255,.08)':'var(--warm)'}'">
+      ${s.icon} ${profile[s.key]}
+    </a>`).join('')}
+  </div>`;
+}
 // ===== HOME PAGE =====
 async function renderHome() {
   // Landing page pakai static HTML — hanya isi elemen dinamis
@@ -179,6 +202,9 @@ async function renderProfile() {
   document.getElementById('profile-phone2').textContent = u.phone || '-';
   document.getElementById('profile-role2').textContent = u.role === 'worker' ? 'Pekerja ⚡' : 'Pencari 🔍';
   document.getElementById('profile-bio-preview').textContent = u.bio ? u.bio.slice(0,60)+(u.bio.length>60?'…':'') : '';
+  // Sosmed links di profil sendiri
+  const selfSocialEl = document.getElementById('self-social-links');
+  if (selfSocialEl) selfSocialEl.innerHTML = renderSocialLinks(u, true);
 
   const badge = document.getElementById('profile-role-label');
   badge.textContent = u.role === 'worker' ? '⚡ PEKERJA' : '🔍 PENCARI';
@@ -398,7 +424,13 @@ async function saveProfile() {
   const btn = document.getElementById('ep-save-btn');
   btn.innerHTML = '<span class="spinner"></span>Menyimpan...';
   btn.disabled = true;
-  const res = await api.updateProfile({ full_name, bio, city, phone });
+  const social_twitter  = document.getElementById('ep-twitter')?.value.trim() || '';
+  const social_linkedin = document.getElementById('ep-linkedin')?.value.trim() || '';
+  const social_github   = document.getElementById('ep-github')?.value.trim() || '';
+  const social_tiktok   = document.getElementById('ep-tiktok')?.value.trim() || '';
+  const social_youtube  = document.getElementById('ep-youtube')?.value.trim() || '';
+  const social_telegram = document.getElementById('ep-telegram')?.value.trim() || '';
+  const res = await api.updateProfile({ full_name, bio, city, phone, social_twitter, social_linkedin, social_github, social_tiktok, social_youtube, social_telegram });
   btn.innerHTML = '💾 Simpan Perubahan'; btn.disabled = false;
   if (res.token) {
     localStorage.setItem('akubisa_token', res.token);
@@ -598,6 +630,9 @@ async function renderPublicProfile(userId) {
     document.getElementById('pub-city').textContent = profile.city || 'Indonesia';
     document.getElementById('pub-listings').textContent = (profile.listing_count || 0) + ' penawaran';
     document.getElementById('pub-bio').textContent = profile.bio || '';
+    // Sosmed links di profil publik
+    const pubSocialEl = document.getElementById('pub-social-links');
+    if (pubSocialEl) pubSocialEl.innerHTML = renderSocialLinks(profile, true);
 
     if (profile.is_verified) {
       const badge = document.getElementById('pub-verified');
