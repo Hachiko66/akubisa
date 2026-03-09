@@ -65,8 +65,11 @@ async function loadNotifPanel() {
       list.innerHTML = '<div style="padding:2rem;text-align:center;color:var(--muted);font-size:.85rem">Tidak ada notifikasi</div>';
       return;
     }
-    list.innerHTML = notifs.map(n => `
-      <div onclick="clickNotif(${n.id}, '${n.link||''}')"
+    list.innerHTML = notifs.map(n => {
+      const meta = n.metadata ? (typeof n.metadata === 'string' ? JSON.parse(n.metadata) : n.metadata) : null;
+      const trxId = meta ? (meta.transaction_id || null) : null;
+      const action = n.action || '';
+      return `<div onclick="clickNotif(${n.id},'${n.link||''}',${trxId},'${action}')"
         style="padding:.9rem 1rem;border-bottom:1px solid var(--border);cursor:pointer;display:flex;gap:.8rem;align-items:flex-start;background:${n.is_read?'white':'#fff8f6'};transition:background .2s"
         onmouseover="this.style.background='var(--warm)'" onmouseout="this.style.background='${n.is_read?'white':'#fff8f6'}'">
         <div style="font-size:1.1rem;margin-top:.1rem">${notifIcon(n.type)}</div>
@@ -76,7 +79,8 @@ async function loadNotifPanel() {
           <div style="font-size:.68rem;color:var(--muted);margin-top:.3rem">${timeAgo(n.created_at)}</div>
         </div>
         ${!n.is_read ? '<div style="width:7px;height:7px;border-radius:50%;background:var(--accent);flex-shrink:0;margin-top:.3rem"></div>' : ''}
-      </div>`;}).join('');
+      </div>`;
+    }).join('');
   } catch(e) {
     list.innerHTML = '<div style="padding:1rem;text-align:center;color:var(--danger);font-size:.83rem">Gagal memuat</div>';
   }
