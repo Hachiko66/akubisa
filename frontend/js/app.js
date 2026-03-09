@@ -22,7 +22,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadCategories();
   renderNav();
   if (currentUser) startNotifPoll();
-  checkResetToken();
   const hash = location.hash.replace('#','') || 'home';
   // Handle direct listing link e.g. #listing-26
   if (hash.startsWith('listing-')) {
@@ -44,6 +43,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (hash === 'transactions') renderTransactions();
   if (hash === 'wallet') renderWallet();
   if (hash === 'bookmarks') renderBookmarks();
+  // Cek reset token setelah semua init selesai
+  checkResetToken();
 });
 
 window.addEventListener('hashchange', () => {
@@ -54,6 +55,14 @@ window.addEventListener('hashchange', () => {
     renderNav();
     renderExplore();
     setTimeout(() => openListingDetail(listingId), 800);
+    return;
+  }
+  if (page.startsWith('reset-password/')) {
+    const token = page.replace('reset-password/', '');
+    if (typeof resetToken !== 'undefined') resetToken = token;
+    else window._resetToken = token;
+    navigate('reset-password');
+    renderNav();
     return;
   }
   navigate(page);

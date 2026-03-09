@@ -203,11 +203,15 @@ async function doResetPassword() {
 
 // Handle reset password dari URL: /#reset-password/TOKEN
 function checkResetToken() {
-  const hash = location.hash;
-  const match = hash.match(/^#reset-password\/(.+)$/);
+  const hash = location.hash.replace('#', '');
+  const match = hash.match(/^reset-password\/(.+)$/);
   if (match) {
     resetToken = match[1];
     navigate('reset-password');
+    renderNav();
+  } else if (window._resetToken) {
+    resetToken = window._resetToken;
+    delete window._resetToken;
   }
 }
 

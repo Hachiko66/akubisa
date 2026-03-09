@@ -32,7 +32,7 @@ const emailTemplates = {
         <h2 style="color:#e8521a">AkuBisa</h2>
         <h3>Halo ${name}! 👋</h3>
         <p>Terima kasih sudah mendaftar. Klik tombol di bawah untuk verifikasi emailmu:</p>
-        <a href="${process.env.APP_URL}/api/auth/verify-email/${token}"
+        <a href="${process.env.APP_URL || process.env.BASE_URL}/api/auth/verify-email/${token}"
            style="display:inline-block;background:#e8521a;color:white;padding:.8rem 2rem;border-radius:8px;text-decoration:none;font-weight:700;margin:1rem 0">
           Verifikasi Email
         </a>
@@ -47,7 +47,7 @@ const emailTemplates = {
         <h2 style="color:#e8521a">AkuBisa</h2>
         <h3>Reset Password</h3>
         <p>Halo ${name}, kamu meminta reset password. Klik tombol di bawah:</p>
-        <a href="${process.env.APP_URL}/reset-password/${token}"
+        <a href="${process.env.APP_URL || process.env.BASE_URL}/#reset-password/${token}"
            style="display:inline-block;background:#e8521a;color:white;padding:.8rem 2rem;border-radius:8px;text-decoration:none;font-weight:700;margin:1rem 0">
           Reset Password
         </a>
@@ -62,7 +62,7 @@ const emailTemplates = {
         <h2 style="color:#e8521a">AkuBisa</h2>
         <h3>Selamat datang, ${name}! 🎉</h3>
         <p>Akunmu sudah aktif. Mulai posting kemampuanmu dan temukan klien pertamamu!</p>
-        <a href="${process.env.APP_URL}"
+        <a href="${process.env.APP_URL || process.env.BASE_URL}"
            style="display:inline-block;background:#e8521a;color:white;padding:.8rem 2rem;border-radius:8px;text-decoration:none;font-weight:700;margin:1rem 0">
           Mulai Sekarang
         </a>
