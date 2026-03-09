@@ -5,3 +5,6 @@ backend/uploads/digital/*
 backend/.env
 .env
 *.log
+frontend/uploads/kyc/
+frontend/uploads/portfolio/
+backend/.env
