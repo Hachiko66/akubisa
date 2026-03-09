@@ -32,6 +32,12 @@ router.post('/', auth, async (req, res) => {
   if (worker_id === req.user.id) return res.status(400).json({ message: 'Tidak bisa bertransaksi dengan diri sendiri' });
 
   try {
+    // Cek KYC
+    const kycCheck = await pool.query('SELECT status FROM kyc_submissions WHERE user_id=$1', [req.user.id]);
+    const kycStatus = kycCheck.rows[0]?.status;
+    if (kycStatus !== 'approved') {
+      return res.status(403).json({ message: 'Verifikasi identitas (KYC) diperlukan sebelum melakukan transaksi.', kyc_required: true });
+    }
     const dp_amount = Math.ceil(total_amount * 0.5);
     const final_amount = total_amount - dp_amount;
     const platform_fee = Math.ceil(total_amount * PLATFORM_FEE);

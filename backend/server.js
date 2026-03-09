@@ -22,6 +22,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads/digital', express.static(path.join(__dirname, 'uploads/digital')));
 app.use('/uploads/portfolio', require('express').static('/var/www/akubisa/frontend/uploads/portfolio'));
+app.use('/uploads/kyc', require('express').static('/var/www/akubisa/frontend/uploads/kyc'));
 app.use('/uploads/images', express.static(path.join(__dirname, 'uploads/images')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
@@ -43,6 +44,7 @@ app.use('/api/listings',                   require('./routes/listings'));
 app.use('/api/categories',                 require('./routes/categories'));
 app.use('/api/profile',                    require('./routes/profile'));
 app.use('/api/wallet', require('./routes/wallet'));
+app.use('/api/kyc', require('./routes/kyc'));
 app.use('/api/transactions', require('./routes/transactions'));
 app.use('/api/job-requests', require('./routes/jobRequests'));
 app.use('/api/messages',      msgLimiter,  require('./routes/messages'));

@@ -139,6 +139,10 @@ api.getEarnings     = ()           => fetch(`${API}/wallet/earnings`, { headers:
 api.getWithdrawals  = ()           => fetch(`${API}/wallet/withdrawals`, { headers:headers(true) }).then(r=>r.json());
 api.requestWithdraw = (data)       => fetch(`${API}/wallet/withdraw`, { method:'POST', headers:headers(true), body:JSON.stringify(data) }).then(r=>r.json());
 api.getPortfolio    = (userId)     => fetch(`${API}/wallet/portfolio/${userId}`, { headers:headers(false) }).then(r=>r.json());
+api.kycStatus       = ()           => fetch(`${API}/kyc/status`, { headers:headers(true) }).then(r=>r.json());
+api.adminKycList    = (status)     => fetch(`${API}/kyc/admin/list?status=${status||'pending'}`, { headers:headers(true) }).then(r=>r.json());
+api.adminKycApprove = (id, note)   => fetch(`${API}/kyc/admin/${id}/approve`, { method:'PATCH', headers:headers(true), body:JSON.stringify({note}) }).then(r=>r.json());
+api.adminKycReject  = (id, note)   => fetch(`${API}/kyc/admin/${id}/reject`, { method:'PATCH', headers:headers(true), body:JSON.stringify({note}) }).then(r=>r.json());
 api.getMyPortfolio  = ()           => fetch(`${API}/wallet/my-portfolio`, { headers:headers(true) }).then(r=>r.json());
 api.createPortfolio = (data)       => fetch(`${API}/wallet/portfolio`, { method:'POST', headers:headers(true), body:JSON.stringify(data) }).then(r=>r.json());
 api.deletePortfolio = (id)         => fetch(`${API}/wallet/portfolio/${id}`, { method:'DELETE', headers:headers(true) }).then(r=>r.json());

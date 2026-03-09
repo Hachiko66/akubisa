@@ -117,16 +117,21 @@ function renderQuickActions() {
   const el = document.getElementById('quick-action-buttons');
   if (!el || !currentUser) return;
   const isWorker = currentUser.role === 'worker';
+  const isVerified = currentUser.is_verified;
+  const kycBtn = isVerified
+    ? `<button class="btn btn-sm" style="background:#f0fdf4;color:#166534;border:1.5px solid #bbf7d0;border-radius:100px;padding:.35rem .8rem;font-size:.75rem;cursor:default">✅ Identitas Terverifikasi</button>`
+    : `<button class="btn btn-sm" style="background:#fef9c3;color:#854d0e;border:1.5px solid #fde047;border-radius:100px;padding:.35rem .8rem;font-size:.75rem;cursor:pointer;font-weight:600" onclick="openKycModal()">🪪 Verifikasi Identitas</button>`;
   el.innerHTML = isWorker ? `
+    ${kycBtn}
     <button class="btn btn-primary btn-sm" onclick="openPostModal()">⚡ Buat Penawaran</button>
     <button class="btn btn-outline btn-sm" onclick="goTo('job-requests')">🙋 Lihat Kebutuhan Klien</button>
     <button class="btn btn-outline btn-sm" onclick="goTo('wallet')">💰 Dompet & Portfolio</button>
     <button class="btn btn-outline btn-sm" onclick="goTo('transactions')">💳 Transaksi Saya</button>
     <button class="btn btn-outline btn-sm" onclick="goTo('dashboard')">Dashboard</button>
-    <button class="btn btn-outline btn-sm" onclick="goTo('explore')">Jelajahi</button>
     <button class="btn btn-outline btn-sm" onclick="openEditProfile()">Edit Profil</button>
     <button class="btn btn-danger btn-sm" onclick="logout()">Keluar</button>
   ` : `
+    ${kycBtn}
     <button class="btn btn-primary btn-sm" onclick="openPostJobModal()">🙋 Posting Kebutuhan</button>
     <button class="btn btn-outline btn-sm" onclick="goTo('job-requests')">Lihat Semua Kebutuhan</button>
     <button class="btn btn-outline btn-sm" onclick="goTo('explore')">Jelajahi Penawaran</button>
@@ -1338,10 +1343,13 @@ async function submitCreateTransaction() {
     setTimeout(() => {
       const newTab = window.open(res.invoice_url, '_blank');
       if (!newTab || newTab.closed || typeof newTab.closed === 'undefined') {
-        // Popup diblokir - redirect di tab yang sama
         window.location.href = res.invoice_url;
       }
     }, 800);
+  } else if (res.kyc_required) {
+    closeCreateTrxModal();
+    showToast('Verifikasi identitas diperlukan untuk melakukan transaksi', 'error');
+    setTimeout(() => openKycModal(), 400);
   } else {
     errEl.textContent = res.message || 'Gagal membuat transaksi';
   }
@@ -1585,5 +1593,96 @@ async function submitWithdraw() {
     renderWallet();
   } else {
     errEl.textContent = res.message || 'Gagal';
+  }
+}
+
+// ===== KYC =====
+async function openKycModal() {
+  document.getElementById('kyc-modal').classList.add('open');
+  const status = await api.kycStatus();
+  const info = document.getElementById('kyc-status-info');
+  const form = document.getElementById('kyc-form');
+  const footer = document.getElementById('kyc-footer');
+
+  if (status) {
+    if (status.status === 'pending') {
+      info.innerHTML = `<div style="background:#fef9c3;border:1px solid #fde047;border-radius:10px;padding:.8rem;font-size:.83rem;color:#854d0e">
+        ⏳ <strong>Pengajuan sedang diproses.</strong> Admin akan mereview dalam 1x24 jam. Kamu akan mendapat notifikasi hasilnya.
+      </div>`;
+      form.style.display = 'none';
+      footer.innerHTML = '<button class="btn btn-outline" onclick="closeKycModal()">Tutup</button>';
+    } else if (status.status === 'approved') {
+      info.innerHTML = `<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:.8rem;font-size:.83rem;color:#166534">
+        ✅ <strong>Identitas kamu sudah terverifikasi!</strong> Badge ✓ Terverifikasi tampil di profilmu.
+      </div>`;
+      form.style.display = 'none';
+      footer.innerHTML = '<button class="btn btn-outline" onclick="closeKycModal()">Tutup</button>';
+    } else if (status.status === 'rejected') {
+      info.innerHTML = `<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:.8rem;font-size:.83rem;color:#991b1b">
+        ❌ <strong>Pengajuan ditolak.</strong> Alasan: ${status.admin_note || 'Dokumen tidak valid'}. Silakan ajukan ulang dengan dokumen yang benar.
+      </div>`;
+      form.style.display = 'block';
+    }
+  } else {
+    info.innerHTML = '';
+    form.style.display = 'block';
+    footer.innerHTML = `<button class="btn btn-outline" onclick="closeKycModal()">Batal</button>
+      <button class="btn btn-primary" onclick="submitKyc()" id="kyc-submit-btn">Kirim untuk Diverifikasi</button>`;
+  }
+}
+
+function closeKycModal() {
+  document.getElementById('kyc-modal').classList.remove('open');
+}
+
+function previewKycFile(input, previewId) {
+  const preview = document.getElementById(previewId);
+  if (!input.files[0]) { preview.innerHTML = ''; return; }
+  const url = URL.createObjectURL(input.files[0]);
+  preview.innerHTML = `<img src="${url}" style="width:100%;max-height:180px;object-fit:cover;border-radius:8px;border:1px solid var(--border)">`;
+}
+
+async function submitKyc() {
+  const fullname = document.getElementById('kyc-fullname').value.trim();
+  const nik = document.getElementById('kyc-nik').value.trim();
+  const ktp = document.getElementById('kyc-ktp').files[0];
+  const selfie = document.getElementById('kyc-selfie').files[0];
+  const errEl = document.getElementById('kyc-error');
+  const btn = document.getElementById('kyc-submit-btn');
+
+  if (!fullname) { errEl.textContent = 'Nama lengkap wajib diisi'; return; }
+  if (!nik || nik.length !== 16) { errEl.textContent = 'NIK harus 16 digit'; return; }
+  if (!ktp) { errEl.textContent = 'Foto KTP wajib diupload'; return; }
+  if (!selfie) { errEl.textContent = 'Foto selfie wajib diupload'; return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Mengirim...';
+  errEl.textContent = '';
+
+  try {
+    const form = new FormData();
+    form.append('full_name_ktp', fullname);
+    form.append('nik', nik);
+    form.append('ktp', ktp);
+    form.append('selfie', selfie);
+
+    const res = await fetch('/api/kyc/submit', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${localStorage.getItem('akubisa_token')}` },
+      body: form
+    }).then(r => r.json());
+
+    if (res.message && !res.error) {
+      showToast(res.message, 'success');
+      closeKycModal();
+    } else {
+      errEl.textContent = res.message || 'Gagal mengirim';
+      btn.disabled = false;
+      btn.textContent = 'Kirim untuk Diverifikasi';
+    }
+  } catch(e) {
+    errEl.textContent = 'Error: ' + e.message;
+    btn.disabled = false;
+    btn.textContent = 'Kirim untuk Diverifikasi';
   }
 }

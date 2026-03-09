@@ -204,6 +204,7 @@
       <div class="sidebar-item" onclick="showPanel('withdrawals')" id="nav-withdrawals">💸 Withdraw</div>
       <div class="sidebar-item" onclick="showPanel('disputes')" id="nav-disputes">⚠️ Dispute</div>
       <div class="sidebar-item" onclick="showPanel('transactions')" id="nav-transactions">💳 Transaksi</div>
+      <div class="sidebar-item" onclick="showPanel('kyc')" id="nav-kyc">🪪 Verifikasi KYC</div>
       <div class="sidebar-item" onclick="window.open('/','_blank')">🌐 Buka Platform</div>
     </div>
 
@@ -273,6 +274,16 @@
         <div class="table-wrap"><div id="reports-table"><p style="text-align:center;padding:2rem;color:var(--muted)">Memuat...</p></div></div>
       </div>
 
+      <!-- PANEL KYC -->
+      <div id="panel-kyc" class="panel">
+        <h2 style="margin-bottom:1rem">🪪 Verifikasi KYC</h2>
+        <div style="display:flex;gap:.5rem;margin-bottom:1.2rem">
+          <button class="btn btn-sm btn-primary" onclick="loadKyc('pending')">⏳ Pending</button>
+          <button class="btn btn-sm btn-outline" onclick="loadKyc('approved')">✅ Approved</button>
+          <button class="btn btn-sm btn-outline" onclick="loadKyc('rejected')">❌ Rejected</button>
+        </div>
+        <div id="kyc-content"><div style="text-align:center;padding:2rem;color:var(--muted)">Memuat...</div></div>
+      </div>
       <!-- PANEL WITHDRAWALS -->
       <div id="panel-withdrawals" class="panel">
         <h2 style="margin-bottom:1.5rem">💸 Kelola Withdraw</h2>
@@ -380,6 +391,7 @@ function showPanel(name) {
   if (name==='withdrawals')  { console.log('calling loadWithdrawals'); loadWithdrawals(); }
   if (name==='disputes')     loadDisputes();
   if (name==='transactions') loadTransactions();
+  if (name==='kyc') loadKyc('pending');
 }
 
 function toast(msg, type='success') {
@@ -620,6 +632,47 @@ async function resolveReport(id, action) {
   toast(res.message);
   loadReports('pending');
   loadOverview();
+}
+
+// ===== KYC =====
+async function loadKyc(status='pending') {
+  const el = document.getElementById('kyc-content');
+  el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted)">Memuat...</div>';
+  try {
+    const res = await apiFetch(`/kyc/admin/list?status=${status}`);
+    if (!res || !res.length) { el.innerHTML = `<div style="text-align:center;padding:3rem;color:var(--muted)">Tidak ada KYC ${status}.</div>`; return; }
+    el.innerHTML = `<table class="table">
+      <thead><tr><th>User</th><th>NIK</th><th>Nama KTP</th><th>KTP</th><th>Selfie</th><th>Tanggal</th><th>Aksi</th></tr></thead>
+      <tbody>${res.map(k => `<tr>
+        <td><strong>${k.full_name}</strong><br><small style="color:var(--muted)">${k.email}</small></td>
+        <td style="font-family:monospace;font-size:.8rem">${k.nik||'-'}</td>
+        <td>${k.full_name_ktp||'-'}</td>
+        <td><a href="${k.ktp_url}" target="_blank"><img src="${k.ktp_url}" style="width:80px;height:50px;object-fit:cover;border-radius:6px;border:1px solid var(--border)"></a></td>
+        <td><a href="${k.selfie_url}" target="_blank"><img src="${k.selfie_url}" style="width:60px;height:60px;object-fit:cover;border-radius:50%;border:1px solid var(--border)"></a></td>
+        <td>${new Date(k.submitted_at).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'})}</td>
+        <td>${k.status==='pending'?`
+          <button class="btn btn-sm" style="background:var(--success);color:white;margin-bottom:.3rem" onclick="approveKyc(${k.id})">✅ Approve</button><br>
+          <button class="btn btn-sm" style="background:var(--danger);color:white" onclick="rejectKyc(${k.id})">❌ Tolak</button>
+        `:`<span style="font-weight:700;color:${k.status==='approved'?'var(--success)':'var(--danger)'}">${k.status}</span>${k.admin_note?`<br><small>${k.admin_note}</small>`:''}`}</td>
+      </tr>`).join('')}</tbody></table>`;
+  } catch(e) { el.innerHTML = `<div style="text-align:center;padding:2rem;color:var(--danger)">Error: ${e.message}</div>`; }
+}
+
+async function approveKyc(id) {
+  const note = prompt('Catatan (opsional):') || '';
+  if (!confirm('Approve KYC ini?')) return;
+  const res = await apiFetch(`/kyc/admin/${id}/approve`, 'PATCH', { note });
+  showToast(res.message || 'Berhasil!', 'success');
+  loadKyc('pending');
+}
+
+async function rejectKyc(id) {
+  const note = prompt('Alasan penolakan (wajib):');
+  if (!note) { showToast('Alasan wajib diisi', 'error'); return; }
+  if (!confirm('Tolak KYC ini?')) return;
+  const res = await apiFetch(`/kyc/admin/${id}/reject`, 'PATCH', { note });
+  showToast(res.message || 'Berhasil!', 'success');
+  loadKyc('pending');
 }
 
 // Helper apiFetch

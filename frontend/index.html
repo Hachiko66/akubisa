@@ -1609,6 +1609,55 @@ document.addEventListener('DOMContentLoaded', () => {
   loadHeroStats();
 });
 </script>
+<!-- ===== MODAL KYC ===== -->
+<div class="modal-overlay" id="kyc-modal" onclick="if(event.target===this)closeKycModal()">
+  <div class="modal-box" style="max-width:560px;background:white">
+    <div class="modal-header">
+      <div class="modal-title">🪪 Verifikasi Identitas (KYC)</div>
+      <button class="modal-close" onclick="closeKycModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:.8rem;margin-bottom:1.2rem;font-size:.82rem;color:#166534">
+        🔒 Dokumen kamu aman dan hanya digunakan untuk verifikasi identitas oleh tim AkuBisa.
+      </div>
+      <div id="kyc-status-info" style="margin-bottom:1rem"></div>
+      <div id="kyc-form">
+        <div class="form-group">
+          <label class="form-label">Nama Lengkap sesuai KTP *</label>
+          <input type="text" id="kyc-fullname" class="form-input" placeholder="Nama sesuai KTP">
+        </div>
+        <div class="form-group">
+          <label class="form-label">NIK (Nomor Induk Kependudukan) *</label>
+          <input type="text" id="kyc-nik" class="form-input" placeholder="16 digit NIK" maxlength="16">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Foto KTP *</label>
+          <div id="kyc-ktp-preview" style="margin-bottom:.5rem"></div>
+          <label for="kyc-ktp" style="display:flex;align-items:center;gap:.5rem;padding:.8rem 1rem;border:2px dashed var(--border);border-radius:10px;cursor:pointer;font-size:.85rem;color:var(--muted)">
+            <span style="font-size:1.2rem">🪪</span>
+            <span>Upload foto KTP (JPG/PNG, maks 5MB)</span>
+          </label>
+          <input type="file" id="kyc-ktp" accept="image/*" style="display:none" onchange="previewKycFile(this,'kyc-ktp-preview')">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Foto Selfie dengan KTP *</label>
+          <div id="kyc-selfie-preview" style="margin-bottom:.5rem"></div>
+          <label for="kyc-selfie" style="display:flex;align-items:center;gap:.5rem;padding:.8rem 1rem;border:2px dashed var(--border);border-radius:10px;cursor:pointer;font-size:.85rem;color:var(--muted)">
+            <span style="font-size:1.2rem">🤳</span>
+            <span>Upload selfie sambil pegang KTP (JPG/PNG, maks 5MB)</span>
+          </label>
+          <input type="file" id="kyc-selfie" accept="image/*" style="display:none" onchange="previewKycFile(this,'kyc-selfie-preview')">
+        </div>
+        <div id="kyc-error" style="color:var(--danger);font-size:.82rem;margin-bottom:.5rem"></div>
+      </div>
+    </div>
+    <div class="modal-footer" id="kyc-footer">
+      <button class="btn btn-outline" onclick="closeKycModal()">Tutup</button>
+      <button class="btn btn-primary" onclick="submitKyc()" id="kyc-submit-btn">Kirim untuk Diverifikasi</button>
+    </div>
+  </div>
+</div>
+
 <!-- ===== MODAL BUAT PORTFOLIO ===== -->
 <div class="modal-overlay" id="portfolio-modal" onclick="if(event.target===this)closePortfolioModal()">
   <div class="modal-box" style="max-width:560px;background:white">
