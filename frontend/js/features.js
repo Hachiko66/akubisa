@@ -76,7 +76,7 @@ async function loadNotifPanel() {
           <div style="font-size:.68rem;color:var(--muted);margin-top:.3rem">${timeAgo(n.created_at)}</div>
         </div>
         ${!n.is_read ? '<div style="width:7px;height:7px;border-radius:50%;background:var(--accent);flex-shrink:0;margin-top:.3rem"></div>' : ''}
-      </div>`).join('');
+      </div>`;}).join('');
   } catch(e) {
     list.innerHTML = '<div style="padding:1rem;text-align:center;color:var(--danger);font-size:.83rem">Gagal memuat</div>';
   }

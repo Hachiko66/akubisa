@@ -1241,8 +1241,38 @@ function transactionCardHTML(t) {
         ` : ''}
         ${t.status==='waiting_final' && isClient ? `<a href="${t.xendit_final_invoice_url}" target="_blank" class="btn btn-primary btn-sm">💳 Bayar Pelunasan</a>` : ''}
         ${t.status==='dp_paid' && isClient ? `<button class="btn btn-danger btn-sm" onclick="openDisputeModal(${t.id})">⚠️ Dispute</button>` : ''}
+        ${t.status==='completed' && isClient && !t.reviewed_by_client ? `
+          <button class="btn btn-sm" style="background:#fef9c3;color:#854d0e;border:1.5px solid #fde047;font-weight:600" onclick="openReviewFromTrx(${t.id},${t.worker_id},'${(t.worker_name||'').replace(/'/g,"\'")}',${t.listing_id||null})">⭐ Beri Ulasan</button>
+        ` : ''}
+        ${t.status==='completed' && !isClient && !t.reviewed_by_worker ? `
+          <button class="btn btn-sm" style="background:#fef9c3;color:#854d0e;border:1.5px solid #fde047;font-weight:600" onclick="openReviewFromTrx(${t.id},${t.client_id},'${(t.client_name||'').replace(/'/g,"\'")}',${t.listing_id||null})">⭐ Beri Ulasan</button>
+        ` : ''}
+        ${t.status==='completed' && (isClient ? t.reviewed_by_client : t.reviewed_by_worker) ? `
+          <span style="font-size:.75rem;color:var(--success);font-weight:600">✅ Sudah diulas</span>
+        ` : ''}
       </div>
     </div>`;
+}
+
+function openReviewFromTrx(trxId, reviewedId, reviewedName, listingId) {
+  // Set hidden fields
+  document.getElementById('review-reviewed-id').value = reviewedId;
+  document.getElementById('review-listing-id').value = listingId || '';
+  document.getElementById('review-to-name').textContent = reviewedName;
+  // Simpan transaction_id di hidden field (tambah jika belum ada)
+  let trxField = document.getElementById('review-transaction-id');
+  if (!trxField) {
+    trxField = document.createElement('input');
+    trxField.type = 'hidden';
+    trxField.id = 'review-transaction-id';
+    document.getElementById('review-modal').appendChild(trxField);
+  }
+  trxField.value = trxId;
+  // Reset form
+  selectStar(0);
+  document.getElementById('review-comment').value = '';
+  document.getElementById('review-error').textContent = '';
+  document.getElementById('review-modal').classList.add('open');
 }
 
 async function submitWork(id) {

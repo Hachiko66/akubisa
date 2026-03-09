@@ -35,24 +35,48 @@ router.get('/user/:id', async (req, res) => {
 
 // POST buat review baru
 router.post('/', auth, async (req, res) => {
-  const { reviewed_id, listing_id, rating, comment } = req.body;
+  const { reviewed_id, listing_id, transaction_id, rating, comment } = req.body;
   if (!reviewed_id || !rating) return res.status(400).json({ message: 'User dan rating wajib diisi' });
   if (rating < 1 || rating > 5) return res.status(400).json({ message: 'Rating harus antara 1-5' });
   if (parseInt(reviewed_id) === req.user.id) return res.status(400).json({ message: 'Tidak bisa review diri sendiri' });
   try {
-    // Cek apakah sudah pernah review listing ini
-    if (listing_id) {
+    // Cek duplikat per transaksi
+    if (transaction_id) {
+      const exists = await pool.query(
+        'SELECT id FROM reviews WHERE reviewer_id=$1 AND transaction_id=$2',
+        [req.user.id, transaction_id]
+      );
+      if (exists.rows.length > 0) return res.status(409).json({ message: 'Kamu sudah memberikan ulasan untuk transaksi ini' });
+    } else if (listing_id) {
       const exists = await pool.query(
         'SELECT id FROM reviews WHERE reviewer_id=$1 AND listing_id=$2',
         [req.user.id, listing_id]
       );
       if (exists.rows.length > 0) return res.status(409).json({ message: 'Kamu sudah memberikan ulasan untuk penawaran ini' });
     }
+
     const result = await pool.query(`
-      INSERT INTO reviews (reviewer_id, reviewed_id, listing_id, rating, comment)
-      VALUES ($1,$2,$3,$4,$5)
+      INSERT INTO reviews (reviewer_id, reviewed_id, listing_id, transaction_id, rating, comment)
+      VALUES ($1,$2,$3,$4,$5,$6)
       RETURNING *
-    `, [req.user.id, reviewed_id, listing_id||null, rating, comment||null]);
+    `, [req.user.id, reviewed_id, listing_id||null, transaction_id||null, rating, comment||null]);
+
+    // Update flag reviewed di transaksi
+    if (transaction_id) {
+      const trx = await pool.query('SELECT client_id, worker_id FROM transactions WHERE id=$1', [transaction_id]);
+      if (trx.rows[0]) {
+        const isClient = trx.rows[0].client_id === req.user.id;
+        const field = isClient ? 'reviewed_by_client' : 'reviewed_by_worker';
+        await pool.query(`UPDATE transactions SET ${field}=TRUE WHERE id=$1`, [transaction_id]);
+      }
+    }
+
+    // Notif ke yang direview
+    await pool.query(`
+      INSERT INTO notifications (user_id, type, title, message, link)
+      VALUES ($1,'review','⭐ Ulasan Baru','Kamu mendapat ulasan baru! Cek profilmu.','#public-profile')
+    `, [reviewed_id]);
+
     res.status(201).json({ message: 'Ulasan berhasil dikirim!', review: result.rows[0] });
   } catch(e) { res.status(500).json({ message: e.message }); }
 });

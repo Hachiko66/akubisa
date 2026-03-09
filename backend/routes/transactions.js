@@ -285,6 +285,20 @@ router.post('/webhook/xendit', async (req, res) => {
           INSERT INTO notifications (user_id, type, title, message, link)
           VALUES ($1,'transaction','✅ Transaksi Selesai','Pembayaran lunas. Terima kasih telah menggunakan AkuBisa!','#transactions')
         `, [trx.client_id]);
+
+        // Notif review ke client
+        await pool.query(`
+          INSERT INTO notifications (user_id, type, title, message, metadata, action, link)
+          VALUES ($1,'review','⭐ Beri Ulasan','Bagaimana pengalamanmu? Beri ulasan untuk pekerja ini.',
+            $2::jsonb, 'open_review', '#transactions')
+        `, [trx.client_id, JSON.stringify({ transaction_id: trx.id, worker_id: trx.worker_id })]);
+
+        // Notif review ke worker
+        await pool.query(`
+          INSERT INTO notifications (user_id, type, title, message, metadata, action, link)
+          VALUES ($1,'review','⭐ Beri Ulasan','Beri ulasan untuk klien yang sudah bekerja sama denganmu.',
+            $2::jsonb, 'open_review', '#transactions')
+        `, [trx.worker_id, JSON.stringify({ transaction_id: trx.id, reviewed_id: trx.client_id })]);
       }
     }
 
