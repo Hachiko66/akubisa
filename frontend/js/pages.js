@@ -148,8 +148,16 @@ function renderQuickActions() {
 }
 
 async function renderProfile() {
-  renderQuickActions();
   if (!currentUser) { goTo('login'); return; }
+  // Refresh currentUser dari API agar is_verified selalu fresh
+  try {
+    const fresh = await api.me();
+    if (fresh.id) {
+      currentUser = fresh;
+      localStorage.setItem('akubisa_user', JSON.stringify(fresh));
+    }
+  } catch(e) {}
+  renderQuickActions();
   const u = currentUser;
   const ini = initials(u.full_name);
   const av  = avColor(u.full_name);

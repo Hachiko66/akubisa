@@ -322,3 +322,21 @@ body.auth-mode #main-nav {
   color: var(--accent);
   border-bottom-color: var(--accent);
 }
+
+/* ===== ADAPTIVE NAVBAR ===== */
+#main-nav { transition: background .3s, box-shadow .3s, border-color .3s; }
+#main-nav[data-theme="light"] .logo { color: var(--ink); }
+#main-nav[data-theme="light"] .logo span { color: var(--accent); }
+#main-nav[data-theme="light"] .ham-line { background: var(--ink) !important; }
+#main-nav[data-theme="dark"] .logo { color: white; }
+#main-nav[data-theme="dark"] .logo span { color: var(--accent); }
+
+.nav-link-adaptive { text-decoration:none;font-size:.88rem;font-weight:500;cursor:pointer;transition:opacity .2s; }
+#main-nav[data-theme="light"] .nav-link-adaptive { color: var(--muted); }
+#main-nav[data-theme="light"] .nav-link-adaptive:hover { color: var(--ink); }
+#main-nav[data-theme="dark"] .nav-link-adaptive { color: rgba(255,255,255,.75); }
+#main-nav[data-theme="dark"] .nav-link-adaptive:hover { color: white; }
+
+.nav-icon-btn { transition: opacity .2s; }
+#main-nav[data-theme="light"] .nav-icon-btn { color: var(--muted) !important; filter: none; }
+#main-nav[data-theme="dark"] .nav-icon-btn { color: rgba(255,255,255,.8) !important; filter: brightness(10); }

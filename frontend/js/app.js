@@ -71,6 +71,7 @@ function navigate(page) {
   const nav = document.getElementById('main-nav');
   if (nav) nav.style.display = authPages.includes(page) ? 'none' : 'flex';
 
+  updateNavTheme(page);
   window.scrollTo(0, 0);
 }
 
@@ -91,57 +92,69 @@ function goTo(page) {
 }
 
 // ===== NAV =====
+function updateNavTheme(page) {
+  const nav = document.getElementById('main-nav');
+  if (!nav) return;
+  // Semua halaman pakai dark navbar
+  nav.setAttribute('data-theme', 'dark');
+  nav.style.background = 'var(--ink)';
+  nav.style.borderBottom = 'none';
+  nav.style.boxShadow = 'none';
+}
+
 function renderNav() {
   const links = document.getElementById('nav-links');
   const mobileLinks = document.getElementById('mobile-nav-links');
   if (!links) return;
-  if (mobileLinks) mobileLinks.innerHTML = '';
-
-  let desktopHTML = '';
-  let mobileHTML = '';
 
   if (!currentUser) {
-    desktopHTML = `
-      <a onclick="goTo('explore')">Jelajahi</a>
-      <a onclick="goTo('job-requests')">🙋 Aku Butuh</a>
-      <a onclick="scrollToHow()">Cara Kerja</a>
-      <a onclick="goTo('login')" style="font-weight:600">Masuk</a>
-      <button class="btn btn-primary btn-sm" onclick="goTo('register')">Daftar</button>`;
-    mobileHTML = `
-      <a onclick="closeMobileMenu();setTimeout(()=>goTo('explore'),100)">Jelajahi</a>
-      <a onclick="closeMobileMenu();setTimeout(()=>goTo('job-requests'),100)">🙋 Aku Butuh</a>
-      <a onclick="scrollToHow();closeMobileMenu()">Cara Kerja</a>
-      <a onclick="closeMobileMenu();setTimeout(()=>goTo('login'),100)" style="font-weight:600">Masuk</a>
-      <button class="btn btn-primary" onclick="closeMobileMenu();setTimeout(()=>goTo('register'),100)">Daftar</button>`;
+    // ===== GUEST NAV =====
+    links.innerHTML = `
+      <a onclick="goTo('explore')" style="font-size:.88rem;color:rgba(255,255,255,.75);transition:color .2s" onmouseover="this.style.color='white'" onmouseout="this.style.color='rgba(255,255,255,.75)'">Jelajahi</a>
+      <a onclick="scrollToHow()" style="font-size:.88rem;color:rgba(255,255,255,.75);transition:color .2s" onmouseover="this.style.color='white'" onmouseout="this.style.color='rgba(255,255,255,.75)'">Cara Kerja</a>
+      <a onclick="goTo('login')" style="font-size:.88rem;color:rgba(255,255,255,.75);transition:color .2s" onmouseover="this.style.color='white'" onmouseout="this.style.color='rgba(255,255,255,.75)'">Masuk</a>
+      <button class="btn btn-primary btn-sm" onclick="goTo('register')" style="border-radius:100px;padding:.4rem 1.1rem;font-size:.85rem">Daftar Gratis</button>`;
+    if (mobileLinks) mobileLinks.innerHTML = `
+      <a onclick="closeMobileMenu();setTimeout(()=>goTo('explore'),100)" style="font-size:1.1rem;color:rgba(255,255,255,.85);font-weight:500">Jelajahi</a>
+      <a onclick="scrollToHow();closeMobileMenu()" style="font-size:1.1rem;color:rgba(255,255,255,.85);font-weight:500">Cara Kerja</a>
+      <a onclick="closeMobileMenu();setTimeout(()=>goTo('job-requests'),100)" style="font-size:1.1rem;color:rgba(255,255,255,.85);font-weight:500">Aku Butuh</a>
+      <div style="display:flex;gap:.8rem;margin-top:.5rem">
+        <button class="btn btn-outline" onclick="closeMobileMenu();setTimeout(()=>goTo('login'),100)" style="color:white;border-color:rgba(255,255,255,.3);border-radius:100px;padding:.6rem 1.5rem">Masuk</button>
+        <button class="btn btn-primary" onclick="closeMobileMenu();setTimeout(()=>goTo('register'),100)" style="border-radius:100px;padding:.6rem 1.5rem">Daftar</button>
+      </div>`;
   } else {
-    const roleBadge = `<span class="role-badge ${currentUser.role==='worker'?'role-worker':'role-client'}" onclick="goTo('profile')" style="cursor:pointer">
-      ${currentUser.role==='worker'?'⚡':'🔍'} ${currentUser.role==='worker'?'PEKERJA':'PENCARI'}
-    </span>`;
-    desktopHTML = `
-      <a onclick="goTo('explore')">Jelajahi</a>
-      <a onclick="goTo('job-requests')">🙋 Aku Butuh</a>
-      <a onclick="goTo('dashboard')">Dashboard</a>
-      <a onclick="goTo('bookmarks')">🔖 Simpan</a>
-      <a onclick="goTo('messages')">💬 Pesan</a>
-      ${roleBadge}
-      <div style="position:relative;display:inline-flex;align-items:center">
-        <button onclick="toggleNotifPanel()" style="background:var(--warm);border:1.5px solid var(--border);border-radius:100px;padding:.35rem .8rem;cursor:pointer;font-size:.82rem;display:inline-flex;align-items:center;gap:.3rem;font-weight:600;color:var(--ink)">🔔 Notif</button>
-        <span id="notif-badge" style="display:none;position:absolute;top:-5px;right:-5px;background:var(--accent);color:white;font-size:.6rem;font-weight:800;min-width:17px;height:17px;border-radius:50%;align-items:center;justify-content:center;padding:0 3px;z-index:1"></span>
-      </div>
-      <button class="btn btn-outline btn-sm" onclick="goTo('profile')" style="font-weight:700">${initials(currentUser.full_name)}</button>
-      <button class="btn btn-primary btn-sm" onclick="logout()">Keluar</button>`;
-    mobileHTML = `
-      <a onclick="closeMobileMenu();setTimeout(()=>goTo('explore'),100)">Jelajahi</a>
-      <a onclick="closeMobileMenu();setTimeout(()=>goTo('job-requests'),100)">🙋 Aku Butuh</a>
-      <a onclick="closeMobileMenu();setTimeout(()=>goTo('dashboard'),100)">Dashboard</a>
-      <a onclick="closeMobileMenu();setTimeout(()=>goTo('bookmarks'),100)">🔖 Simpan</a>
-      <a onclick="closeMobileMenu();setTimeout(()=>goTo('messages'),100)">💬 Pesan</a>
-      <a onclick="closeMobileMenu();setTimeout(()=>goTo('profile'),100)">${initials(currentUser.full_name)} — Profil</a>
-      <button class="btn btn-primary" onclick="logout();closeMobileMenu()">Keluar</button>`;
-  }
+    // ===== USER NAV =====
+    const ini = initials(currentUser.full_name);
+    const av = avColor(currentUser.full_name);
+    const avatarHTML = currentUser.avatar
+      ? `<img src="${currentUser.avatar}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,.2)">`
+      : `<div style="width:32px;height:32px;border-radius:50%;background:${av};display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;color:white;border:2px solid rgba(255,255,255,.2)">${ini}</div>`;
 
-  links.innerHTML = desktopHTML;
-  if (mobileLinks) mobileLinks.innerHTML = mobileHTML;
+    links.innerHTML = `
+      <a onclick="goTo('explore')" class="nav-link-adaptive">Jelajahi</a>
+      <a onclick="goTo('job-requests')" class="nav-link-adaptive">Aku Butuh</a>
+      <a onclick="goTo('messages')" class="nav-link-adaptive">Pesan</a>
+      <div style="position:relative;display:inline-flex;align-items:center">
+        <button onclick="toggleNotifPanel()" class="nav-icon-btn" style="background:none;border:none;cursor:pointer;padding:.3rem;font-size:1.1rem;line-height:1" ">🔔</button>
+        <span id="notif-badge" style="display:none;position:absolute;top:-2px;right:-2px;background:var(--accent);color:white;font-size:.55rem;font-weight:800;min-width:15px;height:15px;border-radius:50%;align-items:center;justify-content:center;padding:0 2px;z-index:1"></span>
+      </div>
+      <button onclick="goTo('profile')" style="background:none;border:none;cursor:pointer;padding:0;display:inline-flex;align-items:center;gap:.5rem" title="${currentUser.full_name}">
+        ${avatarHTML}
+      </button>`;
+
+    if (mobileLinks) mobileLinks.innerHTML = `
+      <a onclick="closeMobileMenu();setTimeout(()=>goTo('dashboard'),100)" style="font-size:1.1rem;color:rgba(255,255,255,.85);font-weight:500">Dashboard</a>
+      <a onclick="closeMobileMenu();setTimeout(()=>goTo('explore'),100)" style="font-size:1.1rem;color:rgba(255,255,255,.85);font-weight:500">Jelajahi</a>
+      <a onclick="closeMobileMenu();setTimeout(()=>goTo('job-requests'),100)" style="font-size:1.1rem;color:rgba(255,255,255,.85);font-weight:500">Aku Butuh</a>
+      <a onclick="closeMobileMenu();setTimeout(()=>goTo('messages'),100)" style="font-size:1.1rem;color:rgba(255,255,255,.85);font-weight:500">Pesan</a>
+      <a onclick="closeMobileMenu();setTimeout(()=>goTo('bookmarks'),100)" style="font-size:1.1rem;color:rgba(255,255,255,.85);font-weight:500">Tersimpan</a>
+      <a onclick="closeMobileMenu();setTimeout(()=>goTo('transactions'),100)" style="font-size:1.1rem;color:rgba(255,255,255,.85);font-weight:500">Transaksi</a>
+      <a onclick="closeMobileMenu();setTimeout(()=>goTo('wallet'),100)" style="font-size:1.1rem;color:rgba(255,255,255,.85);font-weight:500">Dompet</a>
+      <a onclick="closeMobileMenu();setTimeout(()=>goTo('profile'),100)" style="font-size:1.1rem;color:rgba(255,255,255,.85);font-weight:500">Profil Saya</a>
+      <div style="margin-top:.5rem">
+        <button class="btn btn-danger" onclick="logout();closeMobileMenu()" style="border-radius:100px;padding:.6rem 1.8rem">Keluar</button>
+      </div>`;
+  }
 }
 
 // ===== LOGOUT =====
