@@ -586,7 +586,10 @@ async function renderPublicProfile(userId) {
     document.getElementById('pub-listings').textContent = (profile.listing_count || 0) + ' penawaran';
     document.getElementById('pub-bio').textContent = profile.bio || '';
 
-    if (profile.is_verified) document.getElementById('pub-verified').style.display = 'inline';
+    if (profile.is_verified) {
+      const badge = document.getElementById('pub-verified');
+      badge.style.display = 'inline-flex';
+    }
 
     // Rating badge
     const avg = parseFloat(reviewData.stats?.avg_rating || 0);
