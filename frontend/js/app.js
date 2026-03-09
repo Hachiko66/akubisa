@@ -24,6 +24,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (currentUser) startNotifPoll();
   checkResetToken();
   const hash = location.hash.replace('#','') || 'home';
+  // Handle direct listing link e.g. #listing-26
+  if (hash.startsWith('listing-')) {
+    const listingId = parseInt(hash.replace('listing-', ''));
+    navigate('explore');
+    renderNav();
+    renderExplore();
+    setTimeout(() => openListingDetail(listingId), 800);
+    return;
+  }
   navigate(hash);
   renderNav();
   if (hash === 'home' || hash === '') renderHome();
@@ -39,6 +48,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 window.addEventListener('hashchange', () => {
   const page = location.hash.replace('#','') || 'home';
+  if (page.startsWith('listing-')) {
+    const listingId = parseInt(page.replace('listing-', ''));
+    navigate('explore');
+    renderNav();
+    renderExplore();
+    setTimeout(() => openListingDetail(listingId), 800);
+    return;
+  }
   navigate(page);
   renderNav();
   if (page === 'home')      renderHome();
@@ -196,13 +213,52 @@ function stripHTML(html) {
   tmp.innerHTML = html || '';
   return tmp.textContent || tmp.innerText || '';
 }
+
+// ===== SHARE LISTING =====
+function shareListing(id, title, event) {
+  if (event) event.stopPropagation();
+  const url = encodeURIComponent(window.location.origin + '/#listing-' + id);
+  const text = encodeURIComponent('Lihat penawaran ini di AkuBisa: ' + title);
+  const panel = document.getElementById('share-panel-' + id);
+  if (panel) {
+    panel.style.display = panel.style.display === 'none' ? 'flex' : 'none';
+    return;
+  }
+}
+function shareToTwitter(id, title) {
+  const url = encodeURIComponent(window.location.origin + '/#listing-' + id);
+  const text = encodeURIComponent(title + ' — temukan di AkuBisa');
+  window.open('https://twitter.com/intent/tweet?text=' + text + '&url=' + url, '_blank');
+}
+function shareToLinkedin(id, title) {
+  const url = encodeURIComponent(window.location.origin + '/#listing-' + id);
+  window.open('https://www.linkedin.com/sharing/share-offsite/?url=' + url, '_blank');
+}
+function copyListingLink(id, btn) {
+  const url = window.location.origin + '/#listing-' + id;
+  navigator.clipboard.writeText(url).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = '✅ Tersalin!';
+    setTimeout(() => btn.textContent = orig, 2000);
+  });
+}
 function listingCardHTML(l) {
   const cs = catStyle[l.category_slug] || catStyle['jasa'];
   const av = avColor(l.full_name || '');
   const ini = initials(l.full_name || '?');
   return `
     <div class="listing-card" onclick="openListingDetail(${l.id})">
-      <span class="cat-tag" style="background:${cs.bg};color:${cs.color}">${l.category_icon||'📌'} ${l.category_name||'Umum'}</span>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
+        <span class="cat-tag" style="background:${cs.bg};color:${cs.color}">${l.category_icon||'📌'} ${l.category_name||'Umum'}</span>
+        <div style="position:relative">
+          <button onclick="event.stopPropagation();document.getElementById('share-panel-'+${l.id}).style.display=document.getElementById('share-panel-'+${l.id}).style.display==='none'?'flex':'none'" style="background:none;border:none;cursor:pointer;padding:.2rem .4rem;font-size:.85rem;color:var(--muted);border-radius:6px;transition:background .2s" onmouseover="this.style.background='var(--warm)'" onmouseout="this.style.background='none'" title="Bagikan">↗ Bagikan</button>
+          <div id="share-panel-${l.id}" style="display:none;position:absolute;right:0;top:110%;background:white;border:1.5px solid var(--border);border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,.12);padding:.5rem;flex-direction:column;gap:.3rem;z-index:10;min-width:160px">
+            <button onclick="event.stopPropagation();shareToTwitter(${l.id},'${l.title.replace(/'/g,'\\\'')}')" style="background:none;border:none;cursor:pointer;padding:.4rem .8rem;font-size:.8rem;text-align:left;border-radius:8px;display:flex;align-items:center;gap:.5rem;color:var(--ink);white-space:nowrap" onmouseover="this.style.background='var(--warm)'" onmouseout="this.style.background='none'">𝕏 Twitter / X</button>
+            <button onclick="event.stopPropagation();shareToLinkedin(${l.id},'${l.title.replace(/'/g,'\\\'')}')" style="background:none;border:none;cursor:pointer;padding:.4rem .8rem;font-size:.8rem;text-align:left;border-radius:8px;display:flex;align-items:center;gap:.5rem;color:var(--ink);white-space:nowrap" onmouseover="this.style.background='var(--warm)'" onmouseout="this.style.background='none'">💼 LinkedIn</button>
+            <button onclick="event.stopPropagation();copyListingLink(${l.id},this)" style="background:none;border:none;cursor:pointer;padding:.4rem .8rem;font-size:.8rem;text-align:left;border-radius:8px;display:flex;align-items:center;gap:.5rem;color:var(--ink);white-space:nowrap" onmouseover="this.style.background='var(--warm)'" onmouseout="this.style.background='none'">🔗 Salin Link</button>
+          </div>
+        </div>
+      </div>
       <div style="font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;line-height:1.3;margin-bottom:.5rem">${l.title}</div>
       <p style="font-size:.82rem;color:var(--muted);line-height:1.55;margin-bottom:1rem">${stripHTML(l.description).slice(0,110)}${stripHTML(l.description).length>110?'…':''}</p>
       ${(()=>{const imgs=extractImages(l.description);if(!imgs.length)return '';const shown=imgs.slice(0,3);const extra=imgs.length-3;return `<div style="display:flex;gap:.4rem;margin-bottom:.8rem;overflow:hidden" onclick="event.stopPropagation();openImageSlider(${l.id},${JSON.stringify(imgs).replace(/"/g,'&quot;')},0)">${shown.map((src,i)=>`<div style="position:relative;flex:1;height:72px;border-radius:8px;overflow:hidden;cursor:pointer"><img src="${src}" style="width:100%;height:100%;object-fit:cover">${i===2&&extra>0?`<div style="position:absolute;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:1rem">+${extra}</div>`:''}</div>`).join('')}</div>`;})()}
@@ -224,6 +280,16 @@ function listingCardHTML(l) {
 
 // ===== LISTING DETAIL MODAL =====
 async function openListingDetail(id) {
+  // Pastikan currentUser ter-load sebelum render modal
+  if (!currentUser) {
+    const token = localStorage.getItem('akubisa_token');
+    if (token) {
+      try {
+        const res = await api.me();
+        if (res.id) currentUser = res;
+      } catch(e) {}
+    }
+  }
   const l = await api.getListing(id);
   if (!l || !l.id) { showToast('Gagal memuat detail', 'error'); return; }
   const cs = catStyle[l.category_slug] || catStyle['jasa'];
@@ -255,7 +321,10 @@ async function openListingDetail(id) {
         <button class="btn btn-outline btn-sm" onclick="openReviewModal(${l.user_id},'${(l.full_name||'').replace(/'/g,"\\'")}',${l.id})">⭐ Beri Ulasan</button>
         <button class="btn btn-outline btn-sm" onclick="closeListingModal();openPublicProfile(${l.user_id})">👤 Lihat Profil</button>
         <button class="btn btn-outline btn-sm" data-bookmarked="false" onclick="toggleBookmark(${l.id},this)" style="color:var(--muted)">🔖 Simpan</button>
-        <button class="btn btn-outline btn-sm" onclick="closeListingModal();setTimeout(()=>openReportModal(${l.user_id},'${(l.full_name||'').replace(/'/g,"\\'")}',${l.id}),200)" style="color:var(--danger);border-color:var(--danger)">🚩 Laporkan</button>
+        <button class="btn btn-outline btn-sm" onclick="shareToTwitter(${l.id},'${l.title.replace(/'/g,"\\'")}')">𝕏 Share</button>
+        <button class="btn btn-outline btn-sm" onclick="shareToLinkedin(${l.id},'${l.title.replace(/'/g,"\\'")}')">💼 LinkedIn</button>
+        <button class="btn btn-outline btn-sm" onclick="copyListingLink(${l.id},this)">🔗 Salin Link</button>
+        <button class="btn btn-outline btn-sm" onclick="closeListingModal();setTimeout(()=>openReportModal(${l.user_id},'${(l.full_name||'').replace(/'/g,"\\'")}'," ${l.id}),200)" style="color:var(--danger);border-color:var(--danger)">🚩 Laporkan</button>
       </div>`
         : !currentUser ? `<button class="btn btn-primary" onclick="goTo('register');closeListingModal()">Daftar untuk Menghubungi</button>` : ''}
     </div>`;
