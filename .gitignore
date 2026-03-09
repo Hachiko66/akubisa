@@ -7,4 +7,4 @@ backend/.env
 *.log
 frontend/uploads/kyc/
 frontend/uploads/portfolio/
-backend/.env
+frontend/uploads/avatars/
