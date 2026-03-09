@@ -116,6 +116,11 @@ function doSearch() {
 function renderQuickActions() {
   const el = document.getElementById('quick-action-buttons');
   if (!el || !currentUser) return;
+  // Badge verified di header profil
+  const vbadge = document.getElementById('profile-verified-badge');
+  if (vbadge) {
+    vbadge.style.display = currentUser.is_verified ? 'inline-flex' : 'none';
+  }
   const isWorker = currentUser.role === 'worker';
   const isVerified = currentUser.is_verified;
   const kycBtn = isVerified
