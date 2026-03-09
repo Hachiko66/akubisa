@@ -36,9 +36,10 @@ async function doRegister() {
   const errEl     = document.getElementById('reg-error');
 
   errEl.textContent = '';
-  if (!full_name || !email || !password) { errEl.textContent = 'Semua field wajib diisi'; return; }
-  if (password !== confirm) { errEl.textContent = 'Password tidak cocok'; return; }
-  if (password.length < 6) { errEl.textContent = 'Password minimal 6 karakter'; return; }
+  errEl.style.display = 'none';
+  if (!full_name || !email || !password) { errEl.textContent = 'Semua field wajib diisi'; errEl.style.display = 'block'; return; }
+  if (password !== confirm) { errEl.textContent = 'Password tidak cocok'; errEl.style.display = 'block'; return; }
+  if (password.length < 6) { errEl.textContent = 'Password minimal 6 karakter'; errEl.style.display = 'block'; return; }
 
   const btn = document.getElementById('reg-btn');
   btn.innerHTML = '<span class="spinner"></span>Mendaftarkan...';
@@ -57,12 +58,12 @@ async function doRegister() {
       showToast('Selamat datang, ' + res.user.full_name.split(' ')[0] + '! Akun berhasil dibuat', 'success');
       goTo('dashboard');
     } else {
-      errEl.textContent = res.message || 'Registrasi gagal';
+      errEl.textContent = res.message || 'Registrasi gagal'; errEl.style.display = 'block'; errEl.style.display = 'block';
     }
   } catch(e) {
     btn.innerHTML = 'Daftar Sekarang';
     btn.disabled = false;
-    errEl.textContent = 'Koneksi ke server gagal';
+    errEl.textContent = 'Koneksi ke server gagal'; errEl.style.display = 'block';
   }
 }
 
@@ -91,11 +92,11 @@ async function doLogin() {
       showToast('Halo lagi, ' + res.user.full_name.split(' ')[0] + '!', 'success');
       goTo('dashboard');
     } else {
-      errEl.textContent = res.message || 'Login gagal';
+      errEl.textContent = res.message || 'Login gagal'; errEl.style.display = 'block';
     }
   } catch(e) {
     btn.innerHTML = 'Masuk';
     btn.disabled = false;
-    errEl.textContent = 'Koneksi ke server gagal';
+    errEl.textContent = 'Koneksi ke server gagal'; errEl.style.display = 'block';
   }
 }
