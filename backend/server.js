@@ -4,39 +4,10 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const cors = require('cors');
 const path = require('path');
-const rateLimit = require('express-rate-limit');
-const helmet = require('helmet');
 const fs = require('fs');
 
 const app = express();
 
-// ===== SECURITY =====
-app.use(helmet({ contentSecurityPolicy: false }));
-
-// Rate limit global
-app.use(rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 menit
-  max: 200,
-  message: { message: 'Terlalu banyak request, coba lagi nanti.' }
-}));
-
-// Rate limit ketat untuk auth
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 20,
-  message: { message: 'Terlalu banyak percobaan login, coba lagi 15 menit lagi.' }
-});
-app.use('/api/auth/login', authLimiter);
-app.use('/api/auth/register', authLimiter);
-app.use('/api/auth/forgot-password', authLimiter);
-
-// Rate limit upload KYC
-const uploadLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 jam
-  max: 5,
-  message: { message: 'Terlalu banyak upload, coba lagi 1 jam lagi.' }
-});
-app.use('/api/kyc/submit', uploadLimiter);
 
 // Security
 app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
