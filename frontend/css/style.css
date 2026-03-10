@@ -342,3 +342,6 @@ body.auth-mode #main-nav {
 .nav-icon-btn { transition: opacity .2s; }
 #main-nav[data-theme="light"] .nav-icon-btn { color: var(--muted) !important; filter: none; }
 #main-nav[data-theme="dark"] .nav-icon-btn { color: rgba(255,255,255,.8) !important; filter: brightness(10); }
+
+#page-404.active { display:flex!important; }
+#page-terms.active, #page-privacy.active { display:block!important; }

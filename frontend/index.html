@@ -3,7 +3,33 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AkuBisa — One Stop Services</title>
+<title>AkuBisa — Platform Freelance Indonesia</title>
+<meta name="description" content="AkuBisa adalah platform freelance Indonesia yang menghubungkan talent lokal dengan klien yang tepat. Temukan jasa desain, teknologi, pendidikan, dan lebih banyak lagi.">
+<meta name="keywords" content="freelance indonesia, jasa desain, freelancer, platform kerja, talent indonesia, akubisa">
+<meta name="author" content="AkuBisa">
+<meta name="robots" content="index, follow">
+
+<!-- Open Graph / Facebook -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://akubisa.co/">
+<meta property="og:title" content="AkuBisa — Platform Freelance Indonesia">
+<meta property="og:description" content="Temukan talent terbaik Indonesia atau tawarkan kemampuanmu. Semua keahlian berharga di AkuBisa.">
+<meta property="og:image" content="https://akubisa.co/og-image.png">
+
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:url" content="https://akubisa.co/">
+<meta name="twitter:title" content="AkuBisa — Platform Freelance Indonesia">
+<meta name="twitter:description" content="Temukan talent terbaik Indonesia atau tawarkan kemampuanmu.">
+<meta name="twitter:image" content="https://akubisa.co/og-image.png">
+
+<!-- Favicon -->
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="alternate icon" href="/favicon.ico">
+<link rel="apple-touch-icon" href="/favicon.svg">
+
+<!-- Theme -->
+<meta name="theme-color" content="#0f0e0d">
 <link rel="stylesheet" href="/css/style.css">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.7/quill.snow.min.css" rel="stylesheet">
 <style>
@@ -700,10 +726,9 @@ body { font-family: var(--font-body); }
       </div>
       <div class="footer-col">
         <h4>Info</h4>
-        <a>Tentang Kami</a>
-        <a>Syarat & Ketentuan</a>
-        <a>Kebijakan Privasi</a>
-        <a>Bantuan</a>
+        <a onclick="goTo('terms')">Syarat & Ketentuan</a>
+        <a onclick="goTo('privacy')">Kebijakan Privasi</a>
+        <a href="mailto:support@akubisa.co">Bantuan</a>
       </div>
     </div>
     <div class="footer-bottom">
@@ -1531,6 +1556,90 @@ body { font-family: var(--font-body); }
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- PAGE 404 -->
+<div id="page-404" class="page" style="display:none;min-height:100vh;align-items:center;justify-content:center;text-align:center;padding:2rem">
+  <div>
+    <div style="font-family:'Playfair Display',Georgia,serif;font-size:8rem;font-weight:900;color:var(--accent);line-height:1;margin-bottom:1rem">404</div>
+    <div style="font-size:1.5rem;font-weight:700;color:var(--ink);margin-bottom:.8rem">Halaman tidak ditemukan</div>
+    <p style="color:var(--muted);font-size:.95rem;margin-bottom:2rem">Halaman yang kamu cari tidak ada atau sudah dipindahkan.</p>
+    <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap">
+      <button class="btn btn-primary" onclick="goTo('home')" style="border-radius:100px;padding:.7rem 1.8rem">← Kembali ke Beranda</button>
+      <button class="btn btn-outline" onclick="goTo('explore')" style="border-radius:100px;padding:.7rem 1.8rem">Jelajahi Penawaran</button>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE TERMS -->
+<div id="page-terms" class="page" style="display:none">
+  <div class="dark-section" style="padding:3rem 5vw">
+    <div style="max-width:800px;margin:0 auto">
+      <h1 style="font-family:'Playfair Display',Georgia,serif;font-size:2.5rem;font-weight:900;margin-bottom:.5rem">Syarat & Ketentuan</h1>
+      <p style="color:rgba(255,255,255,.5);font-size:.88rem">Terakhir diperbarui: Maret 2025</p>
+    </div>
+  </div>
+  <div class="section">
+    <div style="max-width:800px;margin:0 auto;line-height:1.8;color:#444;font-size:.92rem">
+      <h2 style="color:var(--ink);font-size:1.2rem;font-weight:700;margin:2rem 0 .8rem">1. Penerimaan Syarat</h2>
+      <p>Dengan mengakses dan menggunakan platform AkuBisa, kamu menyetujui untuk terikat oleh syarat dan ketentuan ini. Jika kamu tidak setuju, harap tidak menggunakan layanan kami.</p>
+
+      <h2 style="color:var(--ink);font-size:1.2rem;font-weight:700;margin:2rem 0 .8rem">2. Layanan AkuBisa</h2>
+      <p>AkuBisa adalah platform yang menghubungkan penyedia jasa (Pekerja) dengan pencari jasa (Klien). AkuBisa bertindak sebagai perantara dan tidak bertanggung jawab atas kualitas layanan yang diberikan oleh Pekerja.</p>
+
+      <h2 style="color:var(--ink);font-size:1.2rem;font-weight:700;margin:2rem 0 .8rem">3. Akun Pengguna</h2>
+      <p>Kamu bertanggung jawab atas keamanan akun dan semua aktivitas yang terjadi di bawah akunmu. AkuBisa berhak menangguhkan atau menghapus akun yang melanggar ketentuan ini.</p>
+
+      <h2 style="color:var(--ink);font-size:1.2rem;font-weight:700;margin:2rem 0 .8rem">4. Transaksi & Pembayaran</h2>
+      <p>Semua transaksi dilakukan melalui sistem escrow AkuBisa. Platform fee sebesar 10% dikenakan dari total nilai transaksi. Dana akan dilepas ke Pekerja setelah Klien menyetujui hasil pekerjaan.</p>
+
+      <h2 style="color:var(--ink);font-size:1.2rem;font-weight:700;margin:2rem 0 .8rem">5. Larangan</h2>
+      <p>Pengguna dilarang: melakukan penipuan, menyebarkan konten ilegal, melecehkan pengguna lain, mencoba meretas sistem, atau melakukan transaksi di luar platform untuk menghindari fee.</p>
+
+      <h2 style="color:var(--ink);font-size:1.2rem;font-weight:700;margin:2rem 0 .8rem">6. Dispute & Penyelesaian</h2>
+      <p>Jika terjadi sengketa, pengguna dapat mengajukan dispute melalui platform. Admin AkuBisa akan meninjau dan memberikan keputusan dalam 1x24 jam kerja.</p>
+
+      <h2 style="color:var(--ink);font-size:1.2rem;font-weight:700;margin:2rem 0 .8rem">7. Perubahan Syarat</h2>
+      <p>AkuBisa berhak mengubah syarat ini sewaktu-waktu. Perubahan akan diberitahukan melalui email atau notifikasi platform.</p>
+
+      <h2 style="color:var(--ink);font-size:1.2rem;font-weight:700;margin:2rem 0 .8rem">8. Kontak</h2>
+      <p>Pertanyaan terkait syarat & ketentuan dapat dikirim ke: <a href="mailto:support@akubisa.co" style="color:var(--accent)">support@akubisa.co</a></p>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE PRIVACY -->
+<div id="page-privacy" class="page" style="display:none">
+  <div class="dark-section" style="padding:3rem 5vw">
+    <div style="max-width:800px;margin:0 auto">
+      <h1 style="font-family:'Playfair Display',Georgia,serif;font-size:2.5rem;font-weight:900;margin-bottom:.5rem">Kebijakan Privasi</h1>
+      <p style="color:rgba(255,255,255,.5);font-size:.88rem">Terakhir diperbarui: Maret 2025</p>
+    </div>
+  </div>
+  <div class="section">
+    <div style="max-width:800px;margin:0 auto;line-height:1.8;color:#444;font-size:.92rem">
+      <h2 style="color:var(--ink);font-size:1.2rem;font-weight:700;margin:2rem 0 .8rem">1. Data yang Kami Kumpulkan</h2>
+      <p>Kami mengumpulkan: nama, email, nomor telepon, foto profil, dan dokumen KYC (KTP & selfie) saat kamu mendaftar dan menggunakan layanan kami.</p>
+
+      <h2 style="color:var(--ink);font-size:1.2rem;font-weight:700;margin:2rem 0 .8rem">2. Penggunaan Data</h2>
+      <p>Data kamu digunakan untuk: verifikasi identitas, memproses transaksi, mengirim notifikasi layanan, meningkatkan pengalaman pengguna, dan memenuhi kewajiban hukum.</p>
+
+      <h2 style="color:var(--ink);font-size:1.2rem;font-weight:700;margin:2rem 0 .8rem">3. Keamanan Data</h2>
+      <p>Kami menggunakan enkripsi SSL/TLS untuk semua transmisi data. Dokumen KYC disimpan secara aman dan hanya dapat diakses oleh tim verifikasi AkuBisa.</p>
+
+      <h2 style="color:var(--ink);font-size:1.2rem;font-weight:700;margin:2rem 0 .8rem">4. Berbagi Data</h2>
+      <p>Kami tidak menjual data pribadimu kepada pihak ketiga. Data hanya dibagikan kepada: payment gateway (Xendit) untuk memproses pembayaran, dan pihak berwenang jika diwajibkan oleh hukum.</p>
+
+      <h2 style="color:var(--ink);font-size:1.2rem;font-weight:700;margin:2rem 0 .8rem">5. Hak Pengguna</h2>
+      <p>Kamu berhak untuk: mengakses data pribadimu, meminta koreksi data yang tidak akurat, dan meminta penghapusan akun beserta datanya dengan menghubungi kami.</p>
+
+      <h2 style="color:var(--ink);font-size:1.2rem;font-weight:700;margin:2rem 0 .8rem">6. Cookie</h2>
+      <p>Kami menggunakan localStorage untuk menyimpan sesi login. Tidak ada cookie tracking pihak ketiga yang digunakan.</p>
+
+      <h2 style="color:var(--ink);font-size:1.2rem;font-weight:700;margin:2rem 0 .8rem">7. Kontak</h2>
+      <p>Pertanyaan terkait privasi dapat dikirim ke: <a href="mailto:privacy@akubisa.co" style="color:var(--accent)">privacy@akubisa.co</a></p>
+    </div>
+  </div>
+</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.7/quill.min.js"></script>
 <script src="/js/api.js"></script>
