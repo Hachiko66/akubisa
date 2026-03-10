@@ -1,3 +1,64 @@
+
+// ===== ONBOARDING =====
+let currentOnboardStep = 1;
+const totalOnboardSteps = 4;
+
+function showOnboarding() {
+  if (localStorage.getItem('akubisa_onboarded')) return;
+  const modal = document.getElementById('onboarding-modal');
+  if (modal) { modal.style.display = 'flex'; currentOnboardStep = 1; updateOnboardStep(); }
+}
+
+function closeOnboarding() {
+  localStorage.setItem('akubisa_onboarded', '1');
+  const modal = document.getElementById('onboarding-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+function goToStep(step) {
+  currentOnboardStep = step;
+  updateOnboardStep();
+}
+
+function onboardNext() {
+  if (currentOnboardStep < totalOnboardSteps) {
+    currentOnboardStep++;
+    updateOnboardStep();
+  } else {
+    closeOnboarding();
+  }
+}
+
+function onboardPrev() {
+  if (currentOnboardStep > 1) {
+    currentOnboardStep--;
+    updateOnboardStep();
+  }
+}
+
+function updateOnboardStep() {
+  // Show/hide steps
+  for (let i = 1; i <= totalOnboardSteps; i++) {
+    const el = document.getElementById('onboard-step-' + i);
+    if (el) el.style.display = i === currentOnboardStep ? 'block' : 'none';
+  }
+  // Update progress bar
+  const progress = document.getElementById('onboard-progress');
+  if (progress) progress.style.width = (currentOnboardStep / totalOnboardSteps * 100) + '%';
+  // Update dots
+  document.querySelectorAll('.onboard-dot').forEach((dot, i) => {
+    dot.classList.toggle('active', i + 1 === currentOnboardStep);
+  });
+  // Update nav buttons
+  const prev = document.getElementById('onboard-prev');
+  const next = document.getElementById('onboard-next');
+  if (prev) prev.style.display = currentOnboardStep > 1 ? 'block' : 'none';
+  if (next) {
+    next.textContent = currentOnboardStep === totalOnboardSteps ? '🚀 Mulai!' : 'Lanjut →';
+    if (currentOnboardStep === totalOnboardSteps) next.onclick = closeOnboarding;
+    else next.onclick = onboardNext;
+  }
+}
 // ===================================================
 // BOOKMARKS
 // ===================================================

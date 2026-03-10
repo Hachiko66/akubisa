@@ -345,3 +345,9 @@ body.auth-mode #main-nav {
 
 #page-404.active { display:flex!important; }
 #page-terms.active, #page-privacy.active { display:block!important; }
+
+/* ===== ONBOARDING ===== */
+.onboard-dot {
+  width:8px;height:8px;border-radius:50%;background:var(--border);cursor:pointer;transition:all .3s;
+}
+.onboard-dot.active { background:var(--accent);width:20px;border-radius:4px; }

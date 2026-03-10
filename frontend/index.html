@@ -1555,6 +1555,130 @@ body { font-family: var(--font-body); }
   </div>
 </div>
 
+
+<!-- MODAL ONBOARDING -->
+<div id="onboarding-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:2000;align-items:center;justify-content:center;padding:1rem">
+  <div style="background:white;border-radius:24px;max-width:480px;width:100%;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+    <!-- Progress bar -->
+    <div style="height:4px;background:#f0f0f0">
+      <div id="onboard-progress" style="height:100%;background:var(--accent);transition:width .4s;width:25%"></div>
+    </div>
+    <!-- Steps -->
+    <div id="onboard-steps">
+      <!-- Step 1 -->
+      <div class="onboard-step" id="onboard-step-1">
+        <div style="background:var(--ink);padding:2.5rem;text-align:center">
+          <div style="font-size:3rem;margin-bottom:1rem">👋</div>
+          <div style="font-family:'Playfair Display',Georgia,serif;font-size:1.6rem;font-weight:900;color:white;line-height:1.2">Selamat datang di <span style="color:var(--accent)">AkuBisa!</span></div>
+          <p style="color:rgba(255,255,255,.6);font-size:.88rem;margin-top:.8rem">Platform freelance Indonesia untuk menghubungkan talent dengan klien terbaik.</p>
+        </div>
+        <div style="padding:1.5rem 2rem 2rem">
+          <div style="font-size:.8rem;color:var(--muted);text-align:center;margin-bottom:1.2rem">Panduan singkat 4 langkah untuk memulai</div>
+          <div style="display:flex;flex-direction:column;gap:.7rem">
+            <div style="display:flex;align-items:center;gap:.8rem;padding:.7rem;background:var(--warm);border-radius:10px">
+              <span style="font-size:1.3rem">⚡</span><span style="font-size:.85rem;font-weight:600">Posting penawaran jasamu</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:.8rem;padding:.7rem;background:var(--warm);border-radius:10px">
+              <span style="font-size:1.3rem">💳</span><span style="font-size:.85rem;font-weight:600">Transaksi aman via escrow</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:.8rem;padding:.7rem;background:var(--warm);border-radius:10px">
+              <span style="font-size:1.3rem">🪪</span><span style="font-size:.85rem;font-weight:600">Verifikasi identitas (KYC)</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:.8rem;padding:.7rem;background:var(--warm);border-radius:10px">
+              <span style="font-size:1.3rem">💰</span><span style="font-size:.85rem;font-weight:600">Withdraw saldo ke rekening</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Step 2 -->
+      <div class="onboard-step" id="onboard-step-2" style="display:none">
+        <div style="background:linear-gradient(135deg,#e8521a,#c94415);padding:2.5rem;text-align:center">
+          <div style="font-size:3rem;margin-bottom:1rem">⚡</div>
+          <div style="font-family:'Playfair Display',Georgia,serif;font-size:1.5rem;font-weight:900;color:white;line-height:1.2">Posting Penawaranmu</div>
+          <p style="color:rgba(255,255,255,.8);font-size:.88rem;margin-top:.8rem">Ceritakan kemampuanmu dan mulai terima klien</p>
+        </div>
+        <div style="padding:1.5rem 2rem 2rem">
+          <div style="display:flex;flex-direction:column;gap:1rem">
+            <div style="display:flex;gap:1rem;align-items:flex-start">
+              <div style="width:28px;height:28px;border-radius:50%;background:var(--accent);color:white;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.8rem;flex-shrink:0">1</div>
+              <div><div style="font-weight:700;font-size:.88rem">Klik "+ Posting Penawaran"</div><div style="font-size:.78rem;color:var(--muted);margin-top:.2rem">Ada di dashboard atau navbar atas</div></div>
+            </div>
+            <div style="display:flex;gap:1rem;align-items:flex-start">
+              <div style="width:28px;height:28px;border-radius:50%;background:var(--accent);color:white;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.8rem;flex-shrink:0">2</div>
+              <div><div style="font-weight:700;font-size:.88rem">Isi judul, deskripsi & harga</div><div style="font-size:.78rem;color:var(--muted);margin-top:.2rem">Jelaskan dengan detail apa yang kamu tawarkan</div></div>
+            </div>
+            <div style="display:flex;gap:1rem;align-items:flex-start">
+              <div style="width:28px;height:28px;border-radius:50%;background:var(--accent);color:white;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.8rem;flex-shrink:0">3</div>
+              <div><div style="font-weight:700;font-size:.88rem">Tunggu klien menghubungimu</div><div style="font-size:.78rem;color:var(--muted);margin-top:.2rem">Kamu akan dapat notifikasi saat ada pesan masuk</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Step 3 -->
+      <div class="onboard-step" id="onboard-step-3" style="display:none">
+        <div style="background:linear-gradient(135deg,#2a6b4a,#1a4a32);padding:2.5rem;text-align:center">
+          <div style="font-size:3rem;margin-bottom:1rem">💳</div>
+          <div style="font-family:'Playfair Display',Georgia,serif;font-size:1.5rem;font-weight:900;color:white;line-height:1.2">Transaksi Aman</div>
+          <p style="color:rgba(255,255,255,.8);font-size:.88rem;margin-top:.8rem">Dana tersimpan di escrow sampai pekerjaan selesai</p>
+        </div>
+        <div style="padding:1.5rem 2rem 2rem">
+          <div style="display:flex;flex-direction:column;gap:1rem">
+            <div style="display:flex;gap:1rem;align-items:flex-start">
+              <div style="width:28px;height:28px;border-radius:50%;background:#2a6b4a;color:white;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.8rem;flex-shrink:0">1</div>
+              <div><div style="font-weight:700;font-size:.88rem">Klien bayar DP 50%</div><div style="font-size:.78rem;color:var(--muted);margin-top:.2rem">Dana aman tersimpan di escrow AkuBisa</div></div>
+            </div>
+            <div style="display:flex;gap:1rem;align-items:flex-start">
+              <div style="width:28px;height:28px;border-radius:50%;background:#2a6b4a;color:white;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.8rem;flex-shrink:0">2</div>
+              <div><div style="font-weight:700;font-size:.88rem">Kerjakan & submit hasil</div><div style="font-size:.78rem;color:var(--muted);margin-top:.2rem">Upload bukti pekerjaan selesai</div></div>
+            </div>
+            <div style="display:flex;gap:1rem;align-items:flex-start">
+              <div style="width:28px;height:28px;border-radius:50%;background:#2a6b4a;color:white;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.8rem;flex-shrink:0">3</div>
+              <div><div style="font-weight:700;font-size:.88rem">Klien bayar pelunasan 50%</div><div style="font-size:.78rem;color:var(--muted);margin-top:.2rem">Dana masuk ke dompetmu setelah disetujui</div></div>
+            </div>
+          </div>
+          <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:.8rem;margin-top:1rem;font-size:.78rem;color:#166534">
+            🔒 Jika ada masalah, ajukan dispute — admin akan membantu
+          </div>
+        </div>
+      </div>
+      <!-- Step 4 -->
+      <div class="onboard-step" id="onboard-step-4" style="display:none">
+        <div style="background:linear-gradient(135deg,#1d9bf0,#0d7ad4);padding:2.5rem;text-align:center">
+          <div style="font-size:3rem;margin-bottom:1rem">🪪</div>
+          <div style="font-family:'Playfair Display',Georgia,serif;font-size:1.5rem;font-weight:900;color:white;line-height:1.2">Verifikasi & Withdraw</div>
+          <p style="color:rgba(255,255,255,.8);font-size:.88rem;margin-top:.8rem">Verifikasi KYC untuk akses penuh & tarik saldo kapan saja</p>
+        </div>
+        <div style="padding:1.5rem 2rem 2rem">
+          <div style="display:flex;flex-direction:column;gap:1rem;margin-bottom:1.2rem">
+            <div style="display:flex;gap:1rem;align-items:flex-start">
+              <span style="font-size:1.3rem">🪪</span>
+              <div><div style="font-weight:700;font-size:.88rem">Verifikasi KYC</div><div style="font-size:.78rem;color:var(--muted);margin-top:.2rem">Upload KTP & selfie untuk dapat badge terverifikasi dan akses transaksi</div></div>
+            </div>
+            <div style="display:flex;gap:1rem;align-items:flex-start">
+              <span style="font-size:1.3rem">💰</span>
+              <div><div style="font-weight:700;font-size:.88rem">Withdraw Saldo</div><div style="font-size:.78rem;color:var(--muted);margin-top:.2rem">Tarik saldo ke rekening bank atau e-wallet kapan saja dari menu Dompet</div></div>
+            </div>
+          </div>
+          <button class="btn btn-primary btn-block" onclick="closeOnboarding()" style="border-radius:12px;padding:.9rem;font-size:.95rem">
+            🚀 Mulai Sekarang!
+          </button>
+          <p style="text-align:center;font-size:.72rem;color:var(--muted);margin-top:.8rem;cursor:pointer" onclick="closeOnboarding()">Lewati panduan ini</p>
+        </div>
+      </div>
+    </div>
+    <!-- Navigation -->
+    <div id="onboard-nav" style="padding:1rem 2rem 1.5rem;display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border)">
+      <button id="onboard-prev" onclick="onboardPrev()" style="background:none;border:none;cursor:pointer;font-size:.85rem;color:var(--muted);font-weight:600;display:none">← Kembali</button>
+      <div style="display:flex;gap:.4rem;margin:0 auto" id="onboard-dots">
+        <div class="onboard-dot active" onclick="goToStep(1)"></div>
+        <div class="onboard-dot" onclick="goToStep(2)"></div>
+        <div class="onboard-dot" onclick="goToStep(3)"></div>
+        <div class="onboard-dot" onclick="goToStep(4)"></div>
+      </div>
+      <button id="onboard-next" onclick="onboardNext()" class="btn btn-primary btn-sm" style="border-radius:100px">Lanjut →</button>
+    </div>
+  </div>
+</div>
 <div class="toast" id="toast"></div>
 
 <!-- PAGE 404 -->

@@ -91,6 +91,7 @@ async function doLogin() {
       startNotifPoll();
       showToast('Halo lagi, ' + res.user.full_name.split(' ')[0] + '!', 'success');
       goTo('dashboard');
+      setTimeout(showOnboarding, 500);
     } else {
       errEl.textContent = res.message || 'Login gagal'; errEl.style.display = 'block';
     }
