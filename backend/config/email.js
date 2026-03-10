@@ -70,4 +70,102 @@ const emailTemplates = {
   })
 };
 
-module.exports = { sendEmail, emailTemplates };
+
+
+// ===== EMAIL NOTIFIKASI =====
+const sendEmailNotif = async (userId, type, data, pool) => {
+  if (!pool) { console.error('sendEmailNotif: pool required'); return; }
+  try {
+    const user = await pool.query('SELECT email, full_name FROM users WHERE id=$1', [userId]);
+    if (!user.rows.length) return;
+    const { email, full_name } = user.rows[0];
+    const template = emailNotifTemplates[type];
+    if (!template) return;
+    const { subject, html } = template(full_name, data);
+    await sendEmail({ to: email, subject, html });
+  } catch(e) {
+    console.error('Email notif error:', e.message);
+  }
+};
+
+const emailNotifTemplates = {
+  new_message: (name, { senderName, preview }) => ({
+    subject: `💬 Pesan baru dari ${senderName} — AkuBisa`,
+    html: `<div style="font-family:sans-serif;max-width:500px;margin:0 auto;padding:2rem">
+      <h2 style="color:#e8521a">AkuBisa</h2>
+      <p>Halo <strong>${name}</strong>,</p>
+      <p><strong>${senderName}</strong> mengirim pesan kepadamu:</p>
+      <div style="background:#f5f5f5;border-left:4px solid #e8521a;padding:1rem;border-radius:0 8px 8px 0;margin:1rem 0;font-style:italic;color:#555">"${preview}"</div>
+      <a href="${process.env.BASE_URL}/#messages" style="display:inline-block;background:#e8521a;color:white;padding:.8rem 2rem;border-radius:8px;text-decoration:none;font-weight:700">Balas Pesan →</a>
+    </div>`
+  }),
+  new_transaction: (name, { clientName, amount, description }) => ({
+    subject: `💳 Transaksi baru masuk — AkuBisa`,
+    html: `<div style="font-family:sans-serif;max-width:500px;margin:0 auto;padding:2rem">
+      <h2 style="color:#e8521a">AkuBisa</h2>
+      <p>Halo <strong>${name}</strong>,</p>
+      <p><strong>${clientName}</strong> telah membayar DP untuk proyekmu!</p>
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:1rem;margin:1rem 0">
+        <div style="font-size:.9rem;color:#166534"><strong>Proyek:</strong> ${description}</div>
+        <div style="font-size:1.2rem;font-weight:800;color:#e8521a;margin-top:.5rem">DP: ${amount}</div>
+      </div>
+      <a href="${process.env.BASE_URL}/#transactions" style="display:inline-block;background:#e8521a;color:white;padding:.8rem 2rem;border-radius:8px;text-decoration:none;font-weight:700">Lihat Transaksi →</a>
+    </div>`
+  }),
+  work_submitted: (name, { workerName, description }) => ({
+    subject: `📦 Pekerjaan telah disubmit — AkuBisa`,
+    html: `<div style="font-family:sans-serif;max-width:500px;margin:0 auto;padding:2rem">
+      <h2 style="color:#e8521a">AkuBisa</h2>
+      <p>Halo <strong>${name}</strong>,</p>
+      <p><strong>${workerName}</strong> telah menyelesaikan dan submit pekerjaan:</p>
+      <div style="background:#f5f5f5;border-radius:10px;padding:1rem;margin:1rem 0;color:#555">${description}</div>
+      <p>Silakan cek dan setujui jika sesuai ekspektasi.</p>
+      <a href="${process.env.BASE_URL}/#transactions" style="display:inline-block;background:#e8521a;color:white;padding:.8rem 2rem;border-radius:8px;text-decoration:none;font-weight:700">Cek Pekerjaan →</a>
+    </div>`
+  }),
+  transaction_completed: (name, { amount }) => ({
+    subject: `✅ Transaksi selesai — Dana masuk ke dompetmu`,
+    html: `<div style="font-family:sans-serif;max-width:500px;margin:0 auto;padding:2rem">
+      <h2 style="color:#e8521a">AkuBisa</h2>
+      <p>Halo <strong>${name}</strong>,</p>
+      <p>🎉 Transaksi telah selesai! Dana telah masuk ke dompetmu.</p>
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:1rem;margin:1rem 0;text-align:center">
+        <div style="font-size:1.5rem;font-weight:800;color:#166534">${amount}</div>
+        <div style="font-size:.85rem;color:#166534;margin-top:.3rem">Tersedia di dompetmu</div>
+      </div>
+      <a href="${process.env.BASE_URL}/#wallet" style="display:inline-block;background:#e8521a;color:white;padding:.8rem 2rem;border-radius:8px;text-decoration:none;font-weight:700">Lihat Dompet →</a>
+    </div>`
+  }),
+  kyc_approved: (name) => ({
+    subject: `✅ Identitas kamu telah terverifikasi — AkuBisa`,
+    html: `<div style="font-family:sans-serif;max-width:500px;margin:0 auto;padding:2rem">
+      <h2 style="color:#e8521a">AkuBisa</h2>
+      <p>Halo <strong>${name}</strong>,</p>
+      <p>🎉 Selamat! Identitasmu telah berhasil diverifikasi. Badge <strong>Pengguna Terverifikasi</strong> kini tampil di profilmu.</p>
+      <a href="${process.env.BASE_URL}/#profile" style="display:inline-block;background:#e8521a;color:white;padding:.8rem 2rem;border-radius:8px;text-decoration:none;font-weight:700">Lihat Profilku →</a>
+    </div>`
+  }),
+  kyc_rejected: (name, { note }) => ({
+    subject: `❌ Verifikasi identitas ditolak — AkuBisa`,
+    html: `<div style="font-family:sans-serif;max-width:500px;margin:0 auto;padding:2rem">
+      <h2 style="color:#e8521a">AkuBisa</h2>
+      <p>Halo <strong>${name}</strong>,</p>
+      <p>Maaf, pengajuan verifikasi identitasmu ditolak.</p>
+      <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:1rem;margin:1rem 0;color:#991b1b"><strong>Alasan:</strong> ${note}</div>
+      <p>Silakan perbaiki dokumen dan ajukan ulang.</p>
+      <a href="${process.env.BASE_URL}/#profile" style="display:inline-block;background:#e8521a;color:white;padding:.8rem 2rem;border-radius:8px;text-decoration:none;font-weight:700">Ajukan Ulang →</a>
+    </div>`
+  }),
+  new_job_application: (name, { applicantName, jobTitle }) => ({
+    subject: `📝 Lamaran baru untuk "${jobTitle}" — AkuBisa`,
+    html: `<div style="font-family:sans-serif;max-width:500px;margin:0 auto;padding:2rem">
+      <h2 style="color:#e8521a">AkuBisa</h2>
+      <p>Halo <strong>${name}</strong>,</p>
+      <p><strong>${applicantName}</strong> melamar untuk kebutuhanmu:</p>
+      <div style="background:#f5f5f5;border-radius:10px;padding:1rem;margin:1rem 0;font-weight:700;color:#333">${jobTitle}</div>
+      <a href="${process.env.BASE_URL}/#job-requests" style="display:inline-block;background:#e8521a;color:white;padding:.8rem 2rem;border-radius:8px;text-decoration:none;font-weight:700">Lihat Lamaran →</a>
+    </div>`
+  }),
+};
+
+module.exports = { sendEmail, emailTemplates, sendEmailNotif };

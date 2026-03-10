@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../config/db');
+const { sendEmailNotif } = require('../config/email');
 const auth = require('../middleware/auth');
 const admin = require('../middleware/admin');
 const multer = require('multer');
@@ -91,6 +92,7 @@ router.patch('/admin/:id/approve', admin, async (req, res) => {
     await pool.query(`UPDATE kyc_submissions SET status='approved', reviewed_at=NOW(), reviewed_by=$1, admin_note=$2 WHERE id=$3`, [req.user.id, req.body.note||'', req.params.id]);
     await pool.query('UPDATE users SET is_verified=true WHERE id=$1', [kyc.rows[0].user_id]);
     await pool.query(`INSERT INTO notifications (user_id, type, title, message, link) VALUES ($1,'kyc','✅ Identitas Terverifikasi!','Selamat! Identitas kamu telah diverifikasi. Badge terverifikasi kini tampil di profilmu.','#profile')`, [kyc.rows[0].user_id]);
+    sendEmailNotif(kyc.rows[0].user_id, 'kyc_approved', {}, pool);
     res.json({ message: 'KYC disetujui!' });
   } catch(e) { res.status(500).json({ message: e.message }); }
 });
@@ -103,6 +105,7 @@ router.patch('/admin/:id/reject', admin, async (req, res) => {
     if (!kyc.rows[0]) return res.status(404).json({ message: 'Tidak ditemukan' });
     const note = req.body.note || 'Dokumen tidak valid';
     await pool.query(`UPDATE kyc_submissions SET status='rejected', reviewed_at=NOW(), reviewed_by=$1, admin_note=$2 WHERE id=$3`, [req.user.id, note, req.params.id]);
+    sendEmailNotif(kyc.rows[0].user_id, 'kyc_rejected', { note }, pool);
     await pool.query(`INSERT INTO notifications (user_id, type, title, message, link) VALUES ($1,'kyc','❌ KYC Ditolak','Pengajuan verifikasi ditolak. Alasan: ${note}. Silakan ajukan ulang.','#profile')`, [kyc.rows[0].user_id]);
     res.json({ message: 'KYC ditolak' });
   } catch(e) { res.status(500).json({ message: e.message }); }

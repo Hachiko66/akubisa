@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const auth = require('../middleware/auth');
 const pool = require('../config/db');
+const { sendEmailNotif } = require('../config/email');
 
 // GET semua conversation user
 router.get('/conversations', auth, async (req, res) => {
@@ -74,6 +75,12 @@ router.post('/send', auth, async (req, res) => {
       [req.user.id, receiver_id, convId, content.trim()]
     );
     res.status(201).json({ message: 'Pesan terkirim!', data: msg.rows[0], conversation_id: convId });
+    // Kirim email notif ke penerima (fire and forget)
+    const sender = await pool.query('SELECT full_name FROM users WHERE id=$1', [req.user.id]);
+    sendEmailNotif(receiver_id, 'new_message', {
+      senderName: sender.rows[0]?.full_name || 'Seseorang',
+      preview: content.trim().slice(0, 100)
+    }, pool);
   } catch(e) { res.status(500).json({ message: e.message }); }
 });
 

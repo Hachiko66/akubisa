@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const auth = require('../middleware/auth');
 const pool = require('../config/db');
+const { sendEmailNotif } = require('../config/email');
 const Xendit = require('xendit-node');
 
 const xenditClient = new Xendit.default({ secretKey: process.env.XENDIT_SECRET_KEY });
@@ -147,6 +148,12 @@ router.patch('/:id/submit', auth, async (req, res) => {
       VALUES ($1,'transaction','📦 Pekerjaan Selesai!','Pekerja telah menandai pekerjaan selesai. Klik untuk langsung lakukan pelunasan.','#transactions','approve',$2)
     `, [trxData.rows[0].client_id, JSON.stringify({trx_id: parseInt(req.params.id)})]);
 
+    // Email ke client
+    const workerData = await pool.query('SELECT full_name FROM users WHERE id=$1', [req.user.id]);
+    sendEmailNotif(trxData.rows[0].client_id, 'work_submitted', {
+      workerName: workerData.rows[0]?.full_name || 'Pekerja',
+      description: trxData.rows[0].notes || 'Proyek #' + req.params.id
+    }, pool);
     res.json({ message: 'Pekerjaan ditandai selesai! Klien akan mereview dalam 7 hari.' });
   } catch(e) {
     res.status(500).json({ message: e.message });
@@ -243,6 +250,13 @@ router.post('/webhook/xendit', async (req, res) => {
           INSERT INTO notifications (user_id, type, title, message, link)
           VALUES ($1,'transaction','✅ Pembayaran DP Berhasil','DP 50% kamu berhasil diterima. Pekerja akan segera mulai.','#transactions')
         `, [t.rows[0].client_id]);
+        // Email notif DP masuk ke worker
+        const clientNameDP = await pool.query('SELECT full_name FROM users WHERE id=$1', [t.rows[0].client_id]);
+        sendEmailNotif(t.rows[0].worker_id, 'new_transaction', {
+          clientName: clientNameDP.rows[0]?.full_name || 'Klien',
+          amount: 'Rp ' + parseInt(t.rows[0].dp_amount).toLocaleString('id'),
+          description: t.rows[0].notes || 'Proyek #' + trxId
+        }, pool);
       }
     } else if (external_id.startsWith('final_')) {
       const trxId = external_id.split('_')[1];
@@ -253,6 +267,10 @@ router.post('/webhook/xendit', async (req, res) => {
       const t = await pool.query('SELECT * FROM transactions WHERE id=$1', [trxId]);
       if (t.rows[0]) {
         const trx = t.rows[0];
+        // Email notif transaksi selesai ke worker
+        sendEmailNotif(trx.worker_id, 'transaction_completed', {
+          amount: 'Rp ' + parseInt(trx.total_amount - trx.platform_fee).toLocaleString('id')
+        }, pool);
         const workerEarning = trx.total_amount - trx.platform_fee;
 
         // Update saldo pekerja

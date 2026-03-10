@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const auth = require('../middleware/auth');
 const pool = require('../config/db');
+const { sendEmailNotif } = require('../config/email');
 
 // GET semua job requests
 router.get('/', async (req, res) => {
@@ -124,6 +125,12 @@ router.post('/:id/apply', auth, async (req, res) => {
       INSERT INTO job_applications (job_request_id, applicant_id, cover_letter, offered_price, estimated_days)
       VALUES ($1,$2,$3,$4,$5) RETURNING *
     `, [req.params.id, req.user.id, cover_letter, offered_price||null, estimated_days||null]);
+    // Email ke pemilik job request
+    const applicant = await pool.query('SELECT full_name FROM users WHERE id=$1', [req.user.id]);
+    sendEmailNotif(jr.rows[0].user_id, 'new_job_application', {
+      applicantName: applicant.rows[0]?.full_name || 'Seseorang',
+      jobTitle: jr.rows[0].title
+    }, pool);
     res.status(201).json({ message: 'Lamaran terkirim!', data: result.rows[0] });
   } catch(e) {
     if (e.code === '23505') return res.status(400).json({ message: 'Kamu sudah melamar sebelumnya' });
