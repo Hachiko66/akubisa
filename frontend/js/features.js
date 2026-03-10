@@ -1,4 +1,74 @@
 
+// ===== BOOST LISTING =====
+let boostListingId = null;
+let boostSelectedPkg = null;
+
+const BOOST_PACKAGES = {
+  '3day':  { days: 3,   amount: 15000,  label: 'Boost 3 Hari',   price: 'Rp 15.000' },
+  '7day':  { days: 7,   amount: 25000,  label: 'Boost 7 Hari',   price: 'Rp 25.000' },
+  '30day': { days: 30,  amount: 75000,  label: 'Boost 30 Hari',  price: 'Rp 75.000' },
+  '1year': { days: 365, amount: 300000, label: 'Boost 1 Tahun',  price: 'Rp 300.000' },
+};
+
+function openBoostModal(listingId, title) {
+  boostListingId = listingId;
+  boostSelectedPkg = '7day';
+  document.getElementById('boost-listing-title').textContent = title;
+  
+  const pkgContainer = document.getElementById('boost-packages');
+  pkgContainer.innerHTML = Object.entries(BOOST_PACKAGES).map(([key, p]) => `
+    <div class="boost-pkg-card ${key === '7day' ? 'selected' : ''}" onclick="selectBoostPkg('${key}')" data-pkg="${key}"
+      style="border:2px solid ${key === '7day' ? '#e8521a' : '#e0ddd8'};border-radius:12px;padding:.8rem 1rem;cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:all .2s;background:${key === '7day' ? '#fff8f5' : 'white'}">
+      <div>
+        <div style="font-weight:700;font-size:.9rem;color:#0f0e0d">${p.label}</div>
+        <div style="font-size:.75rem;color:#888;margin-top:.1rem">Aktif selama ${p.days} hari</div>
+      </div>
+      <div style="font-weight:800;font-size:1rem;color:${key === '7day' ? '#e8521a' : '#0f0e0d'}">${p.price}</div>
+    </div>
+  `).join('');
+
+  document.getElementById('boost-modal').style.display = 'flex';
+}
+
+function selectBoostPkg(pkg) {
+  boostSelectedPkg = pkg;
+  document.querySelectorAll('.boost-pkg-card').forEach(el => {
+    const isSelected = el.dataset.pkg === pkg;
+    el.style.borderColor = isSelected ? '#e8521a' : '#e0ddd8';
+    el.style.background = isSelected ? '#fff8f5' : 'white';
+    el.querySelector('div > div:first-child').style.color = '#0f0e0d';
+    el.querySelector('div:last-child').style.color = isSelected ? '#e8521a' : '#0f0e0d';
+  });
+}
+
+function closeBoostModal() {
+  document.getElementById('boost-modal').style.display = 'none';
+  boostListingId = null;
+  boostSelectedPkg = null;
+}
+
+async function submitBoost() {
+  if (!boostListingId || !boostSelectedPkg) return;
+  const btn = document.getElementById('boost-pay-btn');
+  btn.disabled = true;
+  btn.textContent = 'Memproses...';
+  try {
+    const res = await api.post('/boost/buy', { listing_id: boostListingId, package: boostSelectedPkg });
+    if (res.invoice_url) {
+      closeBoostModal();
+      window.open(res.invoice_url, '_blank');
+      showToast('Halaman pembayaran dibuka! Listing aktif otomatis setelah bayar.', 'success');
+    } else {
+      showToast(res.message || 'Gagal membuat order', 'error');
+    }
+  } catch(e) {
+    showToast('Terjadi kesalahan', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '⚡ Bayar & Aktifkan Boost';
+  }
+}
+
 // ===== ONBOARDING =====
 let currentOnboardStep = 1;
 const totalOnboardSteps = 4;

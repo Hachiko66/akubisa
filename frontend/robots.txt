@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /uploads/kyc/
+Disallow: /admin/
+
+Sitemap: https://akubisa.co/sitemap.xml

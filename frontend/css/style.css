@@ -351,3 +351,20 @@ body.auth-mode #main-nav {
   width:8px;height:8px;border-radius:50%;background:var(--border);cursor:pointer;transition:all .3s;
 }
 .onboard-dot.active { background:var(--accent);width:20px;border-radius:4px; }
+
+/* ===== MOBILE MODAL FIX ===== */
+#onboarding-modal,
+#boost-modal {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 2000 !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
+}
+
+#onboarding-modal > div,
+#boost-modal > div {
+  margin: auto;
+  max-height: 90vh;
+  overflow-y: auto;
+}

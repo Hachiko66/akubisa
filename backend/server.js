@@ -52,6 +52,7 @@ app.use('/api/messages',      msgLimiter,  require('./routes/messages'));
 app.use('/api/reviews',                    require('./routes/reviews'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/bookmarks',                  require('./routes/bookmarks'));
+app.use('/api/boost', require('./routes/boost'));
 app.use('/api/notifications',              require('./routes/notifications'));
 app.use('/api/reports',                    require('./routes/reports'));
 
@@ -83,4 +84,29 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server berjalan di http://localhost:${PORT}`);
+});
+
+// Dynamic Sitemap
+app.get('/sitemap.xml', async (req, res) => {
+  try {
+    const listings = await pool.query("SELECT id, updated_at FROM listings WHERE status='active' ORDER BY updated_at DESC LIMIT 1000");
+    const staticUrls = [
+      { loc: 'https://akubisa.co/', priority: '1.0', changefreq: 'daily' },
+      { loc: 'https://akubisa.co/#explore', priority: '0.9', changefreq: 'hourly' },
+      { loc: 'https://akubisa.co/#how-it-works', priority: '0.7', changefreq: 'monthly' },
+    ];
+    let xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
+    staticUrls.forEach(u => {
+      xml += `  <url><loc>${u.loc}</loc><changefreq>${u.changefreq}</changefreq><priority>${u.priority}</priority></url>\n`;
+    });
+    listings.rows.forEach(l => {
+      const lastmod = new Date(l.updated_at).toISOString().split('T')[0];
+      xml += `  <url><loc>https://akubisa.co/#listing-${l.id}</loc><lastmod>${lastmod}</lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>\n`;
+    });
+    xml += '</urlset>';
+    res.header('Content-Type', 'application/xml');
+    res.send(xml);
+  } catch(e) {
+    res.status(500).send('Error generating sitemap');
+  }
 });

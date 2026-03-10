@@ -272,7 +272,7 @@ async function renderDashboard() {
             <div style="display:flex;gap:.5rem;justify-content:flex-end" onclick="event.stopPropagation()">
               <button class="btn btn-outline btn-sm" onclick="openEditListing(${l.id})">✏️ Edit</button>
               <button class="btn btn-danger btn-sm" onclick="deleteListing(${l.id})">🗑 Hapus</button>
-              <button class="btn btn-sm" style="background:linear-gradient(135deg,#d4a017,#f59e0b);color:white;border:none;font-size:.75rem;padding:.3rem .8rem;border-radius:8px;cursor:pointer" onclick="openPromoteModal(${l.id},'listing')">⭐ Promosi</button>
+              <button class="btn btn-sm" style="background:linear-gradient(135deg,#e8521a,#c94415);color:white;border:none;font-size:.75rem;padding:.3rem .8rem;border-radius:8px;cursor:pointer" onclick="openBoostModal(${l.id}, l.title)">⚡ Boost</button>
             </div>
           </div>`;
           }).join('')
