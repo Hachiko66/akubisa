@@ -79,6 +79,7 @@ api.sendMessage      = (data)     => fetch(`${API}/messages/send`, { method:'POS
 
 // REVIEWS
 api.getReviews  = (userId)  => fetch(`${API}/reviews/user/${userId}`).then(r=>r.json());
+api.post        = (path, data) => fetch(`${API}${path}`, { method:'POST', headers:headers(true), body:JSON.stringify(data) }).then(r=>r.json());
 api.postReview  = (data)    => fetch(`${API}/reviews`, { method:'POST', headers:headers(true), body:JSON.stringify(data) }).then(r=>r.json());
 api.deleteReview = (id)     => fetch(`${API}/reviews/${id}`, { method:'DELETE', headers:headers(true) }).then(r=>r.json());
 
