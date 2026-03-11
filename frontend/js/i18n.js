@@ -172,6 +172,14 @@ const LANGS = {
     wd_account_number: 'Nomor Rekening *',
     wd_account_name: 'Nama Pemilik Rekening *',
     trx_sub: 'Riwayat dan status transaksi kamu',
+    trx_pay_title: '💳 Bayar via AkuBisa',
+    trx_escrow_note: '🔒 Dana kamu aman — disimpan di escrow AkuBisa sampai pekerjaan selesai',
+    trx_amount_label: 'Total Harga yang Disepakati (Rp) *',
+    trx_notes_label: 'Deskripsi Pekerjaan *',
+    trx_breakdown: 'Rincian Pembayaran:',
+    trx_dp: 'DP 50% (bayar sekarang)',
+    trx_final: 'Pelunasan 50% (setelah selesai)',
+    trx_fee: 'Fee platform (5%)',
   },
 
   en: {
@@ -346,6 +354,14 @@ const LANGS = {
     wd_account_number: 'Account Number *',
     wd_account_name: 'Account Holder Name *',
     trx_sub: 'Your transaction history and status',
+    trx_pay_title: '💳 Pay via AkuBisa',
+    trx_escrow_note: '🔒 Your money is safe — held in AkuBisa escrow until work is completed',
+    trx_amount_label: 'Agreed Total Price (Rp) *',
+    trx_notes_label: 'Job Description *',
+    trx_breakdown: 'Payment Breakdown:',
+    trx_dp: '50% Deposit (pay now)',
+    trx_final: '50% Final Payment (after completion)',
+    trx_fee: 'Platform fee (5%)',
   }
 };
 
