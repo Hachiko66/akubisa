@@ -6,6 +6,7 @@ let currentCategory = null;
 
 // ===== INIT =====
 document.addEventListener('DOMContentLoaded', async () => {
+  if (typeof applyTranslations === 'function') applyTranslations();
   // Panggil render untuk halaman awal
   const token = localStorage.getItem('akubisa_token');
   if (token) {
@@ -96,6 +97,7 @@ function navigate(page) {
   // Tampilkan halaman aktif
   const el = document.getElementById('page-' + page);
   if (el) el.classList.add('active');
+  if (typeof applyTranslations === 'function') applyTranslations();
 
   // Navbar: sembunyikan di auth pages
   const nav = document.getElementById('main-nav');
@@ -144,10 +146,12 @@ function renderNav() {
   if (!currentUser) {
     // ===== GUEST NAV =====
     links.innerHTML = `
-      <a onclick="goTo('explore')" style="font-size:.88rem;color:rgba(255,255,255,.75);transition:color .2s" onmouseover="this.style.color='white'" onmouseout="this.style.color='rgba(255,255,255,.75)'">Jelajahi</a>
-      <a onclick="scrollToHow()" style="font-size:.88rem;color:rgba(255,255,255,.75);transition:color .2s" onmouseover="this.style.color='white'" onmouseout="this.style.color='rgba(255,255,255,.75)'">Cara Kerja</a>
-      <a onclick="goTo('login')" style="font-size:.88rem;color:rgba(255,255,255,.75);transition:color .2s" onmouseover="this.style.color='white'" onmouseout="this.style.color='rgba(255,255,255,.75)'">Masuk</a>
-      <button class="btn btn-primary btn-sm" onclick="goTo('register')" style="border-radius:100px;padding:.4rem 1.1rem;font-size:.85rem">Daftar Gratis</button>`;
+      <a onclick="goTo('explore')" style="font-size:.88rem;color:rgba(255,255,255,.75);transition:color .2s" onmouseover="this.style.color='white'" onmouseout="this.style.color='rgba(255,255,255,.75)'">${t('nav_explore')}</a>
+      <a onclick="scrollToHow()" style="font-size:.88rem;color:rgba(255,255,255,.75);transition:color .2s" onmouseover="this.style.color='white'" onmouseout="this.style.color='rgba(255,255,255,.75)'">${t('nav_how')}</a>
+      <a onclick="goTo('login')" style="font-size:.88rem;color:rgba(255,255,255,.75);transition:color .2s" onmouseover="this.style.color='white'" onmouseout="this.style.color='rgba(255,255,255,.75)'">${t('nav_login')}</a>
+      <button class="btn btn-primary btn-sm" onclick="goTo('register')" style="border-radius:100px;padding:.4rem 1.1rem;font-size:.85rem">${t('nav_register')}</button>
+      <button class="lang-switch-btn" onclick="switchLang(getCurrentLang()==='id'?'en':'id')" style="background:none;border:1px solid rgba(255,255,255,.25);color:rgba(255,255,255,.7);border-radius:100px;padding:.3rem .7rem;font-size:.75rem;cursor:pointer">${getCurrentLang()==='id'?'🇬🇧 EN':'🇮🇩 ID'}</button>`;
+
     if (mobileLinks) mobileLinks.innerHTML = `
       <a onclick="closeMobileMenu();setTimeout(()=>goTo('explore'),100)" style="font-size:1.1rem;color:rgba(255,255,255,.85);font-weight:500">${t('nav_explore')}</a>
       <a onclick="scrollToHow();closeMobileMenu()" style="font-size:1.1rem;color:rgba(255,255,255,.85);font-weight:500">${t('nav_how')}</a>
@@ -156,7 +160,7 @@ function renderNav() {
         <button class="btn btn-outline" onclick="closeMobileMenu();setTimeout(()=>goTo('login'),100)" style="color:white;border-color:rgba(255,255,255,.3);border-radius:100px;padding:.6rem 1.5rem">${t('nav_login')}</button>
         <button class="btn btn-primary" onclick="closeMobileMenu();setTimeout(()=>goTo('register'),100)" style="border-radius:100px;padding:.6rem 1.5rem">${t('nav_register')}</button>
       </div>
-      <button onclick="switchLang(getCurrentLang()==='id'?'en':'id');closeMobileMenu()" style="margin-top:.5rem;background:none;border:1px solid rgba(255,255,255,.3);color:rgba(255,255,255,.8);border-radius:100px;padding:.5rem 1.2rem;font-size:.85rem;cursor:pointer;align-self:flex-start">${getCurrentLang()==='id'?'🇬🇧 Switch to English':'🇮🇩 Ganti ke Indonesia'}</button>`;
+      <button class="lang-switch-btn" onclick="switchLang(getCurrentLang()==='id'?'en':'id');closeMobileMenu()" style="margin-top:.5rem;background:none;border:1px solid rgba(255,255,255,.3);color:rgba(255,255,255,.8);border-radius:100px;padding:.5rem 1.2rem;font-size:.85rem;cursor:pointer;align-self:flex-start">${getCurrentLang()==='id'?'🇬🇧 Switch to English':'🇮🇩 Ganti ke Indonesia'}</button>`;
   } else {
     // ===== USER NAV =====
     const ini = initials(currentUser.full_name);
@@ -169,7 +173,7 @@ function renderNav() {
       <a onclick="goTo('explore')" class="nav-link-adaptive">${t('nav_explore')}</a>
       <a onclick="goTo('job-requests')" class="nav-link-adaptive">${t('nav_job_requests')}</a>
       <a onclick="goTo('messages')" class="nav-link-adaptive">${t('nav_messages')}</a>
-      <button onclick="switchLang(getCurrentLang()==='id'?'en':'id')" style="background:none;border:1px solid rgba(255,255,255,.25);color:rgba(255,255,255,.7);border-radius:100px;padding:.25rem .6rem;font-size:.72rem;cursor:pointer">${getCurrentLang()==='id'?'🇬🇧 EN':'🇮🇩 ID'}</button>
+      <button class="lang-switch-btn" onclick="switchLang(getCurrentLang()==='id'?'en':'id')" style="background:none;border:1px solid rgba(255,255,255,.25);color:rgba(255,255,255,.7);border-radius:100px;padding:.25rem .6rem;font-size:.72rem;cursor:pointer">${getCurrentLang()==='id'?'🇬🇧 EN':'🇮🇩 ID'}</button>
       <div style="position:relative;display:inline-flex;align-items:center">
         <button onclick="toggleNotifPanel()" class="nav-icon-btn" style="background:none;border:none;cursor:pointer;padding:.3rem;font-size:1.1rem;line-height:1" ">🔔</button>
         <span id="notif-badge" style="display:none;position:absolute;top:-2px;right:-2px;background:var(--accent);color:white;font-size:.55rem;font-weight:800;min-width:15px;height:15px;border-radius:50%;align-items:center;justify-content:center;padding:0 2px;z-index:1"></span>

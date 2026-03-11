@@ -638,7 +638,7 @@ body { font-family: var(--font-body); }
         </div>
         <div>
           <div class="hero-stat-num">8+</div>
-          <div class="hero-stat-label">Kategori</div>
+          <div class="hero-stat-label"><span data-i18n="hero_stat_category">Kategori</span></div>
         </div>
       </div>
     </div>
@@ -683,7 +683,7 @@ body { font-family: var(--font-body); }
   <section class="how-section" id="how-it-works">
     <div class="how-grid">
       <div>
-        <div style="font-size:.72rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);margin-bottom:1rem">Cara Kerja</div>
+        <div style="font-size:.72rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);margin-bottom:1rem"><span data-i18n="how_title">Cara Kerja</span></div>
         <h2 style="font-family:var(--font-display);font-size:clamp(2rem,3.5vw,3rem);font-weight:900;line-height:1.1;margin-bottom:3rem;color:var(--ink)">
           Sesederhana<br><em style="color:var(--accent)">itu.</em>
         </h2>
@@ -818,7 +818,7 @@ body { font-family: var(--font-body); }
   <div style="display:flex;align-items:center;justify-content:center;padding:3rem 5vw;background:var(--cream);overflow-y:auto">
     <div style="width:100%;max-width:440px">
       <h3 style="font-size:1.5rem;font-weight:800;margin-bottom:.4rem;color:var(--ink)">Buat akun gratis</h3>
-      <p style="color:var(--muted);font-size:.88rem;margin-bottom:1.5rem">Sudah punya akun? <a onclick="goTo('login')" style="color:var(--accent);cursor:pointer;font-weight:700">Masuk di sini →</a></p>
+      <p style="color:var(--muted);font-size:.88rem;margin-bottom:1.5rem"><span data-i18n="register_have_account">Sudah punya akun?</span> <a onclick="goTo('login')" style="color:var(--accent);cursor:pointer;font-weight:700">Masuk di sini →</a></p>
 
       <!-- Role selector -->
       <div style="margin-bottom:1.2rem">
@@ -840,8 +840,8 @@ body { font-family: var(--font-body); }
 
       <div id="reg-error" style="font-size:.82rem;color:var(--danger);background:#fef2f2;border:1px solid #fecaca;padding:.6rem .8rem;border-radius:8px;margin-bottom:1rem;display:none"></div>
 
-      <div class="form-group"><label class="form-label">Nama Lengkap *</label><input class="form-input" id="reg-name" placeholder="Nama lengkap kamu" type="text"></div>
-      <div class="form-group"><label class="form-label">Email *</label><input class="form-input" id="reg-email" placeholder="email@kamu.com" type="email"></div>
+      <div class="form-group"><label class="form-label">Nama Lengkap *</label><input class="form-input" id="reg-name" data-i18n-placeholder="register_name" placeholder="Nama lengkap kamu" type="text"></div>
+      <div class="form-group"><label class="form-label">Email *</label><input class="form-input" id="reg-email" data-i18n-placeholder="login_email" data-i18n-placeholder="login_email" placeholder="email@kamu.com" type="email"></div>
       <div class="form-row">
         <div class="form-group"><label class="form-label">Password *</label><input class="form-input" id="reg-pass" placeholder="Min. 6 karakter" type="password"></div>
         <div class="form-group"><label class="form-label">Konfirmasi *</label><input class="form-input" id="reg-confirm" placeholder="Ulangi password" type="password"></div>
@@ -887,21 +887,21 @@ body { font-family: var(--font-body); }
   <!-- RIGHT: Form -->
   <div style="display:flex;align-items:center;justify-content:center;padding:3rem 5vw;background:var(--cream)">
     <div style="width:100%;max-width:400px">
-      <h3 style="font-size:1.6rem;font-weight:800;margin-bottom:.4rem;color:var(--ink)">Masuk ke akun</h3>
-      <p style="color:var(--muted);font-size:.88rem;margin-bottom:2rem">Belum punya akun? <a onclick="goTo('register')" style="color:var(--accent);cursor:pointer;font-weight:700">Daftar gratis →</a></p>
+      <h3 style="font-size:1.6rem;font-weight:800;margin-bottom:.4rem;color:var(--ink)"><span data-i18n="login_title">Masuk ke akun</span></h3>
+      <p style="color:var(--muted);font-size:.88rem;margin-bottom:2rem"><span data-i18n="login_no_account">Belum punya akun?</span> <a onclick="goTo('register')" style="color:var(--accent);cursor:pointer;font-weight:700"><span data-i18n="login_register">Daftar gratis →</span></a></p>
       <div id="login-error" style="font-size:.82rem;color:var(--danger);background:#fef2f2;border:1px solid #fecaca;padding:.6rem .8rem;border-radius:8px;margin-bottom:1rem;display:none"></div>
       <div class="form-group">
-        <label class="form-label">Email</label>
-        <input class="form-input" id="login-email" placeholder="email@kamu.com" type="email">
+        <label class="form-label" data-i18n="login_email">Email</label>
+        <input class="form-input" id="login-email" data-i18n-placeholder="login_email" placeholder="email@kamu.com" type="email">
       </div>
       <div class="form-group">
-        <label class="form-label">Password</label>
-        <input class="form-input" id="login-pass" placeholder="Password kamu" type="password" onkeydown="if(event.key==='Enter')doLogin()">
+        <label class="form-label" data-i18n="login_password">Password</label>
+        <input class="form-input" id="login-pass" data-i18n-placeholder="login_password" placeholder="Password kamu" type="password" onkeydown="if(event.key==='Enter')doLogin()">
       </div>
       <div style="text-align:right;margin-top:-.5rem;margin-bottom:1.2rem">
-        <a onclick="goTo('forgot-password')" style="font-size:.8rem;color:var(--muted);cursor:pointer">Lupa password?</a>
+        <a onclick="goTo('forgot-password')" style="font-size:.8rem;color:var(--muted);cursor:pointer"><span data-i18n="login_forgot">Lupa password?</span></a>
       </div>
-      <button class="btn btn-primary btn-block" id="login-btn" onclick="doLogin()" style="padding:.85rem;font-size:.95rem;border-radius:12px">Masuk</button>
+      <button class="btn btn-primary btn-block" id="login-btn" onclick="doLogin()" style="padding:.85rem;font-size:.95rem;border-radius:12px"><span data-i18n="login_btn">Masuk</span></button>
     </div>
   </div>
 </div>
@@ -909,8 +909,8 @@ body { font-family: var(--font-body); }
 <div id="page-explore" class="page">
   <div class="dark-section" style="padding:2rem 5vw">
     <div style="max-width:1200px;margin:0 auto">
-      <h2 style="margin-bottom:1rem">Jelajahi Penawaran</h2>
-      <div class="search-bar-wrap"><input type="text" id="explore-search" placeholder="Cari penawaran..." onkeydown="if(event.key='Enter')doSearch()"><button onclick="doSearch()">Cari</button></div>
+      <h2 style="margin-bottom:1rem"><span data-i18n="hero_cta_explore">Jelajahi Penawaran</span></h2>
+      <div class="search-bar-wrap"><input type="text" id="explore-search" placeholder="Cari penawaran..." onkeydown="if(event.key='Enter')doSearch()"><button onclick="doSearch()"><span data-i18n="btn_submit">Cari</span></button></div>
       <div class="chip-wrap" id="explore-chips"></div>
     </div>
   </div>
@@ -920,7 +920,7 @@ body { font-family: var(--font-body); }
     <div style="max-width:1200px;margin:0 auto">
       <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:1.2rem">
         <span style="font-size:1.1rem">⭐</span>
-        <span style="font-weight:800;font-size:1rem;color:#92400e">Penawaran Unggulan</span>
+        <span style="font-weight:800;font-size:1rem;color:#92400e"><span data-i18n="featured_title">Penawaran Unggulan</span></span>
         <span style="font-size:.72rem;color:#b45309;background:#fef3c7;border:1px solid #fde68a;padding:.15rem .5rem;border-radius:100px;font-weight:600">FEATURED</span>
       </div>
       <div class="listings-grid" id="featured-grid"></div>
@@ -1670,7 +1670,7 @@ body { font-family: var(--font-body); }
       <div class="onboard-step" id="onboard-step-3" style="display:none">
         <div style="background:linear-gradient(135deg,#2a6b4a,#1a4a32);padding:2.5rem;text-align:center">
           <div style="font-size:3rem;margin-bottom:1rem">💳</div>
-          <div style="font-family:'Playfair Display',Georgia,serif;font-size:1.5rem;font-weight:900;color:white;line-height:1.2">Transaksi Aman</div>
+          <div style="font-family:'Playfair Display',Georgia,serif;font-size:1.5rem;font-weight:900;color:white;line-height:1.2"><span data-i18n="hero_stat_secure">Transaksi Aman</span></div>
           <p style="color:rgba(255,255,255,.8);font-size:.88rem;margin-top:.8rem">Dana tersimpan di escrow sampai pekerjaan selesai</p>
         </div>
         <div style="padding:1.5rem 2rem 2rem">

@@ -315,19 +315,43 @@ function t(key) {
   return (LANGS[currentLang] && LANGS[currentLang][key]) || (LANGS['id'] && LANGS['id'][key]) || key;
 }
 
-// Switch language
+// switchLang defined below
+
+function getCurrentLang() { return currentLang; }
+
+// Apply translations ke semua elemen dengan data-i18n
+function applyTranslations() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    const translation = t(key);
+    if (translation) {
+      if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+        el.placeholder = translation;
+      } else {
+        el.innerHTML = translation;
+      }
+    }
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    const key = el.getAttribute('data-i18n-placeholder');
+    el.placeholder = t(key);
+  });
+  // Update lang switch buttons
+  document.querySelectorAll('.lang-switch-btn').forEach(btn => {
+    const isMobile = btn.style.fontSize === '.85rem';
+    btn.textContent = currentLang === 'id' 
+      ? (isMobile ? '🇬🇧 Switch to English' : '🇬🇧 EN') 
+      : (isMobile ? '🇮🇩 Ganti ke Indonesia' : '🇮🇩 ID');
+  });
+}
+
+// Override switchLang
+const _switchLang = switchLang;
 function switchLang(lang) {
   currentLang = lang;
   localStorage.setItem('akubisa_lang', lang);
   document.documentElement.lang = lang;
-  // Re-render nav dan halaman aktif
+  applyTranslations();
   if (typeof renderNav === 'function') renderNav();
-  const activePage = document.querySelector('.page.active');
-  if (activePage) {
-    const pageId = activePage.id.replace('page-', '');
-    if (typeof navigate === 'function') navigate(pageId);
-  }
   showToast(lang === 'en' ? '🇬🇧 Switched to English' : '🇮🇩 Beralih ke Bahasa Indonesia', 'success');
 }
-
-function getCurrentLang() { return currentLang; }

@@ -47,7 +47,7 @@ async function doRegister() {
 
   try {
     const res = await api.register({ full_name, email, password, role, city, phone });
-    btn.innerHTML = 'Daftar Sekarang';
+    btn.innerHTML = t('register_btn');
     btn.disabled = false;
     if (res.token) {
       localStorage.setItem('akubisa_token', res.token);
@@ -61,7 +61,7 @@ async function doRegister() {
       errEl.textContent = res.message || 'Registrasi gagal'; errEl.style.display = 'block'; errEl.style.display = 'block';
     }
   } catch(e) {
-    btn.innerHTML = 'Daftar Sekarang';
+    btn.innerHTML = t('register_btn');
     btn.disabled = false;
     errEl.textContent = 'Koneksi ke server gagal'; errEl.style.display = 'block';
   }
@@ -73,15 +73,15 @@ async function doLogin() {
   const errEl    = document.getElementById('login-error');
   errEl.textContent = '';
 
-  if (!email || !password) { errEl.textContent = 'Email dan password wajib diisi'; return; }
+  if (!email || !password) { errEl.textContent = t('err_required'); return; }
 
   const btn = document.getElementById('login-btn');
-  btn.innerHTML = '<span class="spinner"></span>Masuk...';
+  btn.innerHTML = '<span class="spinner"></span>' + t('loading');
   btn.disabled = true;
 
   try {
     const res = await api.login({ email, password });
-    btn.innerHTML = 'Masuk';
+    btn.innerHTML = t('login_btn');
     btn.disabled = false;
     if (res.token) {
       localStorage.setItem('akubisa_token', res.token);
@@ -96,7 +96,7 @@ async function doLogin() {
       errEl.textContent = res.message || 'Login gagal'; errEl.style.display = 'block';
     }
   } catch(e) {
-    btn.innerHTML = 'Masuk';
+    btn.innerHTML = t('login_btn');
     btn.disabled = false;
     errEl.textContent = 'Koneksi ke server gagal'; errEl.style.display = 'block';
   }
