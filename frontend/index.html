@@ -82,7 +82,7 @@
 
 <!-- Theme -->
 <meta name="theme-color" content="#0f0e0d">
-<link rel="stylesheet" href="/css/style.css?v=20250310">
+<link rel="stylesheet" href="/css/style.css">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.7/quill.snow.min.css" rel="stylesheet">
 <style>
 .ql-toolbar{border-radius:8px 8px 0 0!important;border-color:var(--border)!important;background:#fafafa}
@@ -910,7 +910,7 @@ body { font-family: var(--font-body); }
   <div class="dark-section" style="padding:2rem 5vw">
     <div style="max-width:1200px;margin:0 auto">
       <h2 style="margin-bottom:1rem"><span data-i18n="hero_cta_explore">Jelajahi Penawaran</span></h2>
-      <div class="search-bar-wrap"><input type="text" id="explore-search" placeholder="Cari penawaran..." onkeydown="if(event.key='Enter')doSearch()"><button onclick="doSearch()"><span data-i18n="btn_submit">Cari</span></button></div>
+      <div class="search-bar-wrap"><input type="text" id="explore-search" data-i18n-placeholder="explore_search" placeholder="Cari penawaran..." onkeydown="if(event.key='Enter')doSearch()"><button onclick="doSearch()"><span data-i18n="btn_submit">Cari</span></button></div>
       <div class="chip-wrap" id="explore-chips"></div>
     </div>
   </div>
@@ -929,8 +929,8 @@ body { font-family: var(--font-body); }
 
   <div class="section">
     <div style="max-width:1200px;margin:0 auto">
-      <div style="font-weight:700;font-size:1rem;margin-bottom:1.2rem;color:var(--muted)" id="explore-label">Semua Penawaran</div>
-      <div class="listings-grid" id="explore-grid"><p style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--muted)">Memuat penawaran...</p></div>
+      <div style="font-weight:700;font-size:1rem;margin-bottom:1.2rem;color:var(--muted)" id="explore-label"><span data-i18n="explore_title">Semua Penawaran</span></div>
+      <div class="listings-grid" id="explore-grid"><p style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--muted)"><span data-i18n="loading">Memuat penawaran...</span></p></div>
     </div>
   </div>
 </div>
@@ -1845,12 +1845,12 @@ body { font-family: var(--font-body); }
 
 <script src="/js/i18n.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.7/quill.min.js"></script>
-<script src="/js/api.js?v=20250310"></script>
-<script src="/js/features.js?v=20250310"></script>
-<script src="/js/pages.js?v=20250310"></script>
-<script src="/js/auth.js?v=20250310"></script>
-<script src="/js/admin.js?v=20250310"></script>
-<script src="/js/app.js?v=20250310"></script>
+<script src="/js/api.js"></script>
+<script src="/js/features.js"></script>
+<script src="/js/pages.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/admin.js"></script>
+<script src="/js/app.js"></script>
 
 <script>
 // ===== LANDING PAGE EXTRAS =====

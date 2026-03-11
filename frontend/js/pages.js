@@ -268,7 +268,7 @@ async function renderDashboard() {
             <div style="font-weight:700;font-size:.95rem;margin-bottom:.4rem">${l.title}</div>
             <p style="font-size:.8rem;color:var(--muted);margin-bottom:.8rem">${stripHTML(l.description).slice(0,100)}…</p>
             ${thumbHTML}
-            <div style="font-size:.75rem;color:var(--muted);margin-bottom:.8rem">👁 ${l.views||0} dilihat</div>
+            <div style="font-size:.75rem;color:var(--muted);margin-bottom:.8rem">👁 ${l.views||0} ${t('listing_views')}</div>
             <div style="display:flex;gap:.5rem;justify-content:flex-end" onclick="event.stopPropagation()">
               <button class="btn btn-outline btn-sm" onclick="openEditListing(${l.id})">✏️ Edit</button>
               <button class="btn btn-danger btn-sm" onclick="deleteListing(${l.id})">🗑 Hapus</button>
