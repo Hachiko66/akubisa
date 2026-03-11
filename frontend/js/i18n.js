@@ -153,6 +153,14 @@ const LANGS = {
     see_all: 'Lihat Semua',
     dash_client_mode: 'Kamu dalam Mode Pencari',
     dash_for_you: 'Penawaran Untukmu',
+    role_worker: 'Pekerja / Penyedia',
+    role_client: 'Pencari Layanan',
+    profile_info: 'Info Akun',
+    profile_quick: 'Aksi Cepat',
+    bookmarks_title: '🔖 Penawaran Tersimpan',
+    bookmarks_sub: 'Penawaran yang kamu simpan untuk dilihat nanti',
+    forgot_title: 'Reset Password',
+    forgot_btn: 'Kirim Link Reset',
   },
 
   en: {
@@ -308,6 +316,14 @@ const LANGS = {
     see_all: 'See All',
     dash_client_mode: 'You are in Client Mode',
     dash_for_you: 'Services For You',
+    role_worker: 'Worker / Provider',
+    role_client: 'Client / Buyer',
+    profile_info: 'Account Info',
+    profile_quick: 'Quick Actions',
+    bookmarks_title: '🔖 Saved Services',
+    bookmarks_sub: 'Services you saved to view later',
+    forgot_title: 'Reset Password',
+    forgot_btn: 'Send Reset Link',
   }
 };
 

@@ -982,21 +982,21 @@ body { font-family: var(--font-body); }
           <div id="self-social-links"></div>
         </div>
       </div>
-      <button class="btn btn-outline btn-sm" style="color:white;border-color:rgba(255,255,255,.3)" onclick="openEditProfile()">Edit Profil</button>
+      <button class="btn btn-outline btn-sm" style="color:white;border-color:rgba(255,255,255,.3)" onclick="openEditProfile()"><span data-i18n="profile_edit">Edit Profil</span></button>
     </div>
   </div>
   <div class="section">
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;max-width:700px">
       <div class="card" style="grid-column:1/-1">
-        <div style="font-weight:700;margin-bottom:.4rem">Ganti Mode</div>
+        <div style="font-weight:700;margin-bottom:.4rem"><span data-i18n="nav_switch_role">Ganti Mode</span></div>
         <p style="font-size:.83rem;color:var(--muted);margin-bottom:1rem">Switch kapan saja antara Pekerja dan Pencari layanan.</p>
         <div class="switch-container">
-          <button id="sw-worker" class="switch-btn" onclick="doSwitchRole('worker')">Pekerja / Penyedia</button>
-          <button id="sw-client" class="switch-btn" onclick="doSwitchRole('client')">Pencari Layanan</button>
+          <button id="sw-worker" class="switch-btn" onclick="doSwitchRole('worker')"><span data-i18n="role_worker">Pekerja / Penyedia</span></button>
+          <button id="sw-client" class="switch-btn" onclick="doSwitchRole('client')"><span data-i18n="role_client">Pencari Layanan</span></button>
         </div>
       </div>
       <div class="card">
-        <div style="font-weight:700;margin-bottom:1rem">Info Akun</div>
+        <div style="font-weight:700;margin-bottom:1rem"><span data-i18n="profile_info">Info Akun</span></div>
         <div style="font-size:.83rem;line-height:2.2;color:var(--muted)">
           <div>Email: <span id="profile-email2" style="color:var(--ink)"></span></div>
           <div>Kota: <span id="profile-city2" style="color:var(--ink)"></span></div>
@@ -1005,7 +1005,7 @@ body { font-family: var(--font-body); }
         </div>
       </div>
       <div class="card" id="profile-quick-actions">
-        <div style="font-weight:700;margin-bottom:1rem">Aksi Cepat</div>
+        <div style="font-weight:700;margin-bottom:1rem"><span data-i18n="profile_quick">Aksi Cepat</span></div>
         <div style="display:flex;flex-direction:column;gap:.6rem" id="quick-action-buttons">
           <!-- Diisi oleh JS berdasarkan role -->
         </div>
@@ -1015,19 +1015,19 @@ body { font-family: var(--font-body); }
 </div>
 
 <div id="page-bookmarks" class="page">
-  <div class="dark-section" style="padding:2rem 5vw"><div style="max-width:1200px;margin:0 auto"><h2>🔖 Penawaran Tersimpan</h2><p>Penawaran yang kamu simpan untuk dilihat nanti</p></div></div>
+  <div class="dark-section" style="padding:2rem 5vw"><div style="max-width:1200px;margin:0 auto"><h2><span data-i18n="bookmarks_title">🔖 Penawaran Tersimpan</span></h2><p><span data-i18n="bookmarks_sub">Penawaran yang kamu simpan untuk dilihat nanti</span></p></div></div>
   <div class="section"><div class="listings-grid" id="bookmarks-grid"><p style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--muted)">Memuat...</p></div></div>
 </div>
 
 <div id="page-forgot-password" class="page" style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:2rem">
   <div style="width:100%;max-width:400px">
-    <div style="text-align:center;margin-bottom:2rem"><div class="logo" style="font-size:1.8rem;display:block;margin-bottom:.5rem">Aku<span>Bisa</span></div><p style="color:var(--muted);font-size:.9rem">Reset Password</p></div>
+    <div style="text-align:center;margin-bottom:2rem"><div class="logo" style="font-size:1.8rem;display:block;margin-bottom:.5rem">Aku<span>Bisa</span></div><p style="color:var(--muted);font-size:.9rem"><span data-i18n="forgot_title">Reset Password</span></p></div>
     <div class="card">
       <p style="font-size:.85rem;color:var(--muted);margin-bottom:1.2rem">Masukkan emailmu dan kami akan kirim link reset password.</p>
       <div id="forgot-error" style="font-size:.8rem;color:var(--danger);min-height:1rem;margin-bottom:.3rem"></div>
       <div id="forgot-success" style="font-size:.85rem;color:var(--success);background:#f0fdf4;border:1px solid #bbf7d0;padding:.8rem;border-radius:8px;display:none;margin-bottom:1rem"></div>
-      <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="forgot-email" type="email" placeholder="email@kamu.com" onkeydown="if(event.key==='Enter')doForgotPassword()"></div>
-      <button class="btn btn-primary btn-block" id="forgot-btn" onclick="doForgotPassword()">Kirim Link Reset</button>
+      <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="forgot-email" type="email" data-i18n-placeholder="login_email" placeholder="email@kamu.com" onkeydown="if(event.key==='Enter')doForgotPassword()"></div>
+      <button class="btn btn-primary btn-block" id="forgot-btn" onclick="doForgotPassword()"><span data-i18n="forgot_btn">Kirim Link Reset</span></button>
       <p style="text-align:center;margin-top:1rem;font-size:.83rem"><a onclick="goTo('login')" style="color:var(--accent);cursor:pointer">← Kembali ke Login</a></p>
     </div>
   </div>
