@@ -180,6 +180,18 @@ const LANGS = {
     trx_dp: 'DP 50% (bayar sekarang)',
     trx_final: 'Pelunasan 50% (setelah selesai)',
     trx_fee: 'Fee platform (5%)',
+    register_agree: 'Dengan mendaftar, kamu menyetujui Syarat & Ketentuan AkuBisa.',
+    btn_send_msg: 'Kirim Pesan',
+    btn_apply: 'Kirim Lamaran',
+    btn_review: 'Kirim Ulasan',
+    btn_report: 'Kirim Laporan',
+    btn_kyc_submit: 'Kirim untuk Diverifikasi',
+    btn_save_password: 'Simpan Password Baru',
+    btn_save_portfolio: 'Simpan Portfolio',
+    btn_pay_dp: 'Bayar DP Sekarang →',
+    label_confirm: 'Konfirmasi *',
+    label_confirm_password: 'Konfirmasi Password *',
+    btn_post_job: 'Posting Kebutuhan',
   },
 
   en: {
@@ -362,6 +374,18 @@ const LANGS = {
     trx_dp: '50% Deposit (pay now)',
     trx_final: '50% Final Payment (after completion)',
     trx_fee: 'Platform fee (5%)',
+    register_agree: 'By signing up, you agree to AkuBisa\'s Terms & Conditions.',
+    btn_send_msg: 'Send Message',
+    btn_apply: 'Submit Application',
+    btn_review: 'Submit Review',
+    btn_report: 'Submit Report',
+    btn_kyc_submit: 'Submit for Verification',
+    btn_save_password: 'Save New Password',
+    btn_save_portfolio: 'Save Portfolio',
+    btn_pay_dp: 'Pay Deposit Now →',
+    label_confirm: 'Confirm *',
+    label_confirm_password: 'Confirm Password *',
+    btn_post_job: 'Post a Job',
   }
 };
 

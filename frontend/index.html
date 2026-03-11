@@ -778,8 +778,8 @@ body { font-family: var(--font-body); }
       </div>
       <div class="footer-col">
         <h4>Info</h4>
-        <a onclick="goTo('terms')">Syarat & Ketentuan</a>
-        <a onclick="goTo('privacy')">Kebijakan Privasi</a>
+        <a onclick="goTo('terms')"><span data-i18n="terms_title">Syarat & Ketentuan</span></a>
+        <a onclick="goTo('privacy')"><span data-i18n="privacy_title">Kebijakan Privasi</span></a>
         <a href="mailto:support@akubisa.co">Bantuan</a>
       </div>
     </div>
@@ -844,14 +844,14 @@ body { font-family: var(--font-body); }
       <div class="form-group"><label class="form-label">Email *</label><input class="form-input" id="reg-email" data-i18n-placeholder="login_email" data-i18n-placeholder="login_email" placeholder="email@kamu.com" type="email"></div>
       <div class="form-row">
         <div class="form-group"><label class="form-label">Password *</label><input class="form-input" id="reg-pass" placeholder="Min. 6 karakter" type="password"></div>
-        <div class="form-group"><label class="form-label">Konfirmasi *</label><input class="form-input" id="reg-confirm" placeholder="Ulangi password" type="password"></div>
+        <div class="form-group"><label class="form-label"><span data-i18n="label_confirm">Konfirmasi *</span></label><input class="form-input" id="reg-confirm" placeholder="Ulangi password" type="password"></div>
       </div>
       <div class="form-row">
         <div class="form-group"><label class="form-label">Kota</label><input class="form-input" id="reg-city" placeholder="Jakarta..." type="text"></div>
         <div class="form-group"><label class="form-label">No. WhatsApp</label><input class="form-input" id="reg-phone" placeholder="08xx..." type="tel"></div>
       </div>
       <button class="btn btn-primary btn-block" id="reg-btn" onclick="doRegister()" style="padding:.85rem;font-size:.95rem;border-radius:12px;margin-top:.5rem">Daftar Sekarang →</button>
-      <p style="text-align:center;margin-top:1rem;font-size:.75rem;color:var(--muted)">Dengan mendaftar, kamu menyetujui Syarat & Ketentuan AkuBisa.</p>
+      <p style="text-align:center;margin-top:1rem;font-size:.75rem;color:var(--muted)"><span data-i18n="register_agree">Dengan mendaftar, kamu menyetujui Syarat & Ketentuan AkuBisa.</span></p>
     </div>
   </div>
 </div>
@@ -1039,8 +1039,8 @@ body { font-family: var(--font-body); }
     <div class="card">
       <div id="reset-error" style="font-size:.8rem;color:var(--danger);min-height:1rem;margin-bottom:.3rem"></div>
       <div class="form-group"><label class="form-label">Password Baru *</label><input class="form-input" id="reset-pass" type="password" placeholder="Min. 6 karakter"></div>
-      <div class="form-group"><label class="form-label">Konfirmasi Password *</label><input class="form-input" id="reset-confirm" type="password" placeholder="Ulangi password baru"></div>
-      <button class="btn btn-primary btn-block" id="reset-btn" onclick="doResetPassword()">Simpan Password Baru</button>
+      <div class="form-group"><label class="form-label"><span data-i18n="label_confirm_password">Konfirmasi Password *</span></label><input class="form-input" id="reset-confirm" type="password" placeholder="Ulangi password baru"></div>
+      <button class="btn btn-primary btn-block" id="reset-btn" onclick="doResetPassword()"><span data-i18n="btn_save_password">Simpan Password Baru</span></button>
     </div>
   </div>
 </div>
@@ -1165,7 +1165,7 @@ body { font-family: var(--font-body); }
     <div class="form-group"><label class="form-label">Deadline</label><input class="form-input" id="job-deadline" type="date"></div>
     <div id="job-post-error" style="font-size:.82rem;color:var(--danger);min-height:1rem"></div>
     <div style="display:flex;gap:.8rem;justify-content:flex-end;margin-top:1rem">
-      <button class="btn btn-outline" onclick="closePostJobModal()">Batal</button>
+      <button class="btn btn-outline" onclick="closePostJobModal()"><span data-i18n="btn_cancel">Batal</span></button>
       <button class="btn btn-primary" id="job-post-btn" onclick="submitJobRequest()">Posting Sekarang</button>
     </div>
   </div>
@@ -1198,8 +1198,8 @@ body { font-family: var(--font-body); }
     </div>
     <div id="apply-error" style="font-size:.82rem;color:var(--danger);min-height:1rem"></div>
     <div style="display:flex;gap:.8rem;justify-content:flex-end;margin-top:1rem">
-      <button class="btn btn-outline" onclick="closeApplyJobModal()">Batal</button>
-      <button class="btn btn-primary" id="apply-btn" onclick="submitJobApplication()">Kirim Lamaran</button>
+      <button class="btn btn-outline" onclick="closeApplyJobModal()"><span data-i18n="btn_cancel">Batal</span></button>
+      <button class="btn btn-primary" id="apply-btn" onclick="submitJobApplication()"><span data-i18n="btn_apply">Kirim Lamaran</span></button>
     </div>
   </div>
 </div>
@@ -1252,8 +1252,8 @@ body { font-family: var(--font-body); }
     </div>
     <div id="trx-error" style="font-size:.82rem;color:var(--danger);min-height:1rem"></div>
     <div style="display:flex;gap:.8rem;justify-content:flex-end;margin-top:1rem">
-      <button class="btn btn-outline" onclick="closeCreateTrxModal()">Batal</button>
-      <button class="btn btn-primary" id="trx-submit-btn" onclick="submitCreateTransaction()">Bayar DP Sekarang →</button>
+      <button class="btn btn-outline" onclick="closeCreateTrxModal()"><span data-i18n="btn_cancel">Batal</span></button>
+      <button class="btn btn-primary" id="trx-submit-btn" onclick="submitCreateTransaction()"><span data-i18n="btn_pay_dp">Bayar DP Sekarang →</span></button>
     </div>
   </div>
 </div>
@@ -1272,7 +1272,7 @@ body { font-family: var(--font-body); }
       <textarea class="form-textarea" id="dispute-reason" style="min-height:100px" placeholder="Jelaskan masalahnya..."></textarea>
     </div>
     <div style="display:flex;gap:.8rem;justify-content:flex-end">
-      <button class="btn btn-outline" onclick="closeDisputeModal()">Batal</button>
+      <button class="btn btn-outline" onclick="closeDisputeModal()"><span data-i18n="btn_cancel">Batal</span></button>
       <button class="btn btn-danger" onclick="submitDispute()">Ajukan Dispute</button>
     </div>
   </div>
@@ -1333,7 +1333,7 @@ body { font-family: var(--font-body); }
     </div>
     <div id="wd-error" style="font-size:.82rem;color:var(--danger);min-height:1rem"></div>
     <div style="display:flex;gap:.8rem;justify-content:flex-end;margin-top:1rem">
-      <button class="btn btn-outline" onclick="closeWithdrawModal()">Batal</button>
+      <button class="btn btn-outline" onclick="closeWithdrawModal()"><span data-i18n="btn_cancel">Batal</span></button>
       <button class="btn btn-primary" id="wd-btn" onclick="submitWithdraw()">Tarik Saldo</button>
     </div>
   </div>
@@ -1441,7 +1441,7 @@ body { font-family: var(--font-body); }
       </div>
     </form>
     <div style="display:flex;gap:.8rem;justify-content:flex-end;margin-top:1rem">
-      <button class="btn btn-outline" onclick="closePostModal()">Batal</button>
+      <button class="btn btn-outline" onclick="closePostModal()"><span data-i18n="btn_cancel">Batal</span></button>
       <button class="btn btn-primary" id="post-submit-btn" onclick="submitListing()">Posting Sekarang</button>
     </div>
   </div>
@@ -1479,21 +1479,21 @@ body { font-family: var(--font-body); }
       </div>
     </div>
     <div style="display:flex;gap:.8rem;justify-content:flex-end;margin-top:.5rem">
-      <button class="btn btn-outline" onclick="closeEditProfile()">Batal</button>
-      <button class="btn btn-primary" id="ep-save-btn" onclick="saveProfile()">Simpan Perubahan</button>
+      <button class="btn btn-outline" onclick="closeEditProfile()"><span data-i18n="btn_cancel">Batal</span></button>
+      <button class="btn btn-primary" id="ep-save-btn" onclick="saveProfile()"><span data-i18n="profile_save">Simpan Perubahan</span></button>
     </div>
   </div>
 </div>
 
 <div class="modal-overlay" id="send-msg-modal" onclick="if(event.target===this)closeSendMsgModal()">
   <div class="modal" style="max-width:420px">
-    <div class="modal-header"><div class="modal-title">Kirim Pesan</div><button class="modal-close" onclick="closeSendMsgModal()">✕</button></div>
+    <div class="modal-header"><div class="modal-title"><span data-i18n="btn_send_msg">Kirim Pesan</span></div><button class="modal-close" onclick="closeSendMsgModal()">✕</button></div>
     <p style="font-size:.85rem;color:var(--muted);margin-bottom:1rem">Kepada: <strong id="send-msg-to-name"></strong></p>
     <input type="hidden" id="send-msg-receiver-id"><input type="hidden" id="send-msg-listing-id">
     <div class="form-group"><label class="form-label">Pesan</label><textarea class="form-textarea" id="send-msg-content" placeholder="Halo, saya tertarik..." style="min-height:100px"></textarea></div>
     <div style="display:flex;gap:.8rem;justify-content:flex-end">
-      <button class="btn btn-outline" onclick="closeSendMsgModal()">Batal</button>
-      <button class="btn btn-primary" id="send-msg-btn" onclick="doSendFirstMessage()">Kirim Pesan</button>
+      <button class="btn btn-outline" onclick="closeSendMsgModal()"><span data-i18n="btn_cancel">Batal</span></button>
+      <button class="btn btn-primary" id="send-msg-btn" onclick="doSendFirstMessage()"><span data-i18n="btn_send_msg">Kirim Pesan</span></button>
     </div>
   </div>
 </div>
@@ -1517,8 +1517,8 @@ body { font-family: var(--font-body); }
     <div class="form-group"><label class="form-label">Komentar (opsional)</label><textarea class="form-textarea" id="review-comment" style="min-height:90px"></textarea></div>
     <div id="review-error" style="font-size:.78rem;color:var(--danger);min-height:1rem;margin-bottom:.3rem"></div>
     <div style="display:flex;gap:.8rem;justify-content:flex-end">
-      <button class="btn btn-outline" onclick="closeReviewModal()">Batal</button>
-      <button class="btn btn-primary" id="review-submit-btn" onclick="submitReview()">Kirim Ulasan</button>
+      <button class="btn btn-outline" onclick="closeReviewModal()"><span data-i18n="btn_cancel">Batal</span></button>
+      <button class="btn btn-primary" id="review-submit-btn" onclick="submitReview()"><span data-i18n="btn_review">Kirim Ulasan</span></button>
     </div>
   </div>
 </div>
@@ -1542,8 +1542,8 @@ body { font-family: var(--font-body); }
     <div class="form-group"><label class="form-label">Deskripsi (opsional)</label><textarea class="form-textarea" id="report-desc" style="min-height:80px"></textarea></div>
     <div id="report-error" style="font-size:.78rem;color:var(--danger);min-height:1rem"></div>
     <div style="display:flex;gap:.8rem;justify-content:flex-end;margin-top:.5rem">
-      <button class="btn btn-outline" onclick="closeReportModal()">Batal</button>
-      <button class="btn btn-danger" id="report-btn" onclick="submitReport()">Kirim Laporan</button>
+      <button class="btn btn-outline" onclick="closeReportModal()"><span data-i18n="btn_cancel">Batal</span></button>
+      <button class="btn btn-danger" id="report-btn" onclick="submitReport()"><span data-i18n="btn_report">Kirim Laporan</span></button>
     </div>
   </div>
 </div>
@@ -1601,7 +1601,7 @@ body { font-family: var(--font-body); }
 
     <div id="promote-selected" style="font-size:.83rem;color:var(--muted);margin-bottom:.8rem;min-height:1.2rem"></div>
     <div style="display:flex;gap:.8rem;justify-content:flex-end">
-      <button class="btn btn-outline" onclick="closePromoteModal()">Batal</button>
+      <button class="btn btn-outline" onclick="closePromoteModal()"><span data-i18n="btn_cancel">Batal</span></button>
       <button class="btn btn-primary" id="promote-btn" onclick="submitPromote()" disabled style="opacity:.5">Aktifkan Sekarang</button>
     </div>
   </div>
@@ -1982,8 +1982,8 @@ document.addEventListener('DOMContentLoaded', () => {
       </div>
     </div>
     <div class="modal-footer" id="kyc-footer">
-      <button class="btn btn-outline" onclick="closeKycModal()">Tutup</button>
-      <button class="btn btn-primary" onclick="submitKyc()" id="kyc-submit-btn">Kirim untuk Diverifikasi</button>
+      <button class="btn btn-outline" onclick="closeKycModal()"><span data-i18n="btn_close">Tutup</span></button>
+      <button class="btn btn-primary" onclick="submitKyc()" id="kyc-submit-btn"><span data-i18n="btn_kyc_submit">Kirim untuk Diverifikasi</span></button>
     </div>
   </div>
 </div>
@@ -2016,8 +2016,8 @@ document.addEventListener('DOMContentLoaded', () => {
       <div id="porto-error" style="color:var(--danger);font-size:.82rem;margin-bottom:.5rem"></div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closePortfolioModal()">Batal</button>
-      <button class="btn btn-primary" onclick="submitPortfolio()" id="porto-submit-btn">Simpan Portfolio</button>
+      <button class="btn btn-outline" onclick="closePortfolioModal()"><span data-i18n="btn_cancel">Batal</span></button>
+      <button class="btn btn-primary" onclick="submitPortfolio()" id="porto-submit-btn"><span data-i18n="btn_save_portfolio">Simpan Portfolio</span></button>
     </div>
   </div>
 </div>

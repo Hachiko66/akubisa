@@ -147,26 +147,26 @@ function renderQuickActions() {
   const isWorker = currentUser.role === 'worker';
   const isVerified = currentUser.is_verified;
   const kycBtn = isVerified
-    ? `<button class="btn btn-sm" style="background:#f0fdf4;color:#166534;border:1.5px solid #bbf7d0;border-radius:100px;padding:.35rem .8rem;font-size:.75rem;cursor:default">✅ Identitas Terverifikasi</button>`
-    : `<button class="btn btn-sm" style="background:#fef9c3;color:#854d0e;border:1.5px solid #fde047;border-radius:100px;padding:.35rem .8rem;font-size:.75rem;cursor:pointer;font-weight:600" onclick="openKycModal()">🪪 Verifikasi Identitas</button>`;
+    ? `<button class="btn btn-sm" style="background:#f0fdf4;color:#166534;border:1.5px solid #bbf7d0;border-radius:100px;padding:.35rem .8rem;font-size:.75rem;cursor:default">✅ ${t('profile_verified')}</button>`
+    : `<button class="btn btn-sm" style="background:#fef9c3;color:#854d0e;border:1.5px solid #fde047;border-radius:100px;padding:.35rem .8rem;font-size:.75rem;cursor:pointer;font-weight:600" onclick="openKycModal()">D83eDeaa ${t('dash_kyc_btn')}</button>`;
   el.innerHTML = isWorker ? `
     ${kycBtn}
-    <button class="btn btn-primary btn-sm" onclick="openPostModal()">⚡ Buat Penawaran</button>
-    <button class="btn btn-outline btn-sm" onclick="goTo('job-requests')">🙋 Lihat Kebutuhan Klien</button>
-    <button class="btn btn-outline btn-sm" onclick="goTo('wallet')">💰 Dompet & Portfolio</button>
-    <button class="btn btn-outline btn-sm" onclick="goTo('transactions')">💳 Transaksi Saya</button>
-    <button class="btn btn-outline btn-sm" onclick="goTo('dashboard')">Dashboard</button>
-    <button class="btn btn-outline btn-sm" onclick="openEditProfile()">Edit Profil</button>
-    <button class="btn btn-danger btn-sm" onclick="logout()">Keluar</button>
+    <button class="btn btn-primary btn-sm" onclick="openPostModal()">⚡ ${t('dash_post_listing')}</button>
+    <button class="btn btn-outline btn-sm" onclick="goTo('job-requests')">🙋 ${t('nav_job_requests')}</button>
+    <button class="btn btn-outline btn-sm" onclick="goTo('wallet')">💰 ${t('wallet_title')}</button>
+    <button class="btn btn-outline btn-sm" onclick="goTo('transactions')">💳 ${t('trx_title')}</button>
+    <button class="btn btn-outline btn-sm" onclick="goTo('dashboard')">${t('dash_title')}</button>
+    <button class="btn btn-outline btn-sm" onclick="openEditProfile()">${t('profile_edit')}</button>
+    <button class="btn btn-danger btn-sm" onclick="logout()">${t('nav_logout')}</button>
   ` : `
     ${kycBtn}
-    <button class="btn btn-primary btn-sm" onclick="openPostJobModal()">🙋 Posting Kebutuhan</button>
-    <button class="btn btn-outline btn-sm" onclick="goTo('job-requests')">Lihat Semua Kebutuhan</button>
-    <button class="btn btn-outline btn-sm" onclick="goTo('explore')">Jelajahi Penawaran</button>
-    <button class="btn btn-outline btn-sm" onclick="goTo('transactions')">💳 Transaksi Saya</button>
-    <button class="btn btn-outline btn-sm" onclick="goTo('dashboard')">Dashboard</button>
-    <button class="btn btn-outline btn-sm" onclick="openEditProfile()">Edit Profil</button>
-    <button class="btn btn-danger btn-sm" onclick="logout()">Keluar</button>
+    <button class="btn btn-primary btn-sm" onclick="openPostJobModal()">🙋 ${t('btn_post_job')}</button>
+    <button class="btn btn-outline btn-sm" onclick="goTo('job-requests')">${t('nav_job_requests')}</button>
+    <button class="btn btn-outline btn-sm" onclick="goTo('explore')">${t('nav_explore')}</button>
+    <button class="btn btn-outline btn-sm" onclick="goTo('transactions')">💳 ${t('trx_title')}</button>
+    <button class="btn btn-outline btn-sm" onclick="goTo('dashboard')">${t('dash_title')}</button>
+    <button class="btn btn-outline btn-sm" onclick="openEditProfile()">${t('profile_edit')}</button>
+    <button class="btn btn-danger btn-sm" onclick="logout()">${t('nav_logout')}</button>
   `;
 }
 
@@ -1691,13 +1691,13 @@ async function openKycModal() {
         ⏳ <strong>Pengajuan sedang diproses.</strong> Admin akan mereview dalam 1x24 jam. Kamu akan mendapat notifikasi hasilnya.
       </div>`;
       form.style.display = 'none';
-      footer.innerHTML = '<button class="btn btn-outline" onclick="closeKycModal()">Tutup</button>';
+      footer.innerHTML = `<button class="btn btn-outline" onclick="closeKycModal()">${t('btn_close')}</button>`;
     } else if (status.status === 'approved') {
       info.innerHTML = `<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:.8rem;font-size:.83rem;color:#166534">
         ✅ <strong>Identitas kamu sudah terverifikasi!</strong> Badge ✓ Terverifikasi tampil di profilmu.
       </div>`;
       form.style.display = 'none';
-      footer.innerHTML = '<button class="btn btn-outline" onclick="closeKycModal()">Tutup</button>';
+      footer.innerHTML = `<button class="btn btn-outline" onclick="closeKycModal()">${t('btn_close')}</button>`;
     } else if (status.status === 'rejected') {
       info.innerHTML = `<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:.8rem;font-size:.83rem;color:#991b1b">
         ❌ <strong>Pengajuan ditolak.</strong> Alasan: ${status.admin_note || 'Dokumen tidak valid'}. Silakan ajukan ulang dengan dokumen yang benar.
@@ -1707,8 +1707,8 @@ async function openKycModal() {
   } else {
     info.innerHTML = '';
     form.style.display = 'block';
-    footer.innerHTML = `<button class="btn btn-outline" onclick="closeKycModal()">Batal</button>
-      <button class="btn btn-primary" onclick="submitKyc()" id="kyc-submit-btn">Kirim untuk Diverifikasi</button>`;
+    footer.innerHTML = `<button class="btn btn-outline" onclick="closeKycModal()">${t('btn_cancel')}</button>
+      <button class="btn btn-primary" onclick="submitKyc()" id="kyc-submit-btn">${t('btn_kyc_submit')}</button>`;
   }
 }
 

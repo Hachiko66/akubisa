@@ -62,7 +62,7 @@ async function submitBoost() {
       showToast(res.message || 'Gagal membuat order', 'error');
     }
   } catch(e) {
-    showToast('Terjadi kesalahan', 'error');
+    showToast(t('toast_error'), 'error');
   } finally {
     btn.disabled = false;
     btn.textContent = '⚡ Bayar & Aktifkan Boost';
