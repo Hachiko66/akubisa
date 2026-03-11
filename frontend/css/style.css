@@ -18,7 +18,7 @@ body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--
 #page-forgot-password.active{ display:flex!important; }
 /* ===================================== */
 
-nav{display:flex;justify-content:space-between;align-items:center;padding:1rem 5vw;background:var(--cream);border-bottom:none;position:fixed;top:0;left:0;right:0;z-index:1000}
+nav{display:flex;justify-content:space-between;align-items:center;padding:1rem 5vw;background:var(--ink)!important;border-bottom:none;position:fixed;top:0;left:0;right:0;z-index:1000}
 .logo{font-family:Georgia,'Times New Roman',serif;font-size:1.4rem;font-weight:800;letter-spacing:-0.03em;cursor:pointer;text-decoration:none;color:var(--ink)}
 .logo span{color:var(--accent)}
 .nav-links{display:flex;gap:1.5rem;align-items:center}

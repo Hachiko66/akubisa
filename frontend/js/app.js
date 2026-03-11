@@ -86,6 +86,7 @@ window.addEventListener('hashchange', () => {
 
 // ===== ROUTER — FIXED =====
 function navigate(page) {
+  currentPage = page;
   const authPages = ['login','register','forgot-password','reset-password'];
 
   // Sembunyikan semua pages
@@ -131,7 +132,7 @@ function goTo(page) {
 function updateNavTheme(page) {
   const nav = document.getElementById('main-nav');
   if (!nav) return;
-  // Semua halaman pakai dark navbar
+  // Navbar selalu dark solid
   nav.setAttribute('data-theme', 'dark');
   nav.style.background = 'var(--ink)';
   nav.style.borderBottom = 'none';
@@ -671,3 +672,13 @@ function closeImageSlider() {
   if (modal) modal.remove();
   document.removeEventListener('keydown', sliderKeyHandler);
 }
+
+
+
+// ===== NAVBAR SCROLL =====
+window.addEventListener('scroll', () => {
+  const nav = document.getElementById('main-nav');
+  if (!nav) return;
+  nav.style.background = 'var(--ink)';
+  nav.style.boxShadow = window.scrollY > 10 ? '0 2px 20px rgba(0,0,0,.2)' : 'none';
+});
