@@ -161,6 +161,17 @@ const LANGS = {
     bookmarks_sub: 'Penawaran yang kamu simpan untuk dilihat nanti',
     forgot_title: 'Reset Password',
     forgot_btn: 'Kirim Link Reset',
+    wallet_sub: 'Saldo, riwayat pendapatan & withdraw',
+    wallet_earnings: '📈 Riwayat Pendapatan',
+    wallet_withdrawals: '💸 Riwayat Withdraw',
+    wallet_portfolio: '🗂 Portfolio Saya',
+    wallet_withdraw_btn: 'Tarik Saldo',
+    wd_amount: 'Jumlah Withdraw (Rp) *',
+    wd_bank: 'Nama Bank *',
+    wd_select_bank: '-- Pilih Bank --',
+    wd_account_number: 'Nomor Rekening *',
+    wd_account_name: 'Nama Pemilik Rekening *',
+    trx_sub: 'Riwayat dan status transaksi kamu',
   },
 
   en: {
@@ -324,6 +335,17 @@ const LANGS = {
     bookmarks_sub: 'Services you saved to view later',
     forgot_title: 'Reset Password',
     forgot_btn: 'Send Reset Link',
+    wallet_sub: 'Balance, earnings history & withdrawals',
+    wallet_earnings: '📈 Earnings History',
+    wallet_withdrawals: '💸 Withdrawal History',
+    wallet_portfolio: '🗂 My Portfolio',
+    wallet_withdraw_btn: 'Withdraw Balance',
+    wd_amount: 'Withdrawal Amount (Rp) *',
+    wd_bank: 'Bank Name *',
+    wd_select_bank: '-- Select Bank --',
+    wd_account_number: 'Account Number *',
+    wd_account_name: 'Account Holder Name *',
+    trx_sub: 'Your transaction history and status',
   }
 };
 

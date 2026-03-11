@@ -1283,8 +1283,8 @@ body { font-family: var(--font-body); }
 <div id="page-wallet" class="page" style="display:none">
   <div class="dark-section" style="padding:2rem 5vw">
     <div style="max-width:900px;margin:0 auto">
-      <h2 style="margin-bottom:.3rem">💰 Dompet Saya</h2>
-      <p style="color:rgba(255,255,255,.6);font-size:.88rem">Saldo, riwayat pendapatan & withdraw</p>
+      <h2 style="margin-bottom:.3rem"><span data-i18n="wallet_title">💰 Dompet Saya</span></h2>
+      <p style="color:rgba(255,255,255,.6);font-size:.88rem"><span data-i18n="wallet_sub">Saldo, riwayat pendapatan & withdraw</span></p>
     </div>
   </div>
   <div class="section">
@@ -1293,9 +1293,9 @@ body { font-family: var(--font-body); }
       <div id="wallet-balance-card"></div>
       <!-- Tabs -->
       <div style="display:flex;gap:.5rem;margin-bottom:1.5rem;border-bottom:2px solid var(--border);padding-bottom:0">
-        <button class="wallet-tab active" onclick="switchWalletTab('earnings',this)">📈 Riwayat Pendapatan</button>
-        <button class="wallet-tab" onclick="switchWalletTab('withdrawals',this)">💸 Riwayat Withdraw</button>
-        <button class="wallet-tab" onclick="switchWalletTab('portfolio',this)">🗂 Portfolio Saya</button>
+        <button class="wallet-tab active" onclick="switchWalletTab('earnings',this)"><span data-i18n="wallet_earnings">📈 Riwayat Pendapatan</span></button>
+        <button class="wallet-tab" onclick="switchWalletTab('withdrawals',this)"><span data-i18n="wallet_withdrawals">💸 Riwayat Withdraw</span></button>
+        <button class="wallet-tab" onclick="switchWalletTab('portfolio',this)"><span data-i18n="wallet_portfolio">🗂 Portfolio Saya</span></button>
       </div>
       <div id="wallet-tab-content"></div>
     </div>
@@ -1306,17 +1306,17 @@ body { font-family: var(--font-body); }
 <div class="modal-overlay" id="withdraw-modal" onclick="if(event.target===this)closeWithdrawModal()">
   <div class="modal" style="max-width:440px">
     <div class="modal-header">
-      <div class="modal-title">💸 Tarik Saldo</div>
+      <div class="modal-title"><span data-i18n="wallet_withdraw">💸 Tarik Saldo</span></div>
       <button class="modal-close" onclick="closeWithdrawModal()">✕</button>
     </div>
     <div class="form-group">
-      <label class="form-label">Jumlah Withdraw (Rp) *</label>
+      <label class="form-label"><span data-i18n="wd_amount">Jumlah Withdraw (Rp) *</span></label>
       <input class="form-input" id="wd-amount" type="number" placeholder="Minimum Rp 50.000">
     </div>
     <div class="form-group">
-      <label class="form-label">Nama Bank *</label>
+      <label class="form-label"><span data-i18n="wd_bank">Nama Bank *</span></label>
       <select class="form-select" id="wd-bank">
-        <option value="">-- Pilih Bank --</option>
+        <option value=""><span data-i18n="wd_select_bank">-- Pilih Bank --</span></option>
         <option>BCA</option><option>BNI</option><option>BRI</option>
         <option>Mandiri</option><option>CIMB Niaga</option>
         <option>Permata</option><option>Danamon</option><option>BSI</option>
@@ -1324,11 +1324,11 @@ body { font-family: var(--font-body); }
       </select>
     </div>
     <div class="form-group">
-      <label class="form-label">Nomor Rekening *</label>
+      <label class="form-label"><span data-i18n="wd_account_number">Nomor Rekening *</span></label>
       <input class="form-input" id="wd-account-number" placeholder="Nomor rekening/e-wallet">
     </div>
     <div class="form-group">
-      <label class="form-label">Nama Pemilik Rekening *</label>
+      <label class="form-label"><span data-i18n="wd_account_name">Nama Pemilik Rekening *</span></label>
       <input class="form-input" id="wd-account-name" placeholder="Sesuai nama di rekening">
     </div>
     <div id="wd-error" style="font-size:.82rem;color:var(--danger);min-height:1rem"></div>
