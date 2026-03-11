@@ -630,7 +630,7 @@ body { font-family: var(--font-body); }
       <div class="hero-stats">
         <div>
           <div class="hero-stat-num" id="hero-stat-listings">-</div>
-          <div class="hero-stat-label">Penawaran Aktif</div>
+          <div class="hero-stat-label"><span data-i18n="dash_listings">Penawaran Aktif</span></div>
         </div>
         <div>
           <div class="hero-stat-num" id="hero-stat-users">-</div>
@@ -940,30 +940,30 @@ body { font-family: var(--font-body); }
     <div style="max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem">
       <div><h2>Halo, <span id="dash-name">-</span>!</h2><p id="dash-role"></p></div>
       <div style="display:flex;gap:.8rem;flex-wrap:wrap">
-        <button class="btn btn-outline" style="color:white;border-color:rgba(255,255,255,.2)" onclick="goTo('profile')">Profil Saya</button>
-        <button class="btn btn-primary" onclick="openPostModal()">+ Posting Penawaran</button>
+        <button class="btn btn-outline" style="color:white;border-color:rgba(255,255,255,.2)" onclick="goTo('profile')"><span data-i18n="nav_profile">Profil Saya</span></button>
+        <button class="btn btn-primary" onclick="openPostModal()"><span data-i18n="dash_post_listing">+ Posting Penawaran</span></button>
       </div>
     </div>
   </div>
   <div id="dash-worker" class="section hidden">
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:1rem;margin-bottom:2rem">
       <div class="card" style="text-align:center"><div style="font-size:2rem;font-weight:800;color:var(--accent)" id="dash-listing-count">0</div><div style="font-size:.8rem;color:var(--muted)">Penawaran Aktif</div></div>
-      <div class="card" style="text-align:center"><div style="font-size:2rem;font-weight:800;color:var(--accent2)" id="dash-views">0</div><div style="font-size:.8rem;color:var(--muted)">Total Dilihat</div></div>
+      <div class="card" style="text-align:center"><div style="font-size:2rem;font-weight:800;color:var(--accent2)" id="dash-views">0</div><div style="font-size:.8rem;color:var(--muted)"><span data-i18n="dash_views">Total Dilihat</span></div></div>
     </div>
     <div style="font-weight:700;font-size:1.1rem;margin-bottom:1rem">Penawaran Saya</div>
     <div class="listings-grid" id="dash-my-listings"></div>
   </div>
   <div id="dash-client" class="section hidden">
     <div class="card" style="margin-bottom:2rem;background:linear-gradient(135deg,#fff4e6,#fce8e4)">
-      <div style="font-weight:700;font-size:1rem;margin-bottom:.4rem">Kamu dalam Mode Pencari</div>
+      <div style="font-weight:700;font-size:1rem;margin-bottom:.4rem"><span data-i18n="dash_client_mode">Kamu dalam Mode Pencari</span></div>
       <p style="font-size:.85rem;color:var(--muted);margin-bottom:1rem">Temukan pekerja berbakat atau posting kebutuhanmu langsung.</p>
       <div style="display:flex;gap:.6rem;flex-wrap:wrap">
         <button class="btn btn-primary btn-sm" onclick="goTo('explore')">Jelajahi Penawaran</button>
         <button class="btn btn-outline btn-sm" onclick="openPostJobModal()">🙋 Posting Kebutuhanku</button>
-        <button class="btn btn-outline btn-sm" onclick="goTo('job-requests')">Lihat Semua Kebutuhan</button>
+        <button class="btn btn-outline btn-sm" onclick="goTo('job-requests')"><span data-i18n="nav_job_requests">Lihat Semua Kebutuhan</span></button>
       </div>
     </div>
-    <div style="font-weight:700;font-size:1.1rem;margin-bottom:1rem">Penawaran Untukmu</div>
+    <div style="font-weight:700;font-size:1.1rem;margin-bottom:1rem"><span data-i18n="dash_for_you">Penawaran Untukmu</span></div>
     <div class="listings-grid" id="dash-client-listings"></div>
   </div>
 </div>
@@ -977,7 +977,7 @@ body { font-family: var(--font-body); }
         <div class="profile-meta"><span id="profile-email">-</span> &middot; <span id="profile-city">-</span></div>
         <div style="margin-top:.5rem;display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
           <span id="profile-role-label" class="role-badge role-worker">PEKERJA</span>
-          <span id="profile-verified-badge" style="display:none;font-size:.78rem;font-weight:700;color:white;background:#1d9bf0;padding:.25rem .7rem;border-radius:100px;align-items:center;gap:.3rem"><svg width="12" height="12" viewBox="0 0 24 24" fill="white"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg> Pengguna Terverifikasi</span>
+          <span id="profile-verified-badge" style="display:none;font-size:.78rem;font-weight:700;color:white;background:#1d9bf0;padding:.25rem .7rem;border-radius:100px;align-items:center;gap:.3rem"><svg width="12" height="12" viewBox="0 0 24 24" fill="white"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg><span data-i18n="profile_verified"> Pengguna Terverifikasi</span></span>
           <span id="profile-bio-preview" style="font-size:.8rem;color:rgba(255,255,255,.5)"></span>
           <div id="self-social-links"></div>
         </div>

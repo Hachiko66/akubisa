@@ -151,6 +151,8 @@ const LANGS = {
     btn_view: 'Lihat',
     loading: 'Memuat...',
     see_all: 'Lihat Semua',
+    dash_client_mode: 'Kamu dalam Mode Pencari',
+    dash_for_you: 'Penawaran Untukmu',
   },
 
   en: {
@@ -304,6 +306,8 @@ const LANGS = {
     btn_view: 'View',
     loading: 'Loading...',
     see_all: 'See All',
+    dash_client_mode: 'You are in Client Mode',
+    dash_for_you: 'Services For You',
   }
 };
 
