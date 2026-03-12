@@ -435,5 +435,20 @@ function switchLang(lang) {
   document.documentElement.lang = lang;
   applyTranslations();
   if (typeof renderNav === 'function') renderNav();
+  // Re-render halaman aktif
+  const activePage = document.querySelector('.page.active');
+  const pageId = activePage ? activePage.id.replace('page-', '') : '';
+  const rerenderMap = {
+    'home':          () => typeof renderHome === 'function' && renderHome(),
+    'explore':       () => typeof renderExplore === 'function' && renderExplore(),
+    'dashboard':     () => typeof renderDashboard === 'function' && renderDashboard(),
+    'profile':       () => typeof renderProfile === 'function' && renderProfile(),
+    'transactions':  () => typeof renderTransactions === 'function' && renderTransactions(),
+    'wallet':        () => typeof renderWallet === 'function' && renderWallet(),
+    'messages':      () => typeof renderMessages === 'function' && renderMessages(),
+    'job-requests':  () => typeof renderJobRequests === 'function' && renderJobRequests(),
+    'bookmarks':     () => typeof renderBookmarks === 'function' && renderBookmarks(),
+  };
+  if (rerenderMap[pageId]) rerenderMap[pageId]();
   showToast(lang === 'en' ? '🇬🇧 Switched to English' : '🇮🇩 Beralih ke Bahasa Indonesia', 'success');
 }
