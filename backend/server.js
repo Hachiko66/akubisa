@@ -14,7 +14,7 @@ app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false 
 
 // Rate limiters
 const globalLimiter = rateLimit({ windowMs: 15*60*1000, max: 500, message: { message: 'Terlalu banyak request.' } });
-const authLimiter   = rateLimit({ windowMs: 15*60*1000, max: 20,  message: { message: 'Terlalu banyak percobaan login.' } });
+const authLimiter   = rateLimit({ windowMs: 15*60*1000, max: 50,  message: { message: 'Terlalu banyak percobaan login. Coba lagi dalam 15 menit.' } });
 const msgLimiter    = rateLimit({ windowMs: 60*1000,    max: 120,  message: { message: 'Terlalu banyak pesan.' } });
 
 app.use(globalLimiter);

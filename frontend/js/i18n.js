@@ -538,7 +538,7 @@ function switchLang(lang) {
     'profile':       () => typeof renderProfile === 'function' && renderProfile(),
     'transactions':  () => typeof renderTransactions === 'function' && renderTransactions(),
     'wallet':        () => typeof renderWallet === 'function' && renderWallet(),
-    'messages':      () => typeof renderMessages === 'function' && renderMessages(),
+    'messages':      () => { if (typeof loadConversations === 'function') loadConversations(); },
     'job-requests':  () => typeof renderJobRequests === 'function' && renderJobRequests(),
     'bookmarks':     () => typeof renderBookmarks === 'function' && renderBookmarks(),
   };

@@ -148,7 +148,7 @@ function renderQuickActions() {
   const isVerified = currentUser.is_verified;
   const kycBtn = isVerified
     ? `<button class="btn btn-sm" style="background:#f0fdf4;color:#166534;border:1.5px solid #bbf7d0;border-radius:100px;padding:.35rem .8rem;font-size:.75rem;cursor:default">✅ ${t('profile_verified')}</button>`
-    : `<button class="btn btn-sm" style="background:#fef9c3;color:#854d0e;border:1.5px solid #fde047;border-radius:100px;padding:.35rem .8rem;font-size:.75rem;cursor:pointer;font-weight:600" onclick="openKycModal()">D83eDeaa ${t('dash_kyc_btn')}</button>`;
+    : `<button class="btn btn-sm" style="background:#fef9c3;color:#854d0e;border:1.5px solid #fde047;border-radius:100px;padding:.35rem .8rem;font-size:.75rem;cursor:pointer;font-weight:600" onclick="openKycModal()">🪪 ${t('dash_kyc_btn')}</button>`;
   el.innerHTML = isWorker ? `
     ${kycBtn}
     <button class="btn btn-primary btn-sm" onclick="openPostModal()">⚡ ${t('dash_post_listing')}</button>
@@ -450,7 +450,6 @@ let activeConvId = null;
 let chatPollInterval = null;
 
 async function renderMessages() {
-  lastUnreadCount = 0;
   if (!currentUser) { goTo('login'); return; }
   stopChatPoll();
   await loadConversations();

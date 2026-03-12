@@ -187,7 +187,7 @@ function renderNav() {
       <a onclick="closeMobileMenu();setTimeout(()=>goTo('dashboard'),100)" style="font-size:1.1rem;color:rgba(255,255,255,.85);font-weight:500">Dashboard</a>
       <a onclick="closeMobileMenu();setTimeout(()=>goTo('explore'),100)" style="font-size:1.1rem;color:rgba(255,255,255,.85);font-weight:500">Jelajahi</a>
       <a onclick="closeMobileMenu();setTimeout(()=>goTo('job-requests'),100)" style="font-size:1.1rem;color:rgba(255,255,255,.85);font-weight:500">Aku Butuh</a>
-      <a onclick="closeMobileMenu();setTimeout(()=>goTo('messages'),100)" style="font-size:1.1rem;color:rgba(255,255,255,.85);font-weight:500">Pesan</a>
+      <a onclick="closeMobileMenu();setTimeout(()=>goTo('messages'),100)" style="font-size:1.1rem;color:rgba(255,255,255,.85);font-weight:500">${t('nav_messages')}</a>
       <a onclick="closeMobileMenu();setTimeout(()=>goTo('bookmarks'),100)" style="font-size:1.1rem;color:rgba(255,255,255,.85);font-weight:500">Tersimpan</a>
       <a onclick="closeMobileMenu();setTimeout(()=>goTo('transactions'),100)" style="font-size:1.1rem;color:rgba(255,255,255,.85);font-weight:500">Transaksi</a>
       <a onclick="closeMobileMenu();setTimeout(()=>goTo('wallet'),100)" style="font-size:1.1rem;color:rgba(255,255,255,.85);font-weight:500">Dompet</a>
