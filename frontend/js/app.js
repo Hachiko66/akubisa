@@ -413,7 +413,7 @@ function updateNavBadge(count) {
   const allLinks = document.querySelectorAll('#nav-links a, #mobile-nav-links a');
   let badgeAdded = false;
   allLinks.forEach(link => {
-    if (link.textContent.trim().includes('Pesan')) {
+    if (link.getAttribute('onclick') && link.getAttribute('onclick').includes('messages')) {
       const badge = document.createElement('span');
       if (!badgeAdded) badge.id = 'nav-msg-badge';
       badgeAdded = true;

@@ -32,7 +32,7 @@ async function renderHome() {
         `<div class="cat-card" onclick="filterAndGo('${c.slug}')">
           <div class="cat-icon">${c.icon}</div>
           <div class="cat-name">${c.name}</div>
-          <div class="cat-count">${c.listing_count||0} penawaran</div>
+          <div class="cat-count">${c.listing_count||0} ${t('cat_listings')}</div>
         </div>`).join('');
     }
     // Stats hero
@@ -196,18 +196,18 @@ async function renderProfile() {
 
   document.getElementById('profile-name').textContent = u.full_name;
   document.getElementById('profile-email').textContent = u.email;
-  document.getElementById('profile-city').textContent = u.city || 'Kota belum diisi';
+  document.getElementById('profile-city').textContent = u.city || t('profile_no_city');
   document.getElementById('profile-email2').textContent = u.email;
   document.getElementById('profile-city2').textContent = u.city || '-';
   document.getElementById('profile-phone2').textContent = u.phone || '-';
-  document.getElementById('profile-role2').textContent = u.role === 'worker' ? 'Pekerja ⚡' : 'Pencari 🔍';
+  document.getElementById('profile-role2').textContent = u.role === 'worker' ? t('role_worker_badge') : t('role_client_badge');
   document.getElementById('profile-bio-preview').textContent = u.bio ? u.bio.slice(0,60)+(u.bio.length>60?'…':'') : '';
   // Sosmed links di profil sendiri
   const selfSocialEl = document.getElementById('self-social-links');
   if (selfSocialEl) selfSocialEl.innerHTML = renderSocialLinks(u, true);
 
   const badge = document.getElementById('profile-role-label');
-  badge.textContent = u.role === 'worker' ? '⚡ PEKERJA' : '🔍 PENCARI';
+  badge.textContent = u.role === 'worker' ? t('badge_worker') : t('badge_client');
   badge.className = `role-badge ${u.role==='worker'?'role-worker':'role-client'}`;
 
   document.getElementById('sw-worker').classList.toggle('active', u.role==='worker');
@@ -243,7 +243,7 @@ async function doSwitchRole(role) {
 async function renderDashboard() {
   if (!currentUser) { goTo('login'); return; }
   document.getElementById('dash-name').textContent = currentUser.full_name.split(' ')[0];
-  document.getElementById('dash-role').textContent = currentUser.role === 'worker' ? 'Mode Pekerja ⚡' : 'Mode Pencari 🔍';
+  document.getElementById('dash-role').textContent = currentUser.role === 'worker' ? t('mode_worker') : t('mode_client');
 
   if (currentUser.role === 'worker') {
     document.getElementById('dash-worker').classList.remove('hidden');
@@ -279,7 +279,7 @@ async function renderDashboard() {
         : `<div style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--muted)">
             <div style="font-size:2rem;margin-bottom:.8rem">📭</div>
             <p>Belum ada penawaran.</p>
-            <button class="btn btn-primary btn-sm" style="margin-top:1rem" onclick="openPostModal()">+ Buat Penawaran Pertama</button>
+            <button class="btn btn-primary btn-sm" style="margin-top:1rem" onclick="openPostModal()">${t('btn_first_listing')}</button>
           </div>`;
     } catch(e) { console.error(e); }
   } else {
@@ -305,7 +305,7 @@ let editListingId = null;
 async function openPostModal() {
   if (!currentUser) { goTo('login'); return; }
   editListingId = null;
-  document.getElementById('post-modal-title').textContent = 'Aku Bisa…';
+  document.getElementById('post-modal-title').textContent = t('post_modal_title');
   document.getElementById('post-form').reset();
   document.getElementById('post-category').innerHTML = categories.map(c=>`<option value="${c.id}">${c.icon} ${c.name}</option>`).join('');
   document.getElementById('post-modal').classList.add('open');
@@ -315,7 +315,7 @@ async function openPostModal() {
 async function openEditListing(id) {
   editListingId = id;
   const l = await api.getListing(id);
-  document.getElementById('post-modal-title').textContent = 'Edit Penawaran';
+  document.getElementById('post-modal-title').textContent = t('btn_edit_listing');
   document.getElementById('post-category').innerHTML = categories.map(c=>`<option value="${c.id}" ${c.id==l.category_id?'selected':''}>${c.icon} ${c.name}</option>`).join('');
   document.getElementById('post-title').value = l.title;
   document.getElementById('post-desc').value = l.description;
@@ -352,7 +352,7 @@ async function submitListing() {
   btn.disabled = true;
   try {
     const res = editListingId ? await api.updateListing(editListingId, data) : await api.createListing(data);
-    btn.innerHTML = '🚀 Posting Sekarang'; btn.disabled = false;
+    btn.innerHTML = t('btn_post_now'); btn.disabled = false;
     if (res.listing || res.message?.includes('berhasil')) {
       showToast(editListingId ? 'Diperbarui! ✅' : 'Berhasil diposting! 🎉', 'success');
       closePostModal();
@@ -360,7 +360,7 @@ async function submitListing() {
     } else {
       showToast(res.message || 'Gagal menyimpan', 'error');
     }
-  } catch(e) { btn.innerHTML = '🚀 Posting Sekarang'; btn.disabled = false; showToast('Koneksi gagal', 'error'); }
+  } catch(e) { btn.innerHTML = t('btn_post_now'); btn.disabled = false; showToast('Koneksi gagal', 'error'); }
 }
 
 // ===== EDIT PROFILE =====
@@ -402,9 +402,9 @@ async function handleAvatarUpload(input) {
   reader.readAsDataURL(file);
   const form = new FormData();
   form.append('avatar', file);
-  document.getElementById('avatar-upload-label').textContent = '⏳ Mengupload...';
+  document.getElementById('avatar-upload-label').textContent = t('uploading');
   const res = await api.uploadAvatar(form);
-  document.getElementById('avatar-upload-label').textContent = '📷 Ganti Foto';
+  document.getElementById('avatar-upload-label').textContent = t('change_photo');
   if (res.avatar) {
     currentUser.avatar = res.avatar;
     localStorage.setItem('akubisa_user', JSON.stringify(currentUser));
@@ -420,7 +420,7 @@ async function saveProfile() {
   const city      = document.getElementById('ep-city').value.trim();
   const phone     = document.getElementById('ep-phone').value.trim();
   const errEl     = document.getElementById('ep-error');
-  if (!full_name) { errEl.textContent = 'Nama tidak boleh kosong'; return; }
+  if (!full_name) { errEl.textContent = t('err_name_required'); return; }
   const btn = document.getElementById('ep-save-btn');
   btn.innerHTML = '<span class="spinner"></span>Menyimpan...';
   btn.disabled = true;
@@ -431,7 +431,7 @@ async function saveProfile() {
   const social_youtube  = document.getElementById('ep-youtube')?.value.trim() || '';
   const social_telegram = document.getElementById('ep-telegram')?.value.trim() || '';
   const res = await api.updateProfile({ full_name, bio, city, phone, social_twitter, social_linkedin, social_github, social_tiktok, social_youtube, social_telegram });
-  btn.innerHTML = '💾 Simpan Perubahan'; btn.disabled = false;
+  btn.innerHTML = t('profile_save'); btn.disabled = false;
   if (res.token) {
     localStorage.setItem('akubisa_token', res.token);
     localStorage.setItem('akubisa_user', JSON.stringify(res.user));
@@ -588,7 +588,7 @@ async function doSendFirstMessage() {
   const btn = document.getElementById('send-msg-btn');
   btn.innerHTML = '<span class="spinner"></span>Mengirim...'; btn.disabled = true;
   const res = await api.sendMessage({ receiver_id: parseInt(receiver_id), content, listing_id: listing_id||null });
-  btn.innerHTML = 'Kirim Pesan'; btn.disabled = false;
+  btn.innerHTML = t('btn_send_msg'); btn.disabled = false;
   if (res.conversation_id) {
     closeSendMsgModal();
     showToast('Pesan terkirim! 💬', 'success');
@@ -911,7 +911,7 @@ async function submitReview() {
   btn.innerHTML = '<span class="spinner"></span>Mengirim...'; btn.disabled = true;
 
   const res = await api.postReview({ reviewed_id, listing_id, rating: selectedStar, comment });
-  btn.innerHTML = 'Kirim Ulasan'; btn.disabled = false;
+  btn.innerHTML = t('btn_review'); btn.disabled = false;
 
   if (res.review) {
     closeReviewModal();
@@ -976,7 +976,7 @@ async function fetchJobRequests(reset = true) {
       grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--muted)">
         <div style="font-size:2.5rem;margin-bottom:1rem">🔍</div>
         <p>Belum ada kebutuhan yang diposting.</p>
-        ${currentUser ? `<button class="btn btn-primary btn-sm" style="margin-top:1rem" onclick="openPostJobModal()">+ Posting Kebutuhanmu</button>` : ''}
+        ${currentUser ? `<button class="btn btn-primary btn-sm" style="margin-top:1rem" onclick="openPostJobModal()">${t('btn_post_job_first')}</button>` : ''}
       </div>`;
     } else {
       requests.forEach(r => {
@@ -1164,7 +1164,7 @@ async function submitJobApplication() {
   const btn = document.getElementById('apply-btn');
   btn.innerHTML = '<span class="spinner"></span>Mengirim...'; btn.disabled = true;
   const res = await api.applyJob(jobId, { cover_letter, offered_price: offered_price||null, estimated_days: estimated_days||null });
-  btn.innerHTML = 'Kirim Lamaran'; btn.disabled = false;
+  btn.innerHTML = t('btn_apply'); btn.disabled = false;
 
   if (res.data) {
     closeApplyJobModal();
@@ -1266,7 +1266,7 @@ function transactionCardHTML(t) {
     'cancelled': { label:'❌ Dibatalkan', color:'var(--danger)', bg:'#fef2f2' },
   };
   const st = statusMap[t.status] || { label: t.status, color:'var(--muted)', bg:'#f8f9fa' };
-  const title = t.listing_title || t.job_title || t.notes || 'Transaksi';
+  const title = t.listing_title || t.job_title || t.notes || t('trx_title_short');
   const date = new Date(t.created_at).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'});
 
   return `
@@ -1293,10 +1293,10 @@ function transactionCardHTML(t) {
         ${t.status==='waiting_final' && isClient ? `<a href="${t.xendit_final_invoice_url}" target="_blank" class="btn btn-primary btn-sm">💳 Bayar Pelunasan</a>` : ''}
         ${t.status==='dp_paid' && isClient ? `<button class="btn btn-danger btn-sm" onclick="openDisputeModal(${t.id})">⚠️ Dispute</button>` : ''}
         ${t.status==='completed' && isClient && !t.reviewed_by_client ? `
-          <button class="btn btn-sm" style="background:#fef9c3;color:#854d0e;border:1.5px solid #fde047;font-weight:600" onclick="openReviewFromTrx(${t.id},${t.worker_id},'${(t.worker_name||'').replace(/'/g,"\'")}',${t.listing_id||null})">⭐ Beri Ulasan</button>
+          <button class="btn btn-sm" style="background:#fef9c3;color:#854d0e;border:1.5px solid #fde047;font-weight:600" onclick="openReviewFromTrx(${t.id},${t.worker_id},'${(t.worker_name||'').replace(/'/g,"\'")}',${t.listing_id||null})">${t('btn_give_review')}</button>
         ` : ''}
         ${t.status==='completed' && !isClient && !t.reviewed_by_worker ? `
-          <button class="btn btn-sm" style="background:#fef9c3;color:#854d0e;border:1.5px solid #fde047;font-weight:600" onclick="openReviewFromTrx(${t.id},${t.client_id},'${(t.client_name||'').replace(/'/g,"\'")}',${t.listing_id||null})">⭐ Beri Ulasan</button>
+          <button class="btn btn-sm" style="background:#fef9c3;color:#854d0e;border:1.5px solid #fde047;font-weight:600" onclick="openReviewFromTrx(${t.id},${t.client_id},'${(t.client_name||'').replace(/'/g,"\'")}',${t.listing_id||null})">${t('btn_give_review')}</button>
         ` : ''}
         ${t.status==='completed' && (isClient ? t.reviewed_by_client : t.reviewed_by_worker) ? `
           <span style="font-size:.75rem;color:var(--success);font-weight:600">✅ Sudah diulas</span>
@@ -1465,7 +1465,7 @@ async function loadWalletBalance() {
         <div style="font-size:1.3rem;font-weight:800;color:var(--muted)">Rp ${parseInt(bal.total_withdrawn||0).toLocaleString('id')}</div>
       </div>
       <div class="card" style="text-align:center">
-        <div style="font-size:.78rem;color:var(--muted);margin-bottom:.3rem">Transaksi Selesai</div>
+        <div style="font-size:.78rem;color:var(--muted);margin-bottom:.3rem">${t('trx_done')}</div>
         <div style="font-size:1.3rem;font-weight:800;color:var(--ink)">${bal.total_transactions||0}</div>
       </div>
     </div>`;
@@ -1533,7 +1533,7 @@ async function switchWalletTab(tab, el) {
                 ${p.photos&&p.photos.length
                   ? `<img src="${p.photos[0]}" style="width:100%;height:160px;object-fit:cover">`
                   : `<div style="height:100px;background:linear-gradient(135deg,var(--warm),#e8e0d5);display:flex;align-items:center;justify-content:center;font-size:2.5rem">🗂️</div>`}
-                <span style="position:absolute;top:.6rem;left:.6rem;font-size:.65rem;font-weight:700;padding:.25rem .6rem;border-radius:100px;${p.transaction_id?'background:var(--accent2);color:white':'background:var(--accent);color:white'}">${p.transaction_id?'✅ Transaksi':'✏️ Manual'}</span>
+                <span style="position:absolute;top:.6rem;left:.6rem;font-size:.65rem;font-weight:700;padding:.25rem .6rem;border-radius:100px;${p.transaction_id?'background:var(--accent2);color:white':'background:var(--accent);color:white'}">${p.transaction_id?t('trx_badge'):t('trx_manual')}</span>
                 ${!p.is_public?'<span style="position:absolute;top:.6rem;right:.6rem;font-size:.65rem;font-weight:700;padding:.25rem .6rem;border-radius:100px;background:rgba(0,0,0,.5);color:white">🔒 Privat</span>':''}
                 ${p.photos&&p.photos.length>1?`<span style="position:absolute;bottom:.4rem;right:.4rem;background:rgba(0,0,0,.55);color:white;font-size:.65rem;padding:.2rem .45rem;border-radius:100px">+${p.photos.length-1} foto</span>`:''}
               </div>
