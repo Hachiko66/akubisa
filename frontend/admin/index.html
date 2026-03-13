@@ -204,6 +204,7 @@
       <div class="sidebar-item" onclick="showPanel('withdrawals')" id="nav-withdrawals">💸 Withdraw</div>
       <div class="sidebar-item" onclick="showPanel('disputes')" id="nav-disputes">⚠️ Dispute</div>
       <div class="sidebar-item" onclick="showPanel('transactions')" id="nav-transactions">💳 Transaksi</div>
+      <div class="sidebar-item" onclick="showPanel('analytics')" id="nav-analytics">📈 Analytics</div>
       <div class="sidebar-item" onclick="showPanel('kyc')" id="nav-kyc">🪪 Verifikasi KYC</div>
       <div class="sidebar-item" onclick="window.open('/','_blank')">🌐 Buka Platform</div>
     </div>
@@ -297,6 +298,41 @@
       </div>
 
       <!-- PANEL TRANSACTIONS -->
+      <div id="panel-analytics" class="panel">
+        <h2 style="margin-bottom:1.5rem">📈 Analytics & Revenue</h2>
+        <!-- Stats Cards -->
+        <div id="analytics-stats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;margin-bottom:2rem"></div>
+        <!-- Charts -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem">
+          <div class="card">
+            <div style="font-weight:700;margin-bottom:1rem">Revenue Bulanan (Rp)</div>
+            <canvas id="chart-revenue" height="200"></canvas>
+          </div>
+          <div class="card">
+            <div style="font-weight:700;margin-bottom:1rem">User Baru per Bulan</div>
+            <canvas id="chart-users" height="200"></canvas>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem">
+          <div class="card">
+            <div style="font-weight:700;margin-bottom:1rem">Transaksi per Bulan</div>
+            <canvas id="chart-transactions" height="200"></canvas>
+          </div>
+          <div class="card">
+            <div style="font-weight:700;margin-bottom:1rem">Listing Baru per Bulan</div>
+            <canvas id="chart-listings" height="200"></canvas>
+          </div>
+        </div>
+        <!-- Export -->
+        <div class="card" style="margin-top:1.5rem">
+          <div style="font-weight:700;margin-bottom:1rem">📥 Export Data</div>
+          <div style="display:flex;gap:.8rem;flex-wrap:wrap">
+            <button class="btn btn-outline btn-sm" onclick="exportCSV('transactions')">Export Transaksi CSV</button>
+            <button class="btn btn-outline btn-sm" onclick="exportCSV('users')">Export Users CSV</button>
+            <button class="btn btn-outline btn-sm" onclick="exportCSV('listings')">Export Listings CSV</button>
+          </div>
+        </div>
+      </div>
       <div id="panel-transactions" class="panel">
         <h2 style="margin-bottom:1.5rem">💳 Semua Transaksi</h2>
         <div id="transactions-stats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:.8rem;margin-bottom:1.5rem"></div>
@@ -308,6 +344,7 @@
 
 <div class="toast" id="toast"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 const API = '/api';
 let adminToken = sessionStorage.getItem('admin_token'); // sessionStorage, bukan localStorage!
@@ -392,6 +429,7 @@ function showPanel(name) {
   if (name==='disputes')     loadDisputes();
   if (name==='transactions') loadTransactions();
   if (name==='kyc') loadKyc('pending');
+  if (name==='analytics') loadAnalytics();
 }
 
 function toast(msg, type='success') {
@@ -798,6 +836,74 @@ async function loadTransactions() {
   } catch(e) {
     el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--danger)">Error: ' + e.message + '</div>';
   }
+}
+
+// ===== ANALYTICS =====
+let revenueChart, usersChart, trxChart, listingsChart;
+
+async function loadAnalytics() {
+  const el = document.getElementById('analytics-stats');
+  el.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:2rem;color:var(--muted)">Memuat analytics...</div>';
+  
+  try {
+    const [overview, monthly] = await Promise.all([
+      apiFetch('/admin/analytics/overview'),
+      apiFetch('/admin/analytics/monthly')
+    ]);
+
+    // Stats cards
+    el.innerHTML = [
+      { label: 'Total Revenue', value: 'Rp ' + formatRp(overview.total_revenue||0), color: 'var(--accent)' },
+      { label: 'Revenue Bulan Ini', value: 'Rp ' + formatRp(overview.monthly_revenue||0), color: 'var(--accent2)' },
+      { label: 'Total Transaksi', value: overview.total_transactions||0, color: '#3b82f6' },
+      { label: 'Total Users', value: overview.total_users||0, color: '#8b5cf6' },
+      { label: 'Total Listings', value: overview.total_listings||0, color: '#10b981' },
+      { label: 'Pending Withdraw', value: 'Rp ' + formatRp(overview.pending_withdrawals||0), color: '#f59e0b' },
+    ].map(s => `
+      <div class="card" style="text-align:center">
+        <div style="font-size:1.5rem;font-weight:800;color:${s.color}">${s.value}</div>
+        <div style="font-size:.78rem;color:var(--muted);margin-top:.3rem">${s.label}</div>
+      </div>`).join('');
+
+    // Charts
+    const months = monthly.map(m => m.month);
+    const revenues = monthly.map(m => Math.round((m.revenue||0)/1000));
+    const users = monthly.map(m => m.new_users||0);
+    const trxs = monthly.map(m => m.transactions||0);
+    const lists = monthly.map(m => m.new_listings||0);
+
+    const chartOpts = (label, data, color) => ({
+      type: 'bar',
+      data: { labels: months, datasets: [{ label, data, backgroundColor: color + '99', borderColor: color, borderWidth: 2, borderRadius: 6 }] },
+      options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+    });
+
+    if (revenueChart) revenueChart.destroy();
+    if (usersChart) usersChart.destroy();
+    if (trxChart) trxChart.destroy();
+    if (listingsChart) listingsChart.destroy();
+
+    revenueChart   = new Chart(document.getElementById('chart-revenue'),      chartOpts('Revenue (rb)', revenues, '#f97316'));
+    usersChart     = new Chart(document.getElementById('chart-users'),         chartOpts('User Baru', users, '#8b5cf6'));
+    trxChart       = new Chart(document.getElementById('chart-transactions'),  chartOpts('Transaksi', trxs, '#3b82f6'));
+    listingsChart  = new Chart(document.getElementById('chart-listings'),      chartOpts('Listing Baru', lists, '#10b981'));
+
+  } catch(e) { el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted)">Gagal memuat analytics</div>'; }
+}
+
+function formatRp(n) {
+  return parseInt(n).toLocaleString('id-ID');
+}
+
+async function exportCSV(type) {
+  const token = sessionStorage.getItem('admin_token');
+  const res = await fetch(`${API}/admin/export/${type}`, { headers: { Authorization: 'Bearer ' + token } });
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `akubisa-${type}-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
 }
 </script>
 </body>

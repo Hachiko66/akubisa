@@ -323,3 +323,93 @@ router.get('/transactions', admin, async (req, res) => {
     res.json({ transactions: result.rows, stats: stats.rows[0] });
   } catch(e) { res.status(500).json({ message: e.message }); }
 });
+
+// ===== ANALYTICS =====
+router.get('/analytics/overview', async (req, res) => {
+  try {
+    const [revenue, users, listings, withdrawals] = await Promise.all([
+      pool.query(`SELECT 
+        COALESCE(SUM(platform_fee), 0) as total_revenue,
+        COALESCE(SUM(CASE WHEN date_trunc('month', created_at) = date_trunc('month', NOW()) THEN platform_fee ELSE 0 END), 0) as monthly_revenue,
+        COUNT(*) as total_transactions
+        FROM transactions WHERE status = 'completed'`),
+      pool.query(`SELECT COUNT(*) as total_users FROM users`),
+      pool.query(`SELECT COUNT(*) as total_listings FROM listings WHERE is_active = true`),
+      pool.query(`SELECT COALESCE(SUM(amount), 0) as pending_withdrawals FROM withdraw_requests WHERE status = 'pending'`),
+    ]);
+    res.json({
+      total_revenue: revenue.rows[0].total_revenue,
+      monthly_revenue: revenue.rows[0].monthly_revenue,
+      total_transactions: revenue.rows[0].total_transactions,
+      total_users: users.rows[0].total_users,
+      total_listings: listings.rows[0].total_listings,
+      pending_withdrawals: withdrawals.rows[0].pending_withdrawals,
+    });
+  } catch(e) { res.status(500).json({ message: e.message }); }
+});
+
+router.get('/analytics/monthly', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        TO_CHAR(m.month, 'Mon YY') as month,
+        COALESCE(t.revenue, 0) as revenue,
+        COALESCE(u.new_users, 0) as new_users,
+        COALESCE(t.transactions, 0) as transactions,
+        COALESCE(l.new_listings, 0) as new_listings
+      FROM generate_series(
+        date_trunc('month', NOW() - interval '5 months'),
+        date_trunc('month', NOW()),
+        '1 month'
+      ) AS m(month)
+      LEFT JOIN (
+        SELECT date_trunc('month', created_at) as month, 
+          SUM(platform_fee) as revenue, COUNT(*) as transactions
+        FROM transactions WHERE status = 'completed'
+        GROUP BY 1
+      ) t ON t.month = m.month
+      LEFT JOIN (
+        SELECT date_trunc('month', created_at) as month, COUNT(*) as new_users
+        FROM users GROUP BY 1
+      ) u ON u.month = m.month
+      LEFT JOIN (
+        SELECT date_trunc('month', created_at) as month, COUNT(*) as new_listings
+        FROM listings GROUP BY 1
+      ) l ON l.month = m.month
+      ORDER BY m.month
+    `);
+    res.json(result.rows);
+  } catch(e) { res.status(500).json({ message: e.message }); }
+});
+
+// ===== EXPORT CSV =====
+router.get('/export/:type', async (req, res) => {
+  const { type } = req.params;
+  try {
+    let rows, headers;
+    if (type === 'transactions') {
+      const r = await pool.query(`SELECT t.id, t.total_amount, t.platform_fee, t.status, t.created_at, 
+        w.full_name as worker, c.full_name as client
+        FROM transactions t
+        JOIN users w ON w.id = t.worker_id
+        JOIN users c ON c.id = t.client_id
+        ORDER BY t.created_at DESC`);
+      headers = 'ID,Total Amount,Platform Fee,Status,Tanggal,Worker,Client';
+      rows = r.rows.map(r => `${r.id},${r.total_amount},${r.platform_fee},${r.status},${r.created_at},${r.worker},${r.client}`);
+    } else if (type === 'users') {
+      const r = await pool.query(`SELECT id, full_name, email, role, city, is_verified, created_at FROM users ORDER BY created_at DESC`);
+      headers = 'ID,Nama,Email,Role,Kota,Verified,Tanggal Daftar';
+      rows = r.rows.map(r => `${r.id},"${r.full_name}",${r.email},${r.role},${r.city||''},${r.is_verified},${r.created_at}`);
+    } else if (type === 'listings') {
+      const r = await pool.query(`SELECT l.id, l.title, l.price, l.is_active, l.created_at, u.full_name as owner FROM listings l JOIN users u ON u.id = l.user_id ORDER BY l.created_at DESC`);
+      headers = 'ID,Judul,Harga,Aktif,Tanggal,Owner';
+      rows = r.rows.map(r => `${r.id},"${r.title}",${r.price},${r.is_active},${r.created_at},"${r.owner}"`);
+    } else {
+      return res.status(400).json({ message: 'Invalid type' });
+    }
+    const csv = [headers, ...rows].join('\n');
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename=akubisa-${type}.csv`);
+    res.send(csv);
+  } catch(e) { res.status(500).json({ message: e.message }); }
+});
