@@ -49,7 +49,7 @@ exports.verifyEmail = async (req, res) => {
   const { token } = req.params;
   try {
     const result = await pool.query(
-      `UPDATE users SET email_verified=true, verify_token=null, is_verified=true
+      `UPDATE users SET email_verified=true, verify_token=null
        WHERE verify_token=$1 RETURNING id, full_name, email`,
       [token]
     );
