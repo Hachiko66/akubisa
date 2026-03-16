@@ -263,7 +263,7 @@ body.auth-mode #main-nav {
 
 /* NAVBAR CLEARANCE */
 .page.active:not(#page-home):not(#page-login):not(#page-register){
-  padding-top: 64px;
+  padding-top: 100px;
 }
 
 /* PROFILE PAGE MOBILE FIX */
