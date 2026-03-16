@@ -13,7 +13,8 @@ const transporter = nodemailer.createTransport({
 const sendEmail = async ({ to, subject, html }) => {
   try {
     await transporter.sendMail({
-      from: process.env.EMAIL_FROM,
+      from: 'AkuBisa <noreply@akubisa.co>',
+      replyTo: 'noreply@akubisa.co',
       to, subject, html
     });
     console.log(`📧 Email terkirim ke ${to}`);
