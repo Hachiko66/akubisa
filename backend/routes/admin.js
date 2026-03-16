@@ -413,3 +413,62 @@ router.get('/export/:type', async (req, res) => {
     res.send(csv);
   } catch(e) { res.status(500).json({ message: e.message }); }
 });
+
+// ===== BOOST ORDERS =====
+router.get('/boost-orders', async (req, res) => {
+  const { filter = 'active' } = req.query;
+  try {
+    let where = '';
+    if (filter === 'active') where = "WHERE bo.status = 'active'";
+    else if (filter === 'pending') where = "WHERE bo.status = 'pending'";
+    const result = await pool.query(`
+      SELECT bo.*, l.title as listing_title, u.full_name as user_name
+      FROM boost_orders bo
+      LEFT JOIN listings l ON l.id = bo.listing_id
+      LEFT JOIN users u ON u.id = bo.user_id
+      ${where}
+      ORDER BY bo.created_at DESC LIMIT 100
+    `);
+    res.json(result.rows);
+  } catch(e) { res.status(500).json({ message: e.message }); }
+});
+
+// ===== CATEGORIES =====
+router.post('/categories', async (req, res) => {
+  const { name, slug, icon } = req.body;
+  try {
+    const result = await pool.query(
+      'INSERT INTO categories (name, slug, icon) VALUES ($1, $2, $3) RETURNING *',
+      [name, slug, icon]
+    );
+    res.json(result.rows[0]);
+  } catch(e) { res.status(500).json({ message: e.message }); }
+});
+
+router.delete('/categories/:id', async (req, res) => {
+  try {
+    await pool.query('DELETE FROM categories WHERE id = $1', [req.params.id]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ message: e.message }); }
+});
+
+// ===== BROADCAST =====
+router.post('/broadcast', async (req, res) => {
+  const { target, title, message } = req.body;
+  try {
+    let users;
+    if (target === 'all') {
+      users = await pool.query('SELECT id FROM users WHERE email_verified = true');
+    } else {
+      users = await pool.query('SELECT id FROM users WHERE role = $1 AND email_verified = true', [target]);
+    }
+    const userIds = users.rows.map(u => u.id);
+    for (const userId of userIds) {
+      await pool.query(
+        'INSERT INTO notifications (user_id, type, title, message) VALUES ($1, $2, $3, $4)',
+        [userId, 'broadcast', title, message]
+      );
+    }
+    res.json({ sent: userIds.length });
+  } catch(e) { res.status(500).json({ message: e.message }); }
+});

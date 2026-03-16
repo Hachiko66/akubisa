@@ -205,6 +205,9 @@
       <div class="sidebar-item" onclick="showPanel('disputes')" id="nav-disputes">⚠️ Dispute</div>
       <div class="sidebar-item" onclick="showPanel('transactions')" id="nav-transactions">💳 Transaksi</div>
       <div class="sidebar-item" onclick="showPanel('analytics')" id="nav-analytics">📈 Analytics</div>
+      <div class="sidebar-item" onclick="showPanel('boost')" id="nav-boost">⚡ Boost Orders</div>
+      <div class="sidebar-item" onclick="showPanel('categories')" id="nav-categories">🗂 Kategori</div>
+      <div class="sidebar-item" onclick="showPanel('broadcast')" id="nav-broadcast">📢 Broadcast</div>
       <div class="sidebar-item" onclick="showPanel('kyc')" id="nav-kyc">🪪 Verifikasi KYC</div>
       <div class="sidebar-item" onclick="window.open('/','_blank')">🌐 Buka Platform</div>
     </div>
@@ -333,6 +336,53 @@
           </div>
         </div>
       </div>
+      <div id="panel-boost" class="panel">
+        <h2 style="margin-bottom:1.5rem">⚡ Boost Orders</h2>
+        <div style="display:flex;gap:.5rem;margin-bottom:1rem;flex-wrap:wrap">
+          <button class="btn btn-sm btn-primary" onclick="loadBoostOrders('active')">Aktif</button>
+          <button class="btn btn-sm btn-outline" onclick="loadBoostOrders('pending')">Pending</button>
+          <button class="btn btn-sm btn-outline" onclick="loadBoostOrders('all')">Semua</button>
+        </div>
+        <div id="boost-content"><div style="text-align:center;padding:2rem;color:var(--muted)">Memuat...</div></div>
+      </div>
+      <div id="panel-categories" class="panel">
+        <h2 style="margin-bottom:1.5rem">🗂 Kelola Kategori</h2>
+        <div class="card" style="margin-bottom:1.5rem">
+          <div style="font-weight:700;margin-bottom:1rem">Tambah Kategori Baru</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:.8rem;align-items:end">
+            <div><label style="font-size:.8rem;color:var(--muted)">Nama</label><input class="form-input" id="cat-name" placeholder="Desain Grafis"></div>
+            <div><label style="font-size:.8rem;color:var(--muted)">Slug</label><input class="form-input" id="cat-slug" placeholder="desain-grafis"></div>
+            <div><label style="font-size:.8rem;color:var(--muted)">Icon Emoji</label><input class="form-input" id="cat-icon" placeholder="🎨"></div>
+            <button class="btn btn-primary" onclick="addCategory()">Tambah</button>
+          </div>
+        </div>
+        <div id="categories-content"><div style="text-align:center;padding:2rem;color:var(--muted)">Memuat...</div></div>
+      </div>
+      <div id="panel-broadcast" class="panel">
+        <h2 style="margin-bottom:1.5rem">📢 Broadcast Notifikasi</h2>
+        <div class="card" style="max-width:600px">
+          <div class="form-group">
+            <label class="form-label">Target User</label>
+            <select class="form-select" id="broadcast-target">
+              <option value="all">Semua User</option>
+              <option value="worker">Pekerja saja</option>
+              <option value="client">Pencari saja</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Judul Notifikasi</label>
+            <input class="form-input" id="broadcast-title" placeholder="Contoh: Update Platform AkuBisa">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Pesan</label>
+            <textarea class="form-textarea" id="broadcast-msg" style="min-height:100px" placeholder="Tulis pesan broadcast..."></textarea>
+          </div>
+          <div style="display:flex;gap:.8rem;align-items:center">
+            <button class="btn btn-primary" onclick="sendBroadcast()">📢 Kirim Broadcast</button>
+            <span id="broadcast-result" style="font-size:.85rem;color:var(--muted)"></span>
+          </div>
+        </div>
+      </div>
       <div id="panel-transactions" class="panel">
         <h2 style="margin-bottom:1.5rem">💳 Semua Transaksi</h2>
         <div id="transactions-stats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:.8rem;margin-bottom:1.5rem"></div>
@@ -430,6 +480,9 @@ function showPanel(name) {
   if (name==='transactions') loadTransactions();
   if (name==='kyc') loadKyc('pending');
   if (name==='analytics') loadAnalytics();
+  if (name==='boost') loadBoostOrders('active');
+  if (name==='categories') loadCategories();
+  if (name==='broadcast') {};
 }
 
 function toast(msg, type='success') {
@@ -904,6 +957,81 @@ async function exportCSV(type) {
   a.href = url;
   a.download = `akubisa-${type}-${new Date().toISOString().slice(0,10)}.csv`;
   a.click();
+}
+
+// ===== BOOST ORDERS =====
+async function loadBoostOrders(filter='active') {
+  const el = document.getElementById('boost-content');
+  el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted)">Memuat...</div>';
+  try {
+    const data = await apiFetch('/admin/boost-orders?filter=' + filter);
+    if (!data.length) { el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted)">Tidak ada boost orders</div>'; return; }
+    el.innerHTML = `<table class="admin-table"><thead><tr>
+      <th>ID</th><th>Listing</th><th>User</th><th>Paket</th><th>Amount</th><th>Status</th><th>Mulai</th><th>Expired</th>
+    </tr></thead><tbody>
+    ${data.map(b => `<tr>
+      <td>${b.id}</td>
+      <td>${b.listing_title||'-'}</td>
+      <td>${b.user_name||'-'}</td>
+      <td>${b.package}</td>
+      <td>Rp ${parseInt(b.amount).toLocaleString('id-ID')}</td>
+      <td><span style="background:${b.status==='active'?'#f0fdf4':b.status==='pending'?'#fef9c3':'#f3f4f6'};color:${b.status==='active'?'#166534':b.status==='pending'?'#854d0e':'#6b7280'};padding:.2rem .6rem;border-radius:100px;font-size:.75rem;font-weight:600">${b.status}</span></td>
+      <td>${b.started_at ? new Date(b.started_at).toLocaleDateString('id-ID') : '-'}</td>
+      <td>${b.expires_at ? new Date(b.expires_at).toLocaleDateString('id-ID') : '-'}</td>
+    </tr>`).join('')}
+    </tbody></table>`;
+  } catch(e) { el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted)">Gagal memuat</div>'; }
+}
+
+// ===== CATEGORIES =====
+async function loadCategories() {
+  const el = document.getElementById('categories-content');
+  el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted)">Memuat...</div>';
+  try {
+    const data = await apiFetch('/categories');
+    el.innerHTML = `<table class="admin-table"><thead><tr>
+      <th>ID</th><th>Icon</th><th>Nama</th><th>Slug</th><th>Listings</th><th>Aksi</th>
+    </tr></thead><tbody>
+    ${data.map(c => `<tr>
+      <td>${c.id}</td>
+      <td style="font-size:1.5rem">${c.icon}</td>
+      <td>${c.name}</td>
+      <td>${c.slug}</td>
+      <td>${c.listing_count||0}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="deleteCategory(${c.id},'${c.name}')">Hapus</button></td>
+    </tr>`).join('')}
+    </tbody></table>`;
+  } catch(e) { el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted)">Gagal memuat</div>'; }
+}
+
+async function addCategory() {
+  const name = document.getElementById('cat-name').value.trim();
+  const slug = document.getElementById('cat-slug').value.trim();
+  const icon = document.getElementById('cat-icon').value.trim();
+  if (!name || !slug || !icon) { showToast('Semua field wajib diisi', 'error'); return; }
+  const res = await apiFetch('/admin/categories', 'POST', { name, slug, icon });
+  if (res.id) { showToast('Kategori ditambahkan!', 'success'); loadCategories(); document.getElementById('cat-name').value=''; document.getElementById('cat-slug').value=''; document.getElementById('cat-icon').value=''; }
+  else showToast(res.message||'Gagal', 'error');
+}
+
+async function deleteCategory(id, name) {
+  if (!confirm('Hapus kategori "' + name + '"?')) return;
+  const res = await apiFetch('/admin/categories/' + id, 'DELETE');
+  if (res.success) { showToast('Kategori dihapus!', 'success'); loadCategories(); }
+  else showToast(res.message||'Gagal', 'error');
+}
+
+// ===== BROADCAST =====
+async function sendBroadcast() {
+  const target = document.getElementById('broadcast-target').value;
+  const title = document.getElementById('broadcast-title').value.trim();
+  const message = document.getElementById('broadcast-msg').value.trim();
+  if (!title || !message) { showToast('Judul dan pesan wajib diisi', 'error'); return; }
+  const resultEl = document.getElementById('broadcast-result');
+  resultEl.textContent = 'Mengirim...';
+  const res = await apiFetch('/admin/broadcast', 'POST', { target, title, message });
+  if (res.sent) { showToast(`Broadcast terkirim ke ${res.sent} user!`, 'success'); resultEl.textContent = `Terkirim ke ${res.sent} user`; document.getElementById('broadcast-title').value=''; document.getElementById('broadcast-msg').value=''; }
+  else showToast(res.message||'Gagal', 'error');
 }
 </script>
 </body>
