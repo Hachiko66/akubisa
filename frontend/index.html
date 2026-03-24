@@ -1438,6 +1438,18 @@ body { font-family: var(--font-body); }
         <div id="upload-status" style="margin-top:.4rem;font-size:.8rem"></div>
         <input type="hidden" id="post-file-url" value="">
         <input type="hidden" id="post-file-name" value="">
+        <!-- Sample/Preview URL -->
+        <div style="margin-top:.8rem">
+          <label class="form-label">Link Preview/Sample (opsional)</label>
+          <input class="form-input" id="post-sample-url" placeholder="https://drive.google.com/... atau link preview">
+          <div style="font-size:.72rem;color:var(--muted);margin-top:.3rem">Link yang bisa dilihat buyer sebelum beli</div>
+        </div>
+        <!-- Delivery URL alternatif -->
+        <div style="margin-top:.8rem">
+          <label class="form-label">Atau gunakan Link Download (opsional)</label>
+          <input class="form-input" id="post-delivery-url" placeholder="https://drive.google.com/... link file produk">
+          <div style="font-size:.72rem;color:var(--muted);margin-top:.3rem">Buyer akan dapat link ini otomatis setelah bayar</div>
+        </div>
       </div>
 
       <div class="form-group"><label class="form-label">Judul *</label><input class="form-input" id="post-title" placeholder="Aku Bisa Bantu Kamu... / Nama Produk..."></div>
@@ -1454,6 +1466,12 @@ body { font-family: var(--font-body); }
         <div class="form-group"><label class="form-label">Satuan</label><input class="form-input" id="post-price-unit" placeholder="/jam, /project, /produk"></div>
       </div>
     </form>
+    <!-- FAQ Section -->
+    <div id="faq-section" style="margin-bottom:1rem">
+      <label class="form-label">FAQ (Pertanyaan Umum) — opsional</label>
+      <div id="faq-list" style="display:flex;flex-direction:column;gap:.5rem;margin-top:.4rem"></div>
+      <button type="button" class="btn btn-outline btn-sm" style="margin-top:.5rem" onclick="addFaqItem()">+ Tambah Pertanyaan</button>
+    </div>
     <div style="display:flex;gap:.8rem;justify-content:flex-end;margin-top:1rem">
       <button class="btn btn-outline" onclick="closePostModal()"><span data-i18n="btn_cancel">Batal</span></button>
       <button class="btn btn-primary" id="post-submit-btn" onclick="submitListing()">Posting Sekarang</button>

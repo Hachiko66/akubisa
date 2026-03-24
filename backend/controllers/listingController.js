@@ -50,13 +50,13 @@ exports.getOne = async (req, res) => {
 };
 
 exports.create = async (req, res) => {
-  const { title, description, category_id, price, price_unit, city } = req.body;
+  const { title, description, category_id, price, price_unit, city, sample_url, delivery_url, faq } = req.body;
   if (!title || !description) return res.status(400).json({ message: 'Judul dan deskripsi wajib diisi' });
   try {
     const result = await pool.query(
-      `INSERT INTO listings (user_id, title, description, category_id, price, price_unit, city)
-       VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
-      [req.user.id, title, description, category_id || null, price || null, price_unit || null, city || null]
+      `INSERT INTO listings (user_id, title, description, category_id, price, price_unit, city, sample_url, delivery_url, faq)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *`,
+      [req.user.id, title, description, category_id || null, price || null, price_unit || null, city || null, sample_url || null, delivery_url || null, JSON.stringify(faq || [])]
     );
     res.status(201).json({ message: 'Listing berhasil dibuat!', listing: result.rows[0] });
   } catch (err) {

@@ -335,25 +335,65 @@ async function openListingDetail(id) {
       </div>
     </div>
     <div style="display:flex;gap:1rem;align-items:center;justify-content:space-between;flex-wrap:wrap">
-      <div>
-        <div style="font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;color:var(--accent)">${l.price||'Hubungi untuk harga'}</div>
-        <div style="font-size:.75rem;color:var(--muted)">${l.price_unit||''}</div>
+    <!-- Sample/Preview -->
+    ${l.sample_url ? `<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:.8rem;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between">
+      <span style="font-size:.85rem;color:#166534">👁️ Preview tersedia</span>
+      <a href="${l.sample_url}" target="_blank" class="btn btn-outline btn-sm" style="color:#166534;border-color:#bbf7d0">Lihat Preview →</a>
+    </div>` : ''}
+    <!-- Harga & CTA -->
+    <div style="background:var(--warm);border-radius:12px;padding:1.2rem;margin-bottom:1rem">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem">
+        <div>
+          <div style="font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800;color:var(--accent)">${l.price||'Hubungi untuk harga'}</div>
+          <div style="font-size:.75rem;color:var(--muted)">${l.price_unit||''}</div>
+        </div>
+        ${currentUser && currentUser.id !== l.user_id ? `
+        <div style="display:flex;flex-direction:column;gap:.5rem;min-width:180px">
+          <button class="btn btn-primary" style="padding:.7rem 1.5rem;font-size:.95rem;border-radius:100px" onclick="closeListingModal();openCreateTrxModal(${l.user_id},'${(l.full_name||'').replace(/'/g,"\'")}',${l.id},'listing')">🛒 Beli Sekarang</button>
+          <button class="btn btn-outline btn-sm" onclick="contactSeller(${l.user_id},'${(l.full_name||'').replace(/'/g,"\'")}',${l.id})">💬 Tanya Dulu</button>
+        </div>` : !currentUser ? `<button class="btn btn-primary" style="border-radius:100px" onclick="goTo('register');closeListingModal()">Daftar untuk Membeli</button>` : ''}
       </div>
-      ${currentUser && currentUser.id !== l.user_id
-        ? `<div style="display:flex;gap:.6rem;flex-wrap:wrap">
-        <button class="btn btn-primary btn-sm" onclick="contactSeller(${l.user_id},'${(l.full_name||'').replace(/'/g,"\'")}',${l.id})">💬 Hubungi</button>
-        <button class="btn btn-primary btn-sm" style="background:var(--accent2)" onclick="closeListingModal();openCreateTrxModal(${l.user_id},'${(l.full_name||'').replace(/'/g,"\'")}',${l.id},'listing')">💳 Bayar via AkuBisa</button>
-        <button class="btn btn-outline btn-sm" onclick="openReviewModal(${l.user_id},'${(l.full_name||'').replace(/'/g,"\\'")}',${l.id})">⭐ Beri Ulasan</button>
-        <button class="btn btn-outline btn-sm" onclick="closeListingModal();openPublicProfile(${l.user_id})">👤 Lihat Profil</button>
-        <button class="btn btn-outline btn-sm" data-bookmarked="false" onclick="toggleBookmark(${l.id},this)" style="color:var(--muted)">🔖 Simpan</button>
-        <button class="btn btn-outline btn-sm" onclick="shareToTwitter(${l.id},'${l.title.replace(/'/g,"\\'")}')">𝕏 Share</button>
-        <button class="btn btn-outline btn-sm" onclick="shareToLinkedin(${l.id},'${l.title.replace(/'/g,"\\'")}')">💼 LinkedIn</button>
-        <button class="btn btn-outline btn-sm" onclick="copyListingLink(${l.id},this)">🔗 Salin Link</button>
-        <button class="btn btn-outline btn-sm" onclick="closeListingModal();setTimeout(()=>openReportModal(${l.user_id},'${(l.full_name||'').replace(/'/g,"\\'")}'," ${l.id}),200)" style="color:var(--danger);border-color:var(--danger)">🚩 Laporkan</button>
-      </div>`
-        : !currentUser ? `<button class="btn btn-primary" onclick="goTo('register');closeListingModal()">Daftar untuk Menghubungi</button>` : ''}
+    </div>
+    <!-- Aksi lainnya -->
+    ${currentUser && currentUser.id !== l.user_id ? `
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem">
+      <button class="btn btn-outline btn-sm" data-bookmarked="false" onclick="toggleBookmark(${l.id},this)">🔖 Simpan</button>
+      <button class="btn btn-outline btn-sm" onclick="closeListingModal();openPublicProfile(${l.user_id})">👤 Lihat Profil</button>
+      <button class="btn btn-outline btn-sm" onclick="openReviewModal(${l.user_id},'${(l.full_name||'').replace(/'/g,"\'")}',${l.id})">⭐ Ulasan</button>
+      <button class="btn btn-outline btn-sm" onclick="shareToTwitter(${l.id},'${l.title.replace(/'/g,"\'")}')">𝕏 Share</button>
+      <button class="btn btn-outline btn-sm" onclick="copyListingLink(${l.id},this)">🔗 Salin Link</button>
+      <button class="btn btn-outline btn-sm" onclick="closeListingModal();setTimeout(()=>openReportModal(${l.user_id},'${(l.full_name||'').replace(/'/g,"\'")}',${l.id}),200)" style="color:var(--danger);border-color:var(--danger)">🚩 Laporkan</button>
+    </div>
+    <div id="download-btn-wrap-${l.id}"></div>` : ''}
+    <!-- FAQ -->
+    ${l.faq && l.faq.length ? `
+    <div style="margin-top:1.5rem">
+      <div style="font-weight:700;font-size:.95rem;margin-bottom:.8rem">❓ FAQ</div>
+      ${l.faq.map(f => `
+      <div style="border:1px solid var(--border);border-radius:10px;margin-bottom:.5rem;overflow:hidden">
+        <div style="padding:.75rem 1rem;font-weight:600;font-size:.88rem;cursor:pointer;background:var(--warm)" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">${f.q}</div>
+        <div style="padding:.75rem 1rem;font-size:.85rem;color:#555;display:none">${f.a}</div>
+      </div>`).join('')}
+    </div>` : ''}
     </div>`;
   document.getElementById('listing-modal').classList.add('open');
+  // Cek apakah user sudah beli produk digital ini
+  if (currentUser && currentUser.id !== l.user_id && l.delivery_url) {
+    checkDeliveryAccess(l.id);
+  }
+}
+
+async function checkDeliveryAccess(listingId) {
+  try {
+    const res = await api.get(`/listings/${listingId}/delivery`);
+    if (res.url) {
+      const wrap = document.getElementById(`download-btn-wrap-${listingId}`);
+      if (wrap) wrap.innerHTML = `<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:.8rem;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between">
+        <span style="font-size:.85rem;color:#166534">✅ Kamu sudah membeli produk ini</span>
+        <a href="${res.url}" target="_blank" class="btn btn-primary btn-sm" style="background:#166534">⬇️ Download</a>
+      </div>`;
+    }
+  } catch(e) {}
 }
 
 function closeListingModal() {

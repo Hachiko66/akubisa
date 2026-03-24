@@ -1362,7 +1362,7 @@ async function submitDispute() {
 }
 
 // Modal buat transaksi
-function openCreateTrxModal(workerId, workerName, listingId = null, type = 'listing') {
+async function openCreateTrxModal(workerId, workerName, listingId = null, type = 'listing') {
   if (!currentUser) { goTo('login'); return; }
   document.getElementById('trx-worker-id').value = workerId;
   document.getElementById('trx-worker-name').textContent = workerName;
@@ -1372,24 +1372,61 @@ function openCreateTrxModal(workerId, workerName, listingId = null, type = 'list
   document.getElementById('trx-notes').value = '';
   document.getElementById('trx-error').textContent = '';
   document.getElementById('trx-breakdown').style.display = 'none';
-  document.getElementById('create-trx-modal').classList.add('open');
 
-  // Live calc breakdown
-  document.getElementById('trx-amount').oninput = function() {
-    const amt = parseInt(this.value) || 0;
-    if (amt >= 10000) {
-      const dp = Math.ceil(amt * 0.5);
-      const final = amt - dp;
-      const fee = Math.ceil(amt * 0.1);
-      document.getElementById('trx-dp-amount').textContent = 'Rp ' + dp.toLocaleString('id');
-      document.getElementById('trx-final-amount').textContent = 'Rp ' + final.toLocaleString('id');
+  // Cek apakah produk digital
+  let isDigital = false;
+  let listingPrice = null;
+  if (listingId) {
+    try {
+      const l = await api.getListing(listingId);
+      isDigital = !!(l.delivery_url || l.file_url);
+      listingPrice = l.price ? parseInt(l.price.replace(/[^0-9]/g,'')) : null;
+    } catch(e) {}
+  }
+
+  // Simpan flag
+  let digitalFlag = document.getElementById('trx-is-digital');
+  if (!digitalFlag) {
+    digitalFlag = document.createElement('input');
+    digitalFlag.type = 'hidden';
+    digitalFlag.id = 'trx-is-digital';
+    document.getElementById('create-trx-modal').appendChild(digitalFlag);
+  }
+  digitalFlag.value = isDigital ? '1' : '0';
+
+  const submitBtn = document.getElementById('trx-submit-btn');
+  const breakdownEl = document.getElementById('trx-breakdown');
+  const amountEl = document.getElementById('trx-amount');
+
+  if (isDigital) {
+    submitBtn.innerHTML = '🛒 Beli Sekarang — Bayar Penuh';
+    if (listingPrice) { amountEl.value = listingPrice; amountEl.readOnly = true; }
+    document.getElementById('trx-notes').value = 'Pembelian produk digital';
+    if (listingPrice && listingPrice >= 10000) {
+      const fee = Math.ceil(listingPrice * 0.05);
+      document.getElementById('trx-dp-amount').textContent = 'Rp ' + listingPrice.toLocaleString('id');
+      document.getElementById('trx-final-amount').textContent = 'Rp 0 (lunas)';
       document.getElementById('trx-fee-amount').textContent = 'Rp ' + fee.toLocaleString('id');
-      document.getElementById('trx-worker-receive').textContent = 'Rp ' + (amt - fee).toLocaleString('id');
-      document.getElementById('trx-breakdown').style.display = 'block';
-    } else {
-      document.getElementById('trx-breakdown').style.display = 'none';
+      breakdownEl.style.display = 'block';
     }
-  };
+  } else {
+    submitBtn.innerHTML = t('btn_pay_dp');
+    amountEl.readOnly = false;
+    amountEl.oninput = function() {
+      const amt = parseInt(this.value) || 0;
+      if (amt >= 10000) {
+        const dp = Math.ceil(amt * 0.5);
+        const final = amt - dp;
+        const fee = Math.ceil(amt * 0.05);
+        document.getElementById('trx-dp-amount').textContent = 'Rp ' + dp.toLocaleString('id');
+        document.getElementById('trx-final-amount').textContent = 'Rp ' + final.toLocaleString('id');
+        document.getElementById('trx-fee-amount').textContent = 'Rp ' + fee.toLocaleString('id');
+        breakdownEl.style.display = 'block';
+      } else { breakdownEl.style.display = 'none'; }
+    };
+  }
+
+  document.getElementById('create-trx-modal').classList.add('open');
 }
 
 function closeCreateTrxModal() { document.getElementById('create-trx-modal').classList.remove('open'); }

@@ -144,3 +144,23 @@ router.get('/:id/purchase-status', auth, async (req, res) => {
     res.status(500).json({ message: e.message });
   }
 });
+
+// ===== DELIVERY URL - hanya buyer yang sudah complete transaksi =====
+router.get('/:id/delivery', auth, async (req, res) => {
+  try {
+    const listing = await pool.query('SELECT delivery_url, file_url FROM listings WHERE id=$1', [req.params.id]);
+    if (!listing.rows.length) return res.status(404).json({ message: 'Listing tidak ditemukan' });
+
+    // Cek apakah user sudah complete transaksi untuk listing ini
+    const trx = await pool.query(
+      `SELECT id FROM transactions WHERE listing_id=$1 AND client_id=$2 AND status='completed'`,
+      [req.params.id, req.user.id]
+    );
+    if (!trx.rows.length) return res.status(403).json({ message: 'Akses ditolak. Selesaikan transaksi terlebih dahulu.' });
+
+    const url = listing.rows[0].delivery_url || listing.rows[0].file_url;
+    if (!url) return res.status(404).json({ message: 'File tidak tersedia' });
+
+    res.json({ url });
+  } catch(e) { res.status(500).json({ message: e.message }); }
+});
