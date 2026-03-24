@@ -29,12 +29,14 @@ router.get('/:id', async (req, res) => {
     const u = await pool.query(
       `SELECT u.id, u.full_name, u.avatar, u.bio, u.city, u.is_verified, u.created_at,
               u.social_twitter, u.social_linkedin, u.social_github, u.social_tiktok, u.social_youtube, u.social_telegram,
-              COUNT(l.id) as listing_count,
+              COUNT(DISTINCT l.id) as listing_count,
               COALESCE(AVG(r.rating),0) as avg_rating,
-              COUNT(r.id) as review_count
+              COUNT(DISTINCT r.id) as review_count,
+              COUNT(DISTINCT t.id) as completed_transactions
        FROM users u
        LEFT JOIN listings l ON l.user_id = u.id AND l.is_active = true
        LEFT JOIN reviews r ON r.reviewed_id = u.id
+       LEFT JOIN transactions t ON t.worker_id = u.id AND t.status = 'completed'
        WHERE u.id = $1
        GROUP BY u.id`, [req.params.id]
     );
