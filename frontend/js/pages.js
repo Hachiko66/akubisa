@@ -627,8 +627,11 @@ async function renderPublicProfile(userId) {
 
     document.getElementById('pub-name').textContent = profile.full_name || '-';
     document.getElementById('pub-city').textContent = profile.city || 'Indonesia';
-    document.getElementById('pub-listings').textContent = (profile.listing_count || 0) + ' penawaran';
+    document.getElementById('pub-listings').textContent = (profile.listing_count || 0);
     document.getElementById('pub-bio').textContent = profile.bio || '';
+    // Completed transactions
+    const completedEl = document.getElementById('pub-completed-trx');
+    if (completedEl) completedEl.textContent = profile.completed_transactions || 0;
     // Sosmed links di profil publik
     const pubSocialEl = document.getElementById('pub-social-links');
     if (pubSocialEl) pubSocialEl.innerHTML = renderSocialLinks(profile, true);
@@ -672,8 +675,8 @@ async function renderPublicProfile(userId) {
     }
 
     // Load listings
-    const listRes = await api.getListings(`limit=6`);
-    const myListings = (listRes.listings || []).filter(l => l.user_id == userId);
+    const listRes = await api.getListings(`user_id=${userId}&limit=12`);
+    const myListings = listRes.listings || [];
     document.getElementById('pub-listings-grid').innerHTML = myListings.length
       ? myListings.map(listingCardHTML).join('')
       : '<p style="color:var(--muted);font-size:.85rem">Belum ada penawaran aktif.</p>';

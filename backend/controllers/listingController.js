@@ -9,6 +9,8 @@ exports.getAll = async (req, res) => {
   if (category) { where.push(`c.slug = $${i++}`); params.push(category); }
   if (search) { where.push(`(l.title ILIKE $${i} OR l.description ILIKE $${i})`); params.push(`%${search}%`); i++; }
   if (city) { where.push(`l.city ILIKE $${i++}`); params.push(`%${city}%`); }
+  const user_id = req.query.user_id;
+  if (user_id) { where.push(`l.user_id = $${i++}`); params.push(parseInt(user_id)); }
   const whereStr = where.length ? 'WHERE ' + where.join(' AND ') : '';
   try {
     const result = await pool.query(

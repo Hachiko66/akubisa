@@ -1087,38 +1087,56 @@ body { font-family: var(--font-body); }
 </div>
 
 <div id="page-public-profile" class="page">
-  <div class="profile-header">
-    <div class="profile-inner">
-      <div class="profile-avatar-lg" id="pub-avatar" style="background:var(--accent);font-size:1.5rem;font-weight:800;overflow:hidden">?</div>
-      <div style="flex:1">
-        <div class="profile-name" id="pub-name">-</div>
-        <div class="profile-meta"><span id="pub-city">-</span> &middot; <span id="pub-listings">0 penawaran</span></div>
-        <div style="margin-top:.5rem;display:flex;gap:.8rem;align-items:center;flex-wrap:wrap">
-          <span id="pub-rating-badge" style="font-size:.9rem;color:white;font-weight:700"></span>
-          <span id="pub-verified" style="display:none;font-size:.78rem;font-weight:700;color:white;background:#1d9bf0;padding:.25rem .7rem;border-radius:100px;align-items:center;gap:.3rem"><svg width="12" height="12" viewBox="0 0 24 24" fill="white"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg> Pengguna Terverifikasi</span>
+  <!-- HERO HEADER -->
+  <div class="profile-header" style="padding:2.5rem 5vw">
+    <div style="max-width:1100px;margin:0 auto;display:flex;gap:2rem;align-items:flex-start;flex-wrap:wrap">
+      <div class="profile-avatar-lg" id="pub-avatar" style="background:var(--accent);font-size:2rem;font-weight:800;overflow:hidden;width:100px;height:100px;flex-shrink:0">?</div>
+      <div style="flex:1;min-width:200px">
+        <div style="display:flex;align-items:center;gap:.8rem;flex-wrap:wrap;margin-bottom:.3rem">
+          <div class="profile-name" id="pub-name" style="font-size:1.6rem">-</div>
+          <span id="pub-verified" style="display:none;font-size:.75rem;font-weight:700;color:white;background:#1d9bf0;padding:.2rem .6rem;border-radius:100px;display:none;align-items:center;gap:.3rem"><svg width="11" height="11" viewBox="0 0 24 24" fill="white"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg> Terverifikasi</span>
         </div>
-        <div id="pub-bio" style="margin-top:.5rem;font-size:.85rem;color:rgba(255,255,255,.6);max-width:400px;line-height:1.5"></div>
-      <div id="pub-social-links"></div>
+        <div class="profile-meta" style="margin-bottom:.5rem"><span id="pub-city">-</span></div>
+        <div id="pub-bio" style="font-size:.88rem;color:rgba(255,255,255,.65);max-width:500px;line-height:1.6;margin-bottom:.8rem"></div>
+        <div style="display:flex;gap:1.5rem;flex-wrap:wrap;margin-bottom:.8rem">
+          <div style="text-align:center">
+            <div style="font-size:1.2rem;font-weight:800;color:white" id="pub-listings">0</div>
+            <div style="font-size:.7rem;color:rgba(255,255,255,.5)">Penawaran</div>
+          </div>
+          <div style="text-align:center">
+            <div style="font-size:1.2rem;font-weight:800;color:white" id="pub-completed-trx">0</div>
+            <div style="font-size:.7rem;color:rgba(255,255,255,.5)">Transaksi Selesai</div>
+          </div>
+          <div style="text-align:center">
+            <div style="font-size:1.2rem;font-weight:800;color:var(--accent)" id="pub-rating-badge">-</div>
+            <div style="font-size:.7rem;color:rgba(255,255,255,.5)">Rating</div>
+          </div>
+        </div>
+        <div id="pub-social-links"></div>
       </div>
-      <div style="display:flex;flex-direction:column;gap:.6rem" id="pub-actions">
-        <button class="btn btn-primary btn-sm" id="pub-msg-btn" style="display:none">💬 Kirim Pesan</button>
-        <button class="btn btn-outline btn-sm" id="pub-review-btn" style="display:none;color:white;border-color:rgba(255,255,255,.3)">⭐ Beri Ulasan</button>
+      <div style="display:flex;flex-direction:column;gap:.6rem;min-width:160px" id="pub-actions">
+        <button class="btn btn-primary" id="pub-msg-btn" style="display:none;border-radius:100px">💬 Kirim Pesan</button>
+        <button class="btn btn-outline" id="pub-review-btn" style="display:none;color:white;border-color:rgba(255,255,255,.3);border-radius:100px">⭐ Beri Ulasan</button>
       </div>
     </div>
   </div>
-  <div style="max-width:1200px;margin:0 auto;padding:2rem 5vw;display:grid;grid-template-columns:1fr 320px;gap:2rem">
+  <!-- CONTENT -->
+  <div style="max-width:1100px;margin:0 auto;padding:2rem 5vw;display:grid;grid-template-columns:1fr 300px;gap:2rem">
     <div>
-      <div style="font-weight:700;font-size:1.1rem;margin-bottom:1rem">Penawaran</div>
+      <div style="font-weight:700;font-size:1.1rem;margin-bottom:1rem">🛠️ Penawaran</div>
       <div class="listings-grid" id="pub-listings-grid"></div>
-      <!-- PORTFOLIO SECTION -->
       <div id="pub-portfolio-section" style="margin-top:2rem;display:none">
-        <div style="font-weight:700;font-size:1.1rem;margin-bottom:1rem">🗂️ Portfolio Pekerjaan</div>
-        <div id="pub-portfolio-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem"></div>
+        <div style="font-weight:700;font-size:1.1rem;margin-bottom:1rem">🗂️ Portfolio</div>
+        <div id="pub-portfolio-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1rem"></div>
+      </div>
+      <div style="margin-top:2rem">
+        <div style="font-weight:700;font-size:1.1rem;margin-bottom:1rem">⭐ Ulasan</div>
+        <div id="pub-reviews-list"></div>
       </div>
     </div>
     <div>
-      <div class="card" style="margin-bottom:1.5rem">
-        <div style="font-weight:700;font-size:1rem;margin-bottom:1rem">Ulasan & Rating</div>
+      <div class="card" style="margin-bottom:1.5rem;position:sticky;top:110px">
+        <div style="font-weight:700;font-size:1rem;margin-bottom:1rem">Rating</div>
         <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem">
           <div style="text-align:center">
             <div style="font-size:2.5rem;font-weight:800;color:var(--accent)" id="pub-avg-rating">-</div>
@@ -1128,8 +1146,9 @@ body { font-family: var(--font-body); }
           <div style="flex:1" id="pub-rating-bars"></div>
         </div>
       </div>
-      <div id="pub-reviews-list"></div>
     </div>
+  </div>
+</div>
   </div>
 </div>
 
