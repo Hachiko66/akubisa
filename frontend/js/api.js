@@ -156,3 +156,6 @@ api.adminRejectWithdrawal   = (id, note)      => fetch(`${API}/admin/withdrawals
 api.adminGetDisputes        = ()              => fetch(`${API}/admin/disputes`, { headers:headers(true) }).then(r=>r.json());
 api.adminResolveDispute     = (id, decision, note) => fetch(`${API}/admin/disputes/${id}/resolve`, { method:'PATCH', headers:headers(true), body:JSON.stringify({decision, admin_note:note}) }).then(r=>r.json());
 api.adminGetTransactions    = ()              => fetch(`${API}/admin/transactions`, { headers:headers(true) }).then(r=>r.json());
+// Generic methods
+api.get    = (path) => fetch(`${API}${path}`, { headers: headers(true) }).then(r => r.json());
+api.delete = (path) => fetch(`${API}${path}`, { method: 'DELETE', headers: headers(true) }).then(r => r.json());

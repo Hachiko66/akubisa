@@ -5,7 +5,36 @@ let categories  = [];
 let currentCategory = null;
 
 // ===== INIT =====
+
+// ===== SOCIAL LOGIN HANDLER =====
+function handleSocialLogin() {
+  const hash = location.hash;
+  if (!hash.startsWith('#social-login')) return;
+  const params = new URLSearchParams(hash.substring(hash.indexOf('?') + 1));
+  const token = params.get('token');
+  const userStr = params.get('user');
+  if (token && userStr) {
+    try {
+      const user = JSON.parse(decodeURIComponent(userStr));
+      localStorage.setItem('akubisa_token', token);
+      localStorage.setItem('akubisa_user', JSON.stringify(user));
+      currentUser = user;
+      history.replaceState(null, '', '/');
+      renderNav();
+      navigate('dashboard');
+      renderDashboard();
+      startNotifPoll();
+      showToast('Selamat datang, ' + user.full_name + '! 👋', 'success');
+    } catch(e) {
+      showToast('Gagal login dengan Google', 'error');
+      navigate('login');
+    }
+  }
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
+  // Cek social login dulu sebelum apapun
+  if (location.hash.startsWith('#social-login')) { handleSocialLogin(); return; }
   if (typeof applyTranslations === 'function') applyTranslations();
   // Panggil render untuk halaman awal
   const token = localStorage.getItem('akubisa_token');
@@ -98,6 +127,8 @@ function navigate(page) {
   // Tampilkan halaman aktif
   const el = document.getElementById('page-' + page);
   if (el) el.classList.add('active');
+  // Cek social login dulu sebelum apapun
+  if (location.hash.startsWith('#social-login')) { handleSocialLogin(); return; }
   if (typeof applyTranslations === 'function') applyTranslations();
 
   // Navbar: sembunyikan di auth pages

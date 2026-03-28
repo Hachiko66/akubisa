@@ -865,6 +865,11 @@ body { font-family: var(--font-body); }
         <div class="form-group"><label class="form-label">No. WhatsApp</label><input class="form-input" id="reg-phone" placeholder="08xx..." type="tel"></div>
       </div>
       <button class="btn btn-primary btn-block" id="reg-btn" onclick="doRegister()" style="padding:.85rem;font-size:.95rem;border-radius:12px;margin-top:.5rem">Daftar Sekarang →</button>
+      <div style="text-align:center;margin:1rem 0;color:var(--muted);font-size:.85rem">— atau —</div>
+      <a href="/api/auth/google" class="btn btn-block" style="background:white;border:1.5px solid var(--border);color:var(--ink);border-radius:12px;padding:.85rem;font-size:.95rem;display:flex;align-items:center;justify-content:center;gap:.8rem;text-decoration:none">
+        <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+        Daftar dengan Google
+      </a>
       <p style="text-align:center;margin-top:1rem;font-size:.75rem;color:var(--muted)"><span data-i18n="register_agree">Dengan mendaftar, kamu menyetujui Syarat & Ketentuan AkuBisa.</span></p>
     </div>
   </div>
@@ -1276,6 +1281,15 @@ body { font-family: var(--font-body); }
       <label class="form-label"><span data-i18n="trx_notes_label">Deskripsi Pekerjaan *</span></label>
       <textarea class="form-textarea" id="trx-notes" style="min-height:70px" placeholder="Contoh: Desain logo untuk startup saya..."></textarea>
     </div>
+    <!-- Kode Diskon -->
+    <div class="form-group" id="discount-section">
+      <label class="form-label">Kode Diskon (opsional)</label>
+      <div style="display:flex;gap:.5rem">
+        <input class="form-input" id="trx-discount-code" placeholder="Masukkan kode diskon..." style="flex:1">
+        <button type="button" class="btn btn-outline btn-sm" onclick="validateDiscountCode()" style="white-space:nowrap">Pakai</button>
+      </div>
+      <div id="discount-result" style="font-size:.82rem;margin-top:.4rem"></div>
+    </div>
     <div id="trx-breakdown" style="background:var(--warm);border-radius:10px;padding:1rem;margin-bottom:1rem;font-size:.83rem;display:none">
       <div style="font-weight:700;margin-bottom:.6rem"><span data-i18n="trx_breakdown">Rincian Pembayaran:</span></div>
       <div style="display:flex;justify-content:space-between;margin-bottom:.3rem"><span><span data-i18n="trx_dp">DP 50% (bayar sekarang)</span></span><span id="trx-dp-amount" style="font-weight:700;color:var(--accent)"></span></div>
@@ -1331,6 +1345,27 @@ body { font-family: var(--font-body); }
         <button class="wallet-tab" onclick="switchWalletTab('portfolio',this)"><span data-i18n="wallet_portfolio">🗂 Portfolio Saya</span></button>
       </div>
       <div id="wallet-tab-content"></div>
+      <!-- Kode Diskon (Worker only) -->
+      <div id="discount-section-wallet" style="display:none;margin-top:2rem">
+        <div style="font-weight:700;font-size:1.1rem;margin-bottom:1rem">🏷️ Kode Diskon Saya</div>
+        <div class="card" style="margin-bottom:1rem">
+          <div style="font-weight:700;margin-bottom:1rem">Buat Kode Baru</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin-bottom:.8rem">
+            <div><label class="form-label">Kode *</label><input class="form-input" id="dc-code" placeholder="DISKON20" style="text-transform:uppercase"></div>
+            <div><label class="form-label">Tipe</label>
+              <select class="form-select" id="dc-type">
+                <option value="percent">Persen (%)</option>
+                <option value="flat">Flat (Rp)</option>
+              </select>
+            </div>
+            <div><label class="form-label">Nilai *</label><input class="form-input" id="dc-value" type="number" placeholder="20 atau 50000"></div>
+            <div><label class="form-label">Max Penggunaan</label><input class="form-input" id="dc-max-uses" type="number" placeholder="Kosong = unlimited"></div>
+          </div>
+          <div style="margin-bottom:.8rem"><label class="form-label">Expired (opsional)</label><input class="form-input" id="dc-expires" type="date"></div>
+          <button class="btn btn-primary btn-sm" onclick="createDiscountCode()">+ Buat Kode Diskon</button>
+        </div>
+        <div id="my-discount-codes"><p style="color:var(--muted);font-size:.85rem">Memuat...</p></div>
+      </div>
     </div>
   </div>
 </div>

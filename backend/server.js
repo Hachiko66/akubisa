@@ -2,6 +2,8 @@ require('dotenv').config();
 const express = require('express');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const session = require('express-session');
+const passport = require('./config/passport');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
@@ -20,6 +22,14 @@ const msgLimiter    = rateLimit({ windowMs: 60*1000,    max: 120,  message: { me
 app.use(globalLimiter);
 app.use(cors({ origin: '*' }));
 app.use(express.json({ limit: '10mb' }));
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'akubisa_secret',
+  resave: false,
+  saveUninitialized: false,
+  cookie: { secure: true, maxAge: 24*60*60*1000 }
+}));
+app.use(passport.initialize());
+app.use(passport.session());
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads/digital', express.static(path.join(__dirname, 'uploads/digital')));
 app.use('/uploads/portfolio', require('express').static('/var/www/akubisa/frontend/uploads/portfolio'));
@@ -41,6 +51,7 @@ const pool = require('./config/db');
 
 // Routes
 app.use('/api/auth',          authLimiter, require('./routes/auth'));
+app.use('/api/discount',        require('./routes/discount'));
 app.use('/api/listings',                   require('./routes/listings'));
 app.use('/api/categories',                 require('./routes/categories'));
 app.use('/api/profile',                    require('./routes/profile'));

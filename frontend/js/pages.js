@@ -1483,6 +1483,12 @@ async function renderWallet() {
   currentWalletTab = 'earnings';
   await loadWalletBalance();
   await switchWalletTab('earnings', document.querySelector('.wallet-tab'));
+  // Tampilkan section diskon untuk worker
+  const discountSection = document.getElementById('discount-section-wallet');
+  if (discountSection && currentUser.role === 'worker') {
+    discountSection.style.display = 'block';
+    loadMyDiscountCodes();
+  }
 }
 
 async function loadWalletBalance() {
@@ -1805,4 +1811,72 @@ async function submitKyc() {
     btn.disabled = false;
     btn.textContent = 'Kirim untuk Diverifikasi';
   }
+}
+
+// ===== DISCOUNT CODES =====
+let appliedDiscount = null;
+
+async function validateDiscountCode() {
+  const code = document.getElementById('trx-discount-code').value.trim();
+  const amount = parseInt(document.getElementById('trx-amount').value) || 0;
+  const listing_id = document.getElementById('trx-listing-id').value;
+  const resultEl = document.getElementById('discount-result');
+  if (!code) { resultEl.textContent = 'Masukkan kode diskon'; resultEl.style.color = 'var(--danger)'; return; }
+  if (!amount || amount < 10000) { resultEl.textContent = 'Masukkan jumlah harga dulu'; resultEl.style.color = 'var(--danger)'; return; }
+  resultEl.textContent = 'Memvalidasi...'; resultEl.style.color = 'var(--muted)';
+  const res = await api.post('/discount/validate', { code, listing_id: listing_id || null, amount });
+  if (res.valid) {
+    appliedDiscount = res;
+    resultEl.innerHTML = '✅ Diskon ' + (res.discount_type === 'percent' ? res.discount_value + '%' : 'Rp ' + res.discount_value.toLocaleString('id-ID')) + ' diterapkan! Hemat Rp ' + res.discount_amount.toLocaleString('id-ID');
+    resultEl.style.color = '#166534';
+    document.getElementById('trx-amount').value = res.final_amount;
+    document.getElementById('trx-amount').dispatchEvent(new Event('input'));
+  } else {
+    appliedDiscount = null;
+    resultEl.textContent = res.message || 'Kode tidak valid';
+    resultEl.style.color = 'var(--danger)';
+  }
+}
+
+async function loadMyDiscountCodes() {
+  const el = document.getElementById('my-discount-codes');
+  if (!el) return;
+  try {
+    const codes = await api.get('/discount/my');
+    if (!Array.isArray(codes) || !codes.length) {
+      el.innerHTML = '<p style="color:var(--muted);font-size:.85rem">Belum ada kode diskon.</p>';
+      return;
+    }
+    el.innerHTML = codes.map(c => `
+      <div style="background:var(--warm);border-radius:10px;padding:.8rem;display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
+        <div>
+          <div style="font-weight:700;font-size:.95rem;letter-spacing:.05em">${c.code}</div>
+          <div style="font-size:.75rem;color:var(--muted)">${c.discount_type === 'percent' ? c.discount_value + '% off' : 'Rp ' + parseInt(c.discount_value).toLocaleString('id-ID') + ' off'} ${c.listing_title ? '· ' + c.listing_title : '· Semua listing'} ${c.max_uses ? '· ' + c.used_count + '/' + c.max_uses + ' dipakai' : ''}</div>
+        </div>
+        <button class="btn btn-danger btn-sm" onclick="deleteDiscountCode(${c.id})">Hapus</button>
+      </div>`).join('');
+  } catch(e) { el.innerHTML = '<p style="color:var(--muted)">Gagal memuat</p>'; }
+}
+
+async function deleteDiscountCode(id) {
+  if (!confirm('Hapus kode diskon ini?')) return;
+  const res = await api.delete('/discount/' + id);
+  if (res.success) { showToast('Kode dihapus!', 'success'); loadMyDiscountCodes(); }
+  else showToast(res.message || 'Gagal', 'error');
+}
+
+async function createDiscountCode() {
+  const code = document.getElementById('dc-code').value.trim().toUpperCase();
+  const type = document.getElementById('dc-type').value;
+  const value = parseInt(document.getElementById('dc-value').value);
+  const max_uses = document.getElementById('dc-max-uses').value;
+  const expires_at = document.getElementById('dc-expires').value;
+  if (!code || !value) { showToast('Kode dan nilai wajib diisi', 'error'); return; }
+  const res = await api.post('/discount', { code, discount_type: type, discount_value: value, max_uses: max_uses || null, expires_at: expires_at || null });
+  if (res.id) {
+    showToast('Kode diskon dibuat!', 'success');
+    loadMyDiscountCodes();
+    document.getElementById('dc-code').value = '';
+    document.getElementById('dc-value').value = '';
+  } else showToast(res.message || 'Gagal', 'error');
 }
