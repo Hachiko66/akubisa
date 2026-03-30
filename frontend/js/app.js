@@ -52,11 +52,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (location.hash.startsWith('#social-login')) { handleSocialLogin(); return; }
   // Cek listing page URL
   if (window.__LISTING_ID__) {
+    const token = localStorage.getItem('akubisa_token');
+    if (token) {
+      try { const res = await api.me(); if (res.id) { currentUser = res; localStorage.setItem('akubisa_user', JSON.stringify(res)); } } catch(e) {}
+    }
     await loadCategories();
+    if (typeof applyTranslations === 'function') applyTranslations();
     renderNav();
     navigate('explore');
     renderExplore();
-    setTimeout(() => openListingDetail(window.__LISTING_ID__), 800);
+    if (currentUser) startNotifPoll();
+    setTimeout(() => openListingDetail(window.__LISTING_ID__), 1000);
     return;
   }
   if (typeof applyTranslations === 'function') applyTranslations();
@@ -151,17 +157,7 @@ function navigate(page) {
   // Tampilkan halaman aktif
   const el = document.getElementById('page-' + page);
   if (el) el.classList.add('active');
-  // Cek social login dulu sebelum apapun
-  if (location.hash.startsWith('#social-login')) { handleSocialLogin(); return; }
-  // Cek listing page URL
-  if (window.__LISTING_ID__) {
-    await loadCategories();
-    renderNav();
-    navigate('explore');
-    renderExplore();
-    setTimeout(() => openListingDetail(window.__LISTING_ID__), 800);
-    return;
-  }
+
   if (typeof applyTranslations === 'function') applyTranslations();
 
   // Navbar: sembunyikan di auth pages
