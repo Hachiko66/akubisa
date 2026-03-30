@@ -32,12 +32,57 @@ router.patch('/:id/promote', auth, async (req, res) => {
   } catch(e) { res.status(500).json({ message: e.message }); }
 });
 
+async function seoPage(req, res) {
+  try {
+    const slug = req.params.slug;
+    const id = slug.split('-').pop();
+    if (!id || isNaN(id)) return res.redirect('/');
+
+    const result = await pool.query(`
+      SELECT l.id, l.title, l.description, l.price, l.price_unit,
+             u.full_name, c.name as category_name
+      FROM listings l
+      LEFT JOIN users u ON u.id = l.user_id
+      LEFT JOIN categories c ON c.id = l.category_id
+      WHERE l.id = $1 AND l.is_active = true
+      LIMIT 1
+    `, [id]);
+
+    if (!result.rows.length) return res.redirect('/');
+    const l = result.rows[0];
+
+    const title = `${l.title} — AkuBisa`;
+    const desc = l.description.replace(/<[^>]*>/g, '').slice(0, 155);
+    const image = 'https://akubisa.co/logonobg.png';
+    const url = `https://akubisa.co/listing/${slug}`;
+
+    let html = fs.readFileSync(path.join(__dirname, '../../frontend/index.html'), 'utf8');
+
+    html = html.replace(/<title>[^<]*<\/title>/, `<title>${title}</title>`);
+    html = html.replace(/<meta name="description" content="[^"]*"/, `<meta name="description" content="${desc}"`);
+    html = html.replace(/<meta property="og:title" content="[^"]*"/, `<meta property="og:title" content="${title}"`);
+    html = html.replace(/<meta property="og:description" content="[^"]*"/, `<meta property="og:description" content="${desc}"`);
+    html = html.replace(/<meta property="og:url" content="[^"]*"/, `<meta property="og:url" content="${url}"`);
+    html = html.replace(/<meta property="og:image" content="[^"]*"/, `<meta property="og:image" content="${image}"`);
+    html = html.replace('<link rel="canonical" href="https://akubisa.co/">', `<link rel="canonical" href="${url}">`);
+    html = html.replace('</body>', `<script>window.__LISTING_ID__=${l.id};</script>\n</body>`);
+
+    res.setHeader('Content-Type', 'text/html');
+    res.send(html);
+  } catch(e) {
+    console.error('SEO page error:', e.message);
+    res.redirect('/');
+  }
+}
+
+router.seoPage = seoPage;
 module.exports = router;
 
 // ===== DIGITAL PRODUCTS =====
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const pool = require('../config/db');
 
 const digitalStorage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -163,4 +208,58 @@ router.get('/:id/delivery', auth, async (req, res) => {
 
     res.json({ url });
   } catch(e) { res.status(500).json({ message: e.message }); }
+});
+
+// ===== SEO - Listing page dengan meta tags dinamis =====
+router.get('/page/:slug', async (req, res) => {
+  try {
+    const slug = req.params.slug;
+    // Extract id dari slug (format: judul-listing-123)
+    const id = slug.split('-').pop();
+    if (!id || isNaN(id)) return res.redirect('/');
+
+    const result = await pool.query(`
+      SELECT l.id, l.title, l.description, l.price, l.price_unit, l.city,
+             u.full_name, c.name as category_name, li.image_url
+      FROM listings l
+      LEFT JOIN users u ON u.id = l.user_id
+      LEFT JOIN categories c ON c.id = l.category_id
+      LEFT JOIN listing_images li ON li.listing_id = l.id AND li.is_primary = true
+      WHERE l.id = $1 AND l.is_active = true
+    `, [id]);
+
+    if (!result.rows.length) return res.redirect('/');
+    const l = result.rows[0];
+
+    const title = `${l.title} — AkuBisa`;
+    const desc = l.description.replace(/<[^>]*>/g, '').slice(0, 155);
+    const image = l.image_url || 'https://akubisa.co/logo2.png';
+    const url = `https://akubisa.co/listing/${slug}`;
+
+    const fs = require('fs');
+const pool = require('../config/db');
+    let html = fs.readFileSync('/var/www/akubisa/frontend/index.html', 'utf8');
+
+    // Inject meta tags dinamis
+    html = html.replace(
+      '<title>AkuBisa — Platform Freelance Indonesia</title>',
+      `<title>${title}</title>`
+    );
+    html = html.replace(
+      '<meta name="description" content="Platform freelance Indonesia',
+      `<meta name="description" content="${desc.substring(0, 155)}" data-original="`
+    );
+    html = html.replace('<meta property="og:title" content="AkuBisa">', `<meta property="og:title" content="${title}">`);
+    html = html.replace(/(<meta property="og:description" content=")[^"]*"/, `$1${desc}"`);
+    html = html.replace(/(<meta property="og:url" content=")[^"]*"/, `$1${url}"`);
+    html = html.replace(/(<meta property="og:image" content=")[^"]*"/, `$1${image}"`);
+
+    // Auto-open listing modal via script
+    html = html.replace('</body>', `<script>window.__LISTING_ID__ = ${l.id};</script>\n</body>`);
+
+    res.send(html);
+  } catch(e) {
+    console.error('Listing page error:', e);
+    res.redirect('/');
+  }
 });

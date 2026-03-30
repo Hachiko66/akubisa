@@ -63,14 +63,12 @@ CREATE TABLE IF NOT EXISTS reviews (
 
 -- SEED CATEGORIES
 INSERT INTO categories (name, slug, icon) VALUES
-  ('Teknologi', 'teknologi', '💻'),
-  ('Kreatif & Desain', 'kreatif', '🎨'),
+  ('Edukasi & Course', 'edukasi', '📚'),
+  ('Freelance', 'freelance', '💼'),
   ('Properti & Sewa', 'properti', '🏠'),
-  ('Edukasi & Les', 'edukasi', '📚'),
-  ('Kuliner', 'kuliner', '🍳'),
-  ('Jasa Umum', 'jasa', '🔧'),
   ('Transportasi', 'transportasi', '🚗'),
-  ('Kesehatan & Fitness', 'kesehatan', '💪')
+  ('Produk Digital', 'digital', '📦'),
+  ('Lowongan Kerja', 'lowongan', '📋')
 ON CONFLICT (slug) DO NOTHING;
 
 -- Email verification & password reset tokens

@@ -6,6 +6,21 @@ let currentCategory = null;
 
 // ===== INIT =====
 
+
+// ===== SEO URL =====
+function listingSlug(title, id) {
+  const slug = title.toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .trim();
+  return slug + '-' + id;
+}
+
+function listingUrl(title, id) {
+  return '/listing/' + listingSlug(title, id);
+}
+
 // ===== SOCIAL LOGIN HANDLER =====
 function handleSocialLogin() {
   const hash = location.hash;
@@ -35,6 +50,15 @@ function handleSocialLogin() {
 document.addEventListener('DOMContentLoaded', async () => {
   // Cek social login dulu sebelum apapun
   if (location.hash.startsWith('#social-login')) { handleSocialLogin(); return; }
+  // Cek listing page URL
+  if (window.__LISTING_ID__) {
+    await loadCategories();
+    renderNav();
+    navigate('explore');
+    renderExplore();
+    setTimeout(() => openListingDetail(window.__LISTING_ID__), 800);
+    return;
+  }
   if (typeof applyTranslations === 'function') applyTranslations();
   // Panggil render untuk halaman awal
   const token = localStorage.getItem('akubisa_token');
@@ -129,6 +153,15 @@ function navigate(page) {
   if (el) el.classList.add('active');
   // Cek social login dulu sebelum apapun
   if (location.hash.startsWith('#social-login')) { handleSocialLogin(); return; }
+  // Cek listing page URL
+  if (window.__LISTING_ID__) {
+    await loadCategories();
+    renderNav();
+    navigate('explore');
+    renderExplore();
+    setTimeout(() => openListingDetail(window.__LISTING_ID__), 800);
+    return;
+  }
   if (typeof applyTranslations === 'function') applyTranslations();
 
   // Navbar: sembunyikan di auth pages

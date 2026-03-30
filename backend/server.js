@@ -53,6 +53,9 @@ const pool = require('./config/db');
 app.use('/api/auth',          authLimiter, require('./routes/auth'));
 app.use('/api/discount',        require('./routes/discount'));
 app.use('/api/listings',                   require('./routes/listings'));
+
+// SEO listing pages
+app.get('/listing/:slug', require('./routes/listings').seoPage || ((req,res) => res.redirect('/')));
 app.use('/api/categories',                 require('./routes/categories'));
 app.use('/api/profile',                    require('./routes/profile'));
 app.use('/api/wallet', require('./routes/wallet'));
@@ -112,7 +115,8 @@ app.get('/sitemap.xml', async (req, res) => {
     });
     listings.rows.forEach(l => {
       const lastmod = new Date(l.updated_at).toISOString().split('T')[0];
-      xml += `  <url><loc>https://akubisa.co/#listing-${l.id}</loc><lastmod>${lastmod}</lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>\n`;
+      const slug = l.title.toLowerCase().replace(/[^a-z0-9\s-]/g,'').replace(/\s+/g,'-').replace(/-+/g,'-').trim() + '-' + l.id;
+      xml += `  <url><loc>https://akubisa.co/listing/${slug}</loc><lastmod>${lastmod}</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>\n`;
     });
     xml += '</urlset>';
     res.header('Content-Type', 'application/xml');
