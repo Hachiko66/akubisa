@@ -320,7 +320,7 @@ function shareToLinkedin(id, title) {
   window.open('https://www.linkedin.com/sharing/share-offsite/?url=' + url, '_blank');
 }
 function copyListingLink(id, btn) {
-  const url = window.location.origin + '/#listing-' + id;
+  const url = window.location.origin + '/listing/' + (btn?.dataset?.slug || id);
   navigator.clipboard.writeText(url).then(() => {
     const orig = btn.textContent;
     btn.textContent = '✅ Tersalin!';
@@ -421,7 +421,7 @@ async function openListingDetail(id) {
       <button class="btn btn-outline btn-sm" onclick="closeListingModal();openPublicProfile(${l.user_id})">👤 Lihat Profil</button>
       <button class="btn btn-outline btn-sm" onclick="openReviewModal(${l.user_id},'${(l.full_name||'').replace(/'/g,"\'")}',${l.id})">⭐ Ulasan</button>
       <button class="btn btn-outline btn-sm" onclick="shareToTwitter(${l.id},'${l.title.replace(/'/g,"\'")}')">𝕏 Share</button>
-      <button class="btn btn-outline btn-sm" onclick="copyListingLink(${l.id},this)">🔗 Salin Link</button>
+      <button class="btn btn-outline btn-sm" onclick="copyListingLink(${l.id},this)" data-slug="${listingSlug(l.title,l.id)}">🔗 Salin Link</button>
       <button class="btn btn-outline btn-sm" onclick="closeListingModal();setTimeout(()=>openReportModal(${l.user_id},'${(l.full_name||'').replace(/'/g,"\'")}',${l.id}),200)" style="color:var(--danger);border-color:var(--danger)">🚩 Laporkan</button>
     </div>
     <div id="download-btn-wrap-${l.id}"></div>` : ''}
