@@ -620,14 +620,14 @@ body { font-family: var(--font-body); }
 
     <div class="hero-left">
       <img src="/logonobg.png" alt="AkuBisa" style="height:105px;object-fit:contain;margin-bottom:1.2rem;display:block;align-self:flex-start">
-      <div class="hero-eyebrow">One Stop Services</div>
+      <div class="hero-eyebrow" data-i18n="hero_eyebrow">One Stop Services</div>
       <h1 class="hero-title">
-        Kemampuanmu
-        <em>bernilai</em>
-        di sini.
+        <span data-i18n="hero_title_1">Kemampuanmu</span>
+        <em data-i18n="hero_title_2">bernilai</em>
+        <span data-i18n="hero_title_3">di sini.</span>
       </h1>
       <p class="hero-desc">
-        Dari bikin website, ngajar privat, hingga desain logo — setiap keahlian punya pasarnya. Mulai tawarkan atau temukan talent terbaik Indonesia.
+        <span data-i18n="hero_desc">Dari bikin website, ngajar privat, hingga desain logo — setiap keahlian punya pasarnya. Mulai tawarkan atau temukan talent terbaik Indonesia.</span>
       </p>
       <div class="hero-cta">
         <button class="btn btn-primary" onclick="goTo('register')" style="font-size:1rem;padding:.8rem 2rem;border-radius:100px">
@@ -695,28 +695,28 @@ body { font-family: var(--font-body); }
       <div>
         <div style="font-size:.72rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);margin-bottom:1rem"><span data-i18n="how_title">Cara Kerja</span></div>
         <h2 style="font-family:var(--font-display);font-size:clamp(2rem,3.5vw,3rem);font-weight:900;line-height:1.1;margin-bottom:3rem;color:var(--ink)">
-          Sesederhana<br><em style="color:var(--accent)">itu.</em>
+          <span data-i18n="how_simple">Sesederhana</span><br><em style="color:var(--accent)" data-i18n="how_simple_em">itu.</em>
         </h2>
         <div class="how-steps">
           <div class="how-step">
             <div class="step-num">01</div>
             <div class="step-content">
-              <h3>Tulis kemampuanmu</h3>
-              <p>Buat profil dan posting penawaran dalam 2 menit. Tidak perlu CV, cukup ceritakan apa yang bisa kamu lakukan.</p>
+              <h3 data-i18n="how_step_1_title">Tulis kemampuanmu</h3>
+              <p data-i18n="how_step_1_desc">Buat profil dan posting penawaran dalam 2 menit. Tidak perlu CV, cukup ceritakan apa yang bisa kamu lakukan.</p>
             </div>
           </div>
           <div class="how-step">
             <div class="step-num">02</div>
             <div class="step-content">
-              <h3>Ditemukan klien yang tepat</h3>
-              <p>Calon klien mencarimu lewat kategori dan pencarian. Profilmu bekerja 24 jam untukmu.</p>
+              <h3 data-i18n="how_step_2_title">Ditemukan klien yang tepat</h3>
+              <p data-i18n="how_step_2_desc">Calon klien mencarimu lewat kategori dan pencarian. Profilmu bekerja 24 jam untukmu.</p>
             </div>
           </div>
           <div class="how-step">
             <div class="step-num">03</div>
             <div class="step-content">
-              <h3>Chat & mulai kolaborasi</h3>
-              <p>Diskusi langsung lewat platform, sepakati syarat, dan mulai bekerja. Semua di satu tempat.</p>
+              <h3 data-i18n="how_step_3_title">Chat & mulai kolaborasi</h3>
+              <p data-i18n="how_step_3_desc">Diskusi langsung lewat platform, sepakati syarat, dan mulai bekerja. Semua di satu tempat.</p>
             </div>
           </div>
         </div>
@@ -730,7 +730,7 @@ body { font-family: var(--font-body); }
   <!-- ===== CATEGORIES ===== -->
   <section class="cat-section">
     <div class="cat-header">
-      <h2>Semua bidang,<br><span>diterima.</span></h2>
+      <h2><span data-i18n="cat_title">Semua bidang,</span><br><span data-i18n="cat_title_2">diterima.</span></h2>
       <button class="btn btn-outline" onclick="goTo('explore')" style="color:white;border-color:rgba(255,255,255,.2);border-radius:100px;padding:.6rem 1.5rem;flex-shrink:0">Lihat Semua →</button>
     </div>
     <div class="cat-grid" id="home-categories"></div>
@@ -739,9 +739,9 @@ body { font-family: var(--font-body); }
   <!-- ===== TESTIMONIALS ===== -->
   <section class="testi-section">
     <div style="max-width:1100px;margin:0 auto 3rem">
-      <div style="font-size:.72rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);margin-bottom:.8rem">Testimoni</div>
+      <div style="font-size:.72rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);margin-bottom:.8rem"><span data-i18n="testi_label">Testimoni</span></div>
       <h2 style="font-family:var(--font-display);font-size:clamp(2rem,3.5vw,2.8rem);font-weight:900;color:var(--ink);line-height:1.1">
-        Mereka sudah<br>membuktikannya.
+        <span data-i18n="testi_title">Mereka sudah</span><br><span data-i18n="testi_title_2">membuktikannya.</span>
       </h2>
     </div>
     <div style="overflow:hidden;margin:0 -8vw">
@@ -753,8 +753,8 @@ body { font-family: var(--font-body); }
 
   <!-- ===== CTA ===== -->
   <section class="cta-section">
-    <h2>Siap mulai<br><em>hari ini?</em></h2>
-    <p>Bergabung dengan ribuan pekerja dan klien yang sudah membuktikan.</p>
+    <h2><span data-i18n="cta_title">Siap mulai</span><br><em data-i18n="cta_title_em">hari ini?</em></h2>
+    <p data-i18n="cta_desc">Bergabung dengan ribuan pekerja dan klien yang sudah membuktikan.</p>
     <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;position:relative">
       <button class="btn btn-primary" onclick="goTo('register')" style="font-size:1rem;padding:.9rem 2.5rem;border-radius:100px">
         Daftar Gratis — Mulai Sekarang
@@ -763,7 +763,7 @@ body { font-family: var(--font-body); }
         Lihat Penawaran
       </button>
     </div>
-    <p style="font-size:.78rem;color:rgba(255,255,255,.25);margin-top:1.5rem;margin-bottom:0">Gratis selamanya · Tidak perlu kartu kredit · Daftar dalam 1 menit</p>
+    <p style="font-size:.78rem;color:rgba(255,255,255,.25);margin-top:1.5rem;margin-bottom:0"><span data-i18n="cta_note">Gratis selamanya · Tidak perlu kartu kredit · Daftar dalam 1 menit</span></p>
   </section>
 
   <!-- ===== FOOTER ===== -->
@@ -771,34 +771,34 @@ body { font-family: var(--font-body); }
     <div class="footer-grid">
       <div class="footer-brand">
         <img src="/logonobg.png" alt="AkuBisa" style="height:45px;object-fit:contain;margin-bottom:.5rem;display:block">
-        <p>Platform freelance Indonesia yang menghubungkan talent lokal dengan klien yang tepat. Semua kemampuan berharga.</p>
+        <p data-i18n="footer_desc">Platform freelance Indonesia yang menghubungkan talent lokal dengan klien yang tepat. Semua kemampuan berharga.</p>
       </div>
       <div class="footer-col">
-        <h4>Platform</h4>
+        <h4 data-i18n="footer_platform">Platform</h4>
         <a onclick="goTo('explore')">Jelajahi</a>
         <a onclick="goTo('register')">Daftar</a>
         <a onclick="goTo('login')">Masuk</a>
       </div>
       <div class="footer-col">
-        <h4>Kategori</h4>
+        <h4 data-i18n="footer_category">Kategori</h4>
         <a onclick="filterAndGo('teknologi')">Teknologi</a>
         <a onclick="filterAndGo('kreatif')">Kreatif & Desain</a>
         <a onclick="filterAndGo('edukasi')">Edukasi</a>
         <a onclick="filterAndGo('jasa')">Jasa Umum</a>
       </div>
       <div class="footer-col">
-        <h4>Ikuti Kami</h4>
+        <h4 data-i18n="footer_follow">Ikuti Kami</h4>
         <a href="https://x.com/Akubisa_co" target="_blank" rel="noopener">𝕏 Twitter / X</a>
       </div>
       <div class="footer-col">
-        <h4>Info</h4>
+        <h4 data-i18n="footer_info">Info</h4>
         <a onclick="goTo('terms')"><span data-i18n="terms_title">Syarat & Ketentuan</span></a>
         <a onclick="goTo('privacy')"><span data-i18n="privacy_title">Kebijakan Privasi</span></a>
-        <a href="mailto:support@akubisa.co">Bantuan</a>
+        <a href="mailto:support@akubisa.co"><span data-i18n="footer_help">Bantuan</span></a>
       </div>
     </div>
     <div class="footer-bottom">
-      <p>© 2025 AkuBisa. Dibuat dengan ❤️ untuk talent Indonesia.</p>
+      <p><span data-i18n="footer_copyright">© 2025 AkuBisa. Dibuat dengan ❤️ untuk talent Indonesia.</span></p>
       <p>v1.0.0</p>
     </div>
   </footer>
