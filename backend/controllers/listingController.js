@@ -11,7 +11,21 @@ exports.getAll = async (req, res) => {
   if (city) { where.push(`l.city ILIKE $${i++}`); params.push(`%${city}%`); }
   const user_id = req.query.user_id;
   if (user_id) { where.push(`l.user_id = $${i++}`); params.push(parseInt(user_id)); }
+  const price_min = req.query.price_min;
+  const price_max = req.query.price_max;
+  if (price_min) { where.push(`CAST(REGEXP_REPLACE(COALESCE(l.price,'0'), '[^0-9]', '', 'g') AS INTEGER) >= $${i++}`); params.push(parseInt(price_min)); }
+  if (price_max) { where.push(`CAST(REGEXP_REPLACE(COALESCE(l.price,'0'), '[^0-9]', '', 'g') AS INTEGER) <= $${i++}`); params.push(parseInt(price_max)); }
+  // Search by user name
+  const search_user = req.query.search_user;
+  if (search_user) { where.push(`u.full_name ILIKE $${i++}`); params.push(`%${search_user}%`); }
   const whereStr = where.length ? 'WHERE ' + where.join(' AND ') : '';
+  const sort = req.query.sort || '';
+  let orderBy = 'l.is_featured DESC, l.created_at DESC';
+  if (sort === 'newest') orderBy = 'l.created_at DESC';
+  else if (sort === 'popular') orderBy = 'l.views DESC';
+  else if (sort === 'price_asc') orderBy = 'CAST(REGEXP_REPLACE(COALESCE(l.price,\'0\'), \'[^0-9]\', \'\', \'g\') AS INTEGER) ASC';
+  else if (sort === 'price_desc') orderBy = 'CAST(REGEXP_REPLACE(COALESCE(l.price,\'0\'), \'[^0-9]\', \'\', \'g\') AS INTEGER) DESC';
+  else if (sort === 'rating') orderBy = 'COALESCE(AVG(r.rating),0) DESC, l.created_at DESC';
   try {
     const result = await pool.query(
       `SELECT l.*, c.name as category_name, c.slug as category_slug, c.icon as category_icon,

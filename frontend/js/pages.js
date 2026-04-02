@@ -55,7 +55,7 @@ async function renderExplore() {
   if (saved) { exploreFilter = saved; sessionStorage.removeItem('explore_filter'); }
   const chipWrap = document.getElementById('explore-chips');
   chipWrap.innerHTML =
-    `<div class="chip ${exploreFilter==='semua'?'active':''}" onclick="setExploreFilter('semua',this)">Semua</div>` +
+    `<div class="chip ${exploreFilter==='semua'?'active':''}" onclick="setExploreFilter('semua',this)">${t('filter_all')}</div>` +
     categories.map(c=>`<div class="chip ${exploreFilter===c.slug?'active':''}" onclick="setExploreFilter('${c.slug}',this)">${c.icon} ${c.name}</div>`).join('');
   await fetchExplore();
 }
@@ -77,6 +77,14 @@ async function fetchExplore(reset = true) {
   let params = `limit=${EXPLORE_LIMIT}&page=${explorePage}`;
   if (exploreFilter !== 'semua') params += `&category=${exploreFilter}`;
   if (exploreSearch) params += `&search=${encodeURIComponent(exploreSearch)}`;
+  const sort = document.getElementById('explore-sort')?.value;
+  const city = document.getElementById('explore-city')?.value;
+  const priceMin = document.getElementById('explore-price-min')?.value;
+  const priceMax = document.getElementById('explore-price-max')?.value;
+  if (sort) params += `&sort=${sort}`;
+  if (city) params += `&city=${encodeURIComponent(city)}`;
+  if (priceMin) params += `&price_min=${priceMin}`;
+  if (priceMax) params += `&price_max=${priceMax}`;
 
   try {
     const res = await api.getListings(params);
@@ -933,6 +941,19 @@ async function deleteMyReview(reviewId) {
   }
 }
 
+
+function applyExploreFilters() { fetchExplore(true); }
+
+function resetExploreFilters() {
+  document.getElementById('explore-sort').value = '';
+  document.getElementById('explore-city').value = '';
+  document.getElementById('explore-price-min').value = '';
+  document.getElementById('explore-price-max').value = '';
+  document.getElementById('explore-search').value = '';
+  exploreSearch = '';
+  fetchExplore(true);
+}
+
 function loadExplore(cat) { if(cat) exploreFilter = cat; renderExplore(); }
 
 // ===== AKU BUTUH / JOB REQUESTS =====
@@ -948,7 +969,7 @@ async function renderJobRequests() {
   // Render category chips
   const chipsEl = document.getElementById('job-chips');
   if (chipsEl && categories.length) {
-    chipsEl.innerHTML = `<span class="chip active" onclick="setJobFilter('semua',this)">Semua</span>` +
+    chipsEl.innerHTML = `<span class="chip active" onclick="setJobFilter('semua',this)">${t('filter_all')}</span>` +
       categories.map(c => `<span class="chip" onclick="setJobFilter('${c.slug}',this)">${c.icon} ${c.name}</span>`).join('');
   }
   await fetchJobRequests(true);

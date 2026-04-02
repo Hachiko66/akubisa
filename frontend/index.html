@@ -931,6 +931,47 @@ body { font-family: var(--font-body); }
       <h2 style="margin-bottom:1rem"><span data-i18n="hero_cta_explore">Jelajahi Penawaran</span></h2>
       <div class="search-bar-wrap"><input type="text" id="explore-search" data-i18n-placeholder="explore_search" placeholder="Cari penawaran..." onkeydown="if(event.key='Enter')doSearch()"><button onclick="doSearch()"><span data-i18n="btn_submit">Cari</span></button></div>
       <div class="chip-wrap" id="explore-chips"></div>
+      <!-- Filter & Sort Bar -->
+      <div style="display:flex;gap:.6rem;flex-wrap:wrap;margin-top:.8rem;align-items:center">
+        <select id="explore-sort" onchange="applyExploreFilters()" style="background:var(--ink);border:1px solid rgba(255,255,255,.25);color:white;border-radius:100px;padding:.35rem .9rem;font-size:.78rem;cursor:pointer">
+          <option value="" data-i18n="sort_default">⇅ Urutkan</option>
+          <option value="newest" data-i18n="sort_newest">Terbaru</option>
+          <option value="popular" data-i18n="sort_popular">Terpopuler</option>
+          <option value="price_asc" data-i18n="sort_price_asc">Harga Terendah</option>
+          <option value="price_desc" data-i18n="sort_price_desc">Harga Tertinggi</option>
+          <option value="rating" data-i18n="sort_rating">Rating Tertinggi</option>
+        </select>
+        <div style="position:relative">
+          <input type="text" id="explore-city" list="city-list" placeholder="📍 Semua Kota" onchange="applyExploreFilters()" oninput="applyExploreFilters()" style="background:var(--ink);border:1px solid rgba(255,255,255,.25);color:white;border-radius:100px;padding:.35rem .9rem;font-size:.78rem;cursor:pointer;outline:none;width:140px" />
+          <datalist id="city-list">
+            <option value="Jakarta">
+            <option value="Surabaya">
+            <option value="Bandung">
+            <option value="Medan">
+            <option value="Yogyakarta">
+            <option value="Semarang">
+            <option value="Bali">
+            <option value="Makassar">
+            <option value="Palembang">
+            <option value="Depok">
+            <option value="Tangerang">
+            <option value="Bekasi">
+            <option value="Bogor">
+            <option value="Pekanbaru">
+            <option value="Banjarmasin">
+            <option value="Padang">
+            <option value="Malang">
+            <option value="Remote">
+          </datalist>
+        </div>
+        <div style="display:flex;align-items:center;gap:.4rem;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:100px;padding:.35rem .9rem">
+          <span style="font-size:.78rem;color:rgba(255,255,255,.6)">Rp</span>
+          <input type="number" id="explore-price-min" placeholder="Min" onchange="applyExploreFilters()" style="background:none;border:none;color:white;width:70px;font-size:.78rem;outline:none" min="0">
+          <span style="color:rgba(255,255,255,.4)">—</span>
+          <input type="number" id="explore-price-max" placeholder="Max" onchange="applyExploreFilters()" style="background:none;border:none;color:white;width:70px;font-size:.78rem;outline:none" min="0">
+        </div>
+        <button onclick="resetExploreFilters()" style="background:none;border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.5);border-radius:100px;padding:.35rem .9rem;font-size:.78rem;cursor:pointer">✕ Reset</button>
+      </div>
     </div>
   </div>
 
