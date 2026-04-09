@@ -643,7 +643,7 @@ function switchLang(lang) {
   const pageId = activePage ? activePage.id.replace('page-', '') : '';
   const rerenderMap = {
     'home':          () => typeof renderHome === 'function' && renderHome(),
-    'explore':       () => typeof renderExplore === 'function' && renderExplore(),
+    'explore':       () => { if (typeof renderExplore === 'function') { const f = exploreFilter; renderExplore(); } },
     'dashboard':     () => typeof renderDashboard === 'function' && renderDashboard(),
     'profile':       () => typeof renderProfile === 'function' && renderProfile(),
     'transactions':  () => typeof renderTransactions === 'function' && renderTransactions(),
