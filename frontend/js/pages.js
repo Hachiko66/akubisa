@@ -1062,6 +1062,12 @@ function jobRequestCardHTML(r) {
         ${r.city ? `<span>📍 ${r.city}</span>` : ''}
         <span>👥 ${r.application_count||0} pelamar</span>
       </div>
+      ${r.twitter_url ? `<div style="margin-bottom:.8rem" onclick="event.stopPropagation()">
+        <a href="${r.twitter_url}" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:.5rem;background:#000;color:white;border-radius:10px;padding:.5rem .8rem;text-decoration:none;font-size:.78rem;font-weight:600">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.748l7.73-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+          Lihat di X/Twitter →
+        </a>
+      </div>` : ''}
       <div style="display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--border);padding-top:.8rem">
         <div style="display:flex;align-items:center;gap:.5rem">
           <div class="avatar" style="background:${av};width:28px;height:28px;font-size:.7rem">${ini}</div>
@@ -1130,6 +1136,7 @@ function openPostJobModal() {
   document.getElementById('job-budget-min').value = '';
   document.getElementById('job-budget-max').value = '';
   document.getElementById('job-deadline').value = '';
+  if(document.getElementById('job-twitter-url')) document.getElementById('job-twitter-url').value = '';
   document.getElementById('job-post-error').textContent = '';
   document.getElementById('post-job-modal').classList.add('open');
 }
@@ -1144,13 +1151,14 @@ async function submitJobRequest() {
   const budget_min = document.getElementById('job-budget-min').value;
   const budget_max = document.getElementById('job-budget-max').value;
   const deadline = document.getElementById('job-deadline').value;
+  const twitter_url = document.getElementById('job-twitter-url')?.value?.trim() || null;
   const errEl = document.getElementById('job-post-error');
 
   if (!title || !description) { errEl.textContent = 'Judul dan deskripsi wajib diisi!'; return; }
 
   const btn = document.getElementById('job-post-btn');
   btn.innerHTML = '<span class="spinner"></span>Memposting...'; btn.disabled = true;
-  const res = await api.createJobRequest({ title, description, category_id: category_id||null, city, budget_min: budget_min||null, budget_max: budget_max||null, deadline: deadline||null });
+  const res = await api.createJobRequest({ title, description, category_id: category_id||null, city, budget_min: budget_min||null, budget_max: budget_max||null, deadline: deadline||null, twitter_url });
   btn.innerHTML = 'Posting Sekarang'; btn.disabled = false;
 
   if (res.data) {

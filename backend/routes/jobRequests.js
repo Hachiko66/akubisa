@@ -71,13 +71,13 @@ router.get('/:id', async (req, res) => {
 
 // POST buat job request
 router.post('/', auth, async (req, res) => {
-  const { title, description, category_id, budget_min, budget_max, deadline, city } = req.body;
+  const { title, description, category_id, budget_min, budget_max, deadline, city, twitter_url } = req.body;
   if (!title || !description) return res.status(400).json({ message: 'Judul dan deskripsi wajib diisi' });
   try {
     const result = await pool.query(`
-      INSERT INTO job_requests (user_id, title, description, category_id, budget_min, budget_max, deadline, city)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *
-    `, [req.user.id, title, description, category_id||null, budget_min||null, budget_max||null, deadline||null, city||null]);
+      INSERT INTO job_requests (user_id, title, description, category_id, budget_min, budget_max, deadline, city, twitter_url)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *
+    `, [req.user.id, title, description, category_id||null, budget_min||null, budget_max||null, deadline||null, city||null, twitter_url||null]);
     res.status(201).json({ message: 'Permintaan berhasil diposting!', data: result.rows[0] });
   } catch(e) { res.status(500).json({ message: e.message }); }
 });
