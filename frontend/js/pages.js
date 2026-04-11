@@ -634,6 +634,9 @@ async function renderPublicProfile(userId) {
     }
 
     document.getElementById('pub-name').textContent = profile.full_name || '-';
+    // Badge level
+    const badgeEl = document.getElementById('pub-badge-level');
+    if (badgeEl && profile.badge_level) badgeEl.innerHTML = badgeHTML(profile.badge_level);
     document.getElementById('pub-city').textContent = profile.city || 'Indonesia';
     document.getElementById('pub-listings').textContent = (profile.listing_count || 0);
     document.getElementById('pub-bio').textContent = profile.bio || '';
@@ -1065,7 +1068,7 @@ function jobRequestCardHTML(r) {
       ${r.twitter_url ? `<div style="margin-bottom:.8rem" onclick="event.stopPropagation()">
         <a href="${r.twitter_url}" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:.5rem;background:#000;color:white;border-radius:10px;padding:.5rem .8rem;text-decoration:none;font-size:.78rem;font-weight:600">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.748l7.73-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-          Lihat di X/Twitter →
+          Apply Now →
         </a>
       </div>` : ''}
       <div style="display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--border);padding-top:.8rem">
@@ -1586,6 +1589,33 @@ async function switchWalletTab(tab, el) {
         </div>
       </div>`;}).join('');
 
+  } else if (tab === 'referral') {
+    const data = await api.get('/referral/my');
+    const refUrl = data.referral_url || '';
+    const stats = data.stats || {};
+    const referred = data.referred_users || [];
+    content.innerHTML = `
+      <div class="card" style="margin-bottom:1rem;background:linear-gradient(135deg,#fff4e6,#fce8e4)">
+        <div style="font-weight:700;font-size:1rem;margin-bottom:.5rem">🎁 Program Referral AkuBisa</div>
+        <p style="font-size:.85rem;color:var(--muted);margin-bottom:1rem">Ajak temanmu bergabung dan dapatkan komisi 5% dari setiap transaksi pertama mereka!</p>
+        <div style="background:white;border-radius:10px;padding:.8rem;display:flex;gap:.5rem;align-items:center;margin-bottom:1rem">
+          <input readonly value="${refUrl}" style="flex:1;border:none;font-size:.82rem;color:var(--ink);background:none;outline:none" id="ref-url-input">
+          <button class="btn btn-primary btn-sm" onclick="navigator.clipboard.writeText('${refUrl}');showToast('Link disalin!','success')">Salin</button>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;text-align:center">
+          <div><div style="font-size:1.5rem;font-weight:800;color:var(--accent)">${stats.total_referred||0}</div><div style="font-size:.72rem;color:var(--muted)">Total Diajak</div></div>
+          <div><div style="font-size:1.5rem;font-weight:800;color:var(--accent2)">${stats.paid_referrals||0}</div><div style="font-size:.72rem;color:var(--muted)">Transaksi</div></div>
+          <div><div style="font-size:1.5rem;font-weight:800;color:#7c3aed">Rp ${parseInt(stats.total_commission||0).toLocaleString('id')}</div><div style="font-size:.72rem;color:var(--muted)">Komisi</div></div>
+        </div>
+      </div>
+      ${referred.length ? `
+      <div style="font-weight:700;margin-bottom:.8rem">👥 Yang Sudah Bergabung</div>
+      ${referred.map(u => `
+        <div style="display:flex;align-items:center;gap:.8rem;padding:.6rem 0;border-bottom:1px solid var(--border)">
+          <div class="avatar" style="background:${avColor(u.full_name)};width:36px;height:36px;font-size:.8rem">${initials(u.full_name)}</div>
+          <div><div style="font-weight:600;font-size:.88rem">${u.full_name}</div><div style="font-size:.75rem;color:var(--muted)">Bergabung ${new Date(u.created_at).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'})}</div></div>
+        </div>`).join('')}` : '<p style="color:var(--muted);font-size:.85rem;text-align:center;padding:2rem">Belum ada yang bergabung. Bagikan linkmu sekarang!</p>'}
+    `;
   } else if (tab === 'portfolio') {
     const data = await api.getMyPortfolio();
     content.innerHTML = `

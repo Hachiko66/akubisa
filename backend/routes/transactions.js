@@ -327,3 +327,15 @@ router.post('/webhook/xendit', async (req, res) => {
 });
 
 module.exports = router;
+// Helper: update badge level worker
+async function updateWorkerBadge(workerId) {
+  try {
+    const count = await pool.query(
+      "SELECT COUNT(*) FROM transactions WHERE worker_id=$1 AND status='completed'",
+      [workerId]
+    );
+    const n = parseInt(count.rows[0].count);
+    const level = n >= 50 ? 'elite' : n >= 20 ? 'expert' : n >= 5 ? 'pro' : 'pemula';
+    await pool.query('UPDATE users SET badge_level=$1 WHERE id=$2', [level, workerId]);
+  } catch(e) { console.error('Badge update error:', e.message); }
+}

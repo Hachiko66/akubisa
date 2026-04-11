@@ -7,6 +7,44 @@ let currentCategory = null;
 // ===== INIT =====
 
 
+
+// ===== BADGE LEVEL =====
+function badgeHTML(level) {
+  const badges = {
+    'elite': { label: '👑 Elite', bg: '#7c3aed', color: 'white' },
+    'expert': { label: '⭐ Expert', bg: '#b45309', color: 'white' },
+    'pro':    { label: '🔥 Pro', bg: '#dc2626', color: 'white' },
+    'pemula': { label: '🌱 Pemula', bg: '#6b7280', color: 'white' },
+  };
+  const b = badges[level] || badges['pemula'];
+  return `<span style="background:${b.bg};color:${b.color};font-size:.65rem;font-weight:700;padding:.15rem .5rem;border-radius:100px">${b.label}</span>`;
+}
+
+
+// ===== REFERRAL HANDLER =====
+function handleReferralCode() {
+  const params = new URLSearchParams(location.search);
+  const ref = params.get('ref');
+  if (!ref) return;
+  // Simpan ke localStorage dan set di form
+  localStorage.setItem('akubisa_ref', ref);
+  // Validate dan tampilkan
+  fetch('/api/referral/validate/' + ref)
+    .then(r => r.json())
+    .then(data => {
+      if (data.valid) {
+        const inp = document.getElementById('reg-ref-code');
+        const disp = document.getElementById('reg-ref-display');
+        const group = document.getElementById('ref-code-group');
+        if (inp) inp.value = ref;
+        if (disp) disp.value = ref + ' (dari ' + data.referrer + ')';
+        if (group) group.style.display = 'block';
+        // Navigate ke register
+        goTo('register');
+      }
+    }).catch(() => {});
+}
+
 // ===== SEO URL =====
 function listingSlug(title, id) {
   const slug = title.toLowerCase()
@@ -146,6 +184,25 @@ window.addEventListener('hashchange', () => {
 // ===== ROUTER — FIXED =====
 function navigate(page) {
   currentPage = page;
+  if (page === 'register') {
+    const savedRef = localStorage.getItem('akubisa_ref');
+    if (savedRef) {
+      setTimeout(() => {
+        const inp = document.getElementById('reg-ref-code');
+        if (inp && !inp.value) {
+          inp.value = savedRef;
+          fetch('/api/referral/validate/' + savedRef).then(r=>r.json()).then(d => {
+            if (d.valid) {
+              const disp = document.getElementById('reg-ref-display');
+              const group = document.getElementById('ref-code-group');
+              if (disp) disp.value = savedRef + ' (dari ' + d.referrer + ')';
+              if (group) group.style.display = 'block';
+            }
+          }).catch(()=>{});
+        }
+      }, 100);
+    }
+  }
   const authPages = ['login','register','forgot-password','reset-password'];
 
   // Sembunyikan semua pages

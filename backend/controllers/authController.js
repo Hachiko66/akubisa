@@ -13,7 +13,7 @@ const signJWT = (user) => jwt.sign(
 );
 
 exports.register = async (req, res) => {
-  const { full_name, email, password, role, city, phone } = req.body;
+  const { full_name, email, password, role, city, phone, ref_code } = req.body;
   if (!full_name || !email || !password || !role)
     return res.status(400).json({ message: 'Semua field wajib diisi' });
   try {
@@ -25,7 +25,7 @@ exports.register = async (req, res) => {
     const verifyToken = makeToken();
 
     const result = await pool.query(
-      `INSERT INTO users (full_name, email, password, role, city, phone, verify_token)
+      `INSERT INTO users (full_name, email, password, role, city, phone, verify_token, referral_code, referred_by)
        VALUES ($1,$2,$3,$4,$5,$6,$7)
        RETURNING id, full_name, email, role, city, email_verified`,
       [full_name, email, hash, role, city||null, phone||null, verifyToken]

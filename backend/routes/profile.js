@@ -27,7 +27,7 @@ const upload = multer({
 router.get('/:id', async (req, res) => {
   try {
     const u = await pool.query(
-      `SELECT u.id, u.full_name, u.avatar, u.bio, u.city, u.is_verified, u.created_at,
+      `SELECT u.id, u.full_name, u.avatar, u.bio, u.city, u.is_verified, u.created_at, u.badge_level,
               u.social_twitter, u.social_linkedin, u.social_github, u.social_tiktok, u.social_youtube, u.social_telegram,
               COUNT(DISTINCT l.id) as listing_count,
               COALESCE(AVG(r.rating),0) as avg_rating,

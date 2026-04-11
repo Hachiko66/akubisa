@@ -46,7 +46,8 @@ async function doRegister() {
   btn.disabled = true;
 
   try {
-    const res = await api.register({ full_name, email, password, role, city, phone });
+    const ref_code = document.getElementById('reg-ref-code')?.value || '';
+    const res = await api.register({ full_name, email, password, role, ref_code, city, phone });
     btn.innerHTML = t('register_btn');
     btn.disabled = false;
     if (res.token) {

@@ -850,6 +850,7 @@ body { font-family: var(--font-body); }
           </div>
         </div>
         <input type="hidden" id="reg-role-input" value="worker">
+      <input type="hidden" id="reg-ref-code" value="">
       </div>
 
       <div id="reg-error" style="font-size:.82rem;color:var(--danger);background:#fef2f2;border:1px solid #fecaca;padding:.6rem .8rem;border-radius:8px;margin-bottom:1rem;display:none"></div>
@@ -864,6 +865,7 @@ body { font-family: var(--font-body); }
         <div class="form-group"><label class="form-label" data-i18n="label_city">Kota</label><input class="form-input" id="reg-city" placeholder="Jakarta..." type="text"></div>
         <div class="form-group"><label class="form-label" data-i18n="label_phone">No. WhatsApp</label><input class="form-input" id="reg-phone" placeholder="08xx..." type="tel"></div>
       </div>
+      <div class="form-group" id="ref-code-group" style="display:none"><label class="form-label">🎁 Kode Referral</label><input class="form-input" id="reg-ref-display" readonly style="background:#f5f5f5"></div>
       <button class="btn btn-primary btn-block" id="reg-btn" onclick="doRegister()" style="padding:.85rem;font-size:.95rem;border-radius:12px;margin-top:.5rem"><span data-i18n="register_btn">Daftar Sekarang →</span></button>
       <div style="text-align:center;margin:1rem 0;color:var(--muted);font-size:.85rem">— atau —</div>
       <a href="/api/auth/google" class="btn btn-block" style="background:white;border:1.5px solid var(--border);color:var(--ink);border-radius:12px;padding:.85rem;font-size:.95rem;display:flex;align-items:center;justify-content:center;gap:.8rem;text-decoration:none">
@@ -1140,7 +1142,7 @@ body { font-family: var(--font-body); }
       <div style="flex:1;min-width:200px">
         <div style="display:flex;align-items:center;gap:.8rem;flex-wrap:wrap;margin-bottom:.3rem">
           <div class="profile-name" id="pub-name" style="font-size:1.6rem">-</div>
-          <span id="pub-verified" style="display:none;font-size:.75rem;font-weight:700;color:white;background:#1d9bf0;padding:.2rem .6rem;border-radius:100px;display:none;align-items:center;gap:.3rem"><svg width="11" height="11" viewBox="0 0 24 24" fill="white"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg> Terverifikasi</span>
+          <span id="pub-badge-level" style="margin-right:.3rem"></span><span id="pub-verified" style="display:none;font-size:.75rem;font-weight:700;color:white;background:#1d9bf0;padding:.2rem .6rem;border-radius:100px;display:none;align-items:center;gap:.3rem"><svg width="11" height="11" viewBox="0 0 24 24" fill="white"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg> Terverifikasi</span>
         </div>
         <div class="profile-meta" style="margin-bottom:.5rem"><span id="pub-city">-</span></div>
         <div id="pub-bio" style="font-size:.88rem;color:rgba(255,255,255,.65);max-width:500px;line-height:1.6;margin-bottom:.8rem"></div>
@@ -1389,6 +1391,7 @@ body { font-family: var(--font-body); }
         <button class="wallet-tab active" onclick="switchWalletTab('earnings',this)"><span data-i18n="wallet_earnings">📈 Riwayat Pendapatan</span></button>
         <button class="wallet-tab" onclick="switchWalletTab('withdrawals',this)"><span data-i18n="wallet_withdrawals">💸 Riwayat Withdraw</span></button>
         <button class="wallet-tab" onclick="switchWalletTab('portfolio',this)"><span data-i18n="wallet_portfolio">🗂 Portfolio Saya</span></button>
+        <button class="wallet-tab" onclick="switchWalletTab('referral',this)">🎁 Referral</button>
       </div>
       <div id="wallet-tab-content"></div>
       <!-- Kode Diskon (Worker only) -->
