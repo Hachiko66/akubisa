@@ -28,7 +28,7 @@ router.get('/my', auth, async (req, res) => {
 
     res.json({
       referral_code: user.rows[0]?.referral_code,
-      referral_url: `https://akubisa.co/?ref=${user.rows[0]?.referral_code}`,
+      referral_url: `https://akubisa.co/r/${user.rows[0]?.referral_code}`,
       stats: stats.rows[0],
       referred_users: referred.rows
     });

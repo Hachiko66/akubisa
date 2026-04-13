@@ -23,8 +23,15 @@ function badgeHTML(level) {
 
 // ===== REFERRAL HANDLER =====
 function handleReferralCode() {
-  const params = new URLSearchParams(location.search);
-  const ref = params.get('ref');
+  // Cek dari hash #register?ref=CODE
+  let ref = null;
+  const hash = location.hash;
+  if (hash.includes('ref=')) {
+    const refMatch = hash.match(/ref=([A-Z0-9]+)/i);
+    if (refMatch) ref = refMatch[1];
+  }
+  if (!ref) ref = localStorage.getItem('akubisa_ref');
+  if (!ref) return;
   if (!ref) return;
   // Simpan ke localStorage dan set di form
   localStorage.setItem('akubisa_ref', ref);
@@ -39,8 +46,9 @@ function handleReferralCode() {
         if (inp) inp.value = ref;
         if (disp) disp.value = ref + ' (dari ' + data.referrer + ')';
         if (group) group.style.display = 'block';
-        // Navigate ke register
-        goTo('register');
+        // Navigate ke register jika belum login
+        if (!currentUser) goTo('register');
+        else showToast('🎁 Kode referral ' + ref + ' tersimpan! Bagikan ke teman yang belum daftar.', 'success');
       }
     }).catch(() => {});
 }
@@ -120,7 +128,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadCategories();
   renderNav();
   if (currentUser) startNotifPoll();
-  const hash = location.hash.replace('#','') || 'home';
+  const hash = location.hash.replace('#','').split('?')[0] || 'home';
   // Handle direct listing link e.g. #listing-26
   if (hash.startsWith('listing-')) {
     const listingId = parseInt(hash.replace('listing-', ''));
@@ -143,10 +151,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (hash === 'bookmarks') renderBookmarks();
   // Cek reset token setelah semua init selesai
   checkResetToken();
+  // Handle referral setelah semua init
+  setTimeout(handleReferralCode, 500);
 });
 
 window.addEventListener('hashchange', () => {
-  const page = location.hash.replace('#','') || 'home';
+  const page = location.hash.replace('#','').split('?')[0] || 'home';
   if (page.startsWith('listing-')) {
     const listingId = parseInt(page.replace('listing-', ''));
     navigate('explore');
