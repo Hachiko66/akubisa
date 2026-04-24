@@ -139,7 +139,12 @@ function setExploreFilter(slug, el) {
 }
 
 function doSearch() {
-  exploreSearch = document.getElementById('explore-search').value;
+  const query = document.getElementById('explore-search').value;
+  if (typeof searchTab !== 'undefined' && searchTab === 'user') {
+    searchUsers(query);
+    return;
+  }
+  exploreSearch = query;
   fetchExplore();
 }
 
