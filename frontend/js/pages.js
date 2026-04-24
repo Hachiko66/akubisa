@@ -1939,3 +1939,68 @@ async function createDiscountCode() {
     document.getElementById('dc-value').value = '';
   } else showToast(res.message || 'Gagal', 'error');
 }
+
+// ===== SEARCH USER =====
+let searchTab = 'listing';
+
+function setSearchTab(tab) {
+  searchTab = tab;
+  const listingBtn = document.getElementById('search-tab-listing');
+  const userBtn = document.getElementById('search-tab-user');
+  const searchInput = document.getElementById('explore-search');
+  if (tab === 'listing') {
+    if (listingBtn) { listingBtn.style.background = 'var(--accent)'; listingBtn.style.color = 'white'; }
+    if (userBtn) { userBtn.style.background = 'rgba(255,255,255,.1)'; userBtn.style.color = 'rgba(255,255,255,.7)'; }
+    if (searchInput) searchInput.placeholder = 'Cari penawaran...';
+    document.getElementById('explore-grid').style.display = '';
+    const old = document.getElementById('user-search-results');
+    if (old) old.remove();
+  } else {
+    if (userBtn) { userBtn.style.background = 'var(--accent)'; userBtn.style.color = 'white'; }
+    if (listingBtn) { listingBtn.style.background = 'rgba(255,255,255,.1)'; listingBtn.style.color = 'rgba(255,255,255,.7)'; }
+    if (searchInput) searchInput.placeholder = 'Cari nama freelancer...';
+    document.getElementById('explore-grid').style.display = 'none';
+    searchUsers('');
+  }
+}
+
+async function searchUsers(query) {
+  const grid = document.getElementById('explore-grid');
+  let container = document.getElementById('user-search-results');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'user-search-results';
+    container.style.cssText = 'padding:1rem 0';
+    grid.parentElement.appendChild(container);
+  }
+  container.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted)">Memuat...</div>';
+  try {
+    const res = await fetch('/api/users/search?q=' + encodeURIComponent(query) + '&limit=20');
+    const data = await res.json();
+    const users = data.users || [];
+    if (!users.length) { container.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--muted)">Tidak ada freelancer ditemukan.</div>'; return; }
+    container.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1rem">' +
+      users.map(u => `
+        <div class="card" style="cursor:pointer;transition:transform .2s" onclick="openPublicProfile(${u.id})" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''">
+          <div style="display:flex;align-items:center;gap:.8rem;margin-bottom:.8rem">
+            <div class="avatar" style="background:${avColor(u.full_name)};width:48px;height:48px;font-size:1rem;flex-shrink:0;overflow:hidden">
+              ${u.avatar ? '<img src="' + u.avatar + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">' : initials(u.full_name)}
+            </div>
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:700;font-size:.9rem;display:flex;align-items:center;gap:.3rem;flex-wrap:wrap">
+                ${u.full_name}
+                ${u.is_verified ? '<span style="font-size:.65rem;color:var(--accent2);font-weight:700">✓</span>' : ''}
+                ${u.badge_level && u.badge_level !== 'pemula' ? badgeHTML(u.badge_level) : ''}
+              </div>
+              <div style="font-size:.75rem;color:var(--muted)">${u.city || 'Indonesia'}</div>
+            </div>
+          </div>
+          ${u.bio ? '<p style="font-size:.78rem;color:var(--muted);line-height:1.5;margin-bottom:.6rem">' + u.bio.slice(0,80) + (u.bio.length>80?'…':'') + '</p>' : ''}
+          <div style="display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted);border-top:1px solid var(--border);padding-top:.6rem">
+            <span>📋 ${u.listing_count||0}</span>
+            <span>⭐ ${parseFloat(u.avg_rating||0).toFixed(1)}</span>
+            <span>✅ ${u.completed_transactions||0}</span>
+          </div>
+        </div>`).join('') + '</div>';
+  } catch(e) { container.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--danger)">Gagal memuat.</div>'; }
+}

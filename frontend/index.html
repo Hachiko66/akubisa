@@ -931,6 +931,10 @@ body { font-family: var(--font-body); }
   <div class="dark-section" style="padding:2rem 5vw">
     <div style="max-width:1200px;margin:0 auto">
       <h2 style="margin-bottom:1rem"><span data-i18n="hero_cta_explore">Jelajahi Penawaran</span></h2>
+      <div style="display:flex;gap:.5rem;margin-bottom:.8rem">
+        <button id="search-tab-listing" onclick="setSearchTab('listing')" style="background:var(--accent);color:white;border:none;border-radius:100px;padding:.3rem .9rem;font-size:.78rem;cursor:pointer;font-weight:600">🛠️ Penawaran</button>
+        <button id="search-tab-user" onclick="setSearchTab('user')" style="background:rgba(255,255,255,.1);color:rgba(255,255,255,.7);border:none;border-radius:100px;padding:.3rem .9rem;font-size:.78rem;cursor:pointer">👤 Freelancer</button>
+      </div>
       <div class="search-bar-wrap"><input type="text" id="explore-search" data-i18n-placeholder="explore_search" placeholder="Cari penawaran..." onkeydown="if(event.key='Enter')doSearch()"><button onclick="doSearch()"><span data-i18n="btn_submit">Cari</span></button></div>
       <div class="chip-wrap" id="explore-chips"></div>
       <!-- Filter & Sort Bar -->

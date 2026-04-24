@@ -53,6 +53,7 @@ const pool = require('./config/db');
 app.use('/api/auth',          authLimiter, require('./routes/auth'));
 app.use('/api/discount',        require('./routes/discount'));
 app.use('/api/referral',        require('./routes/referral'));
+app.use('/api/users',           require('./routes/users'));
 app.use('/api/listings',                   require('./routes/listings'));
 
 // SEO listing pages

@@ -132,6 +132,8 @@ exports.switchRole = async (req, res) => {
   const { role } = req.body;
   if (!['worker','client'].includes(role))
     return res.status(400).json({ message: 'Role tidak valid' });
+  if (req.user.role === 'admin')
+    return res.status(403).json({ message: 'Admin tidak bisa ganti role' });
   try {
     const result = await pool.query(
       'UPDATE users SET role=$1, updated_at=NOW() WHERE id=$2 RETURNING id, full_name, email, role',

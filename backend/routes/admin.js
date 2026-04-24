@@ -79,6 +79,9 @@ router.patch('/users/:id/role', admin, async (req, res) => {
   const { role } = req.body;
   if (!['worker','client','admin'].includes(role)) return res.status(400).json({ message: 'Role tidak valid' });
   try {
+    // Jangan izinkan ubah role admin
+    const checkAdmin = await pool.query('SELECT role FROM users WHERE id=$1', [req.params.id]);
+    if (checkAdmin.rows[0]?.role === 'admin') return res.status(403).json({ message: 'Tidak bisa ubah role admin' });
     await pool.query('UPDATE users SET role=$1 WHERE id=$2', [role, req.params.id]);
     res.json({ message: `Role diubah ke ${role}` });
   } catch(e) { res.status(500).json({ message: e.message }); }
