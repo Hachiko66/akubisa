@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const cookieParser = require('cookie-parser');
 const session = require('express-session');
 const passport = require('./config/passport');
 const cors = require('cors');
@@ -22,6 +23,7 @@ const msgLimiter    = rateLimit({ windowMs: 60*1000,    max: 120,  message: { me
 app.use(globalLimiter);
 app.use(cors({ origin: '*' }));
 app.use(express.json({ limit: '10mb' }));
+app.use(cookieParser());
 app.use(session({
   secret: process.env.SESSION_SECRET || 'akubisa_secret',
   resave: false,
@@ -51,6 +53,7 @@ const pool = require('./config/db');
 
 // Routes
 app.use('/api/auth',          authLimiter, require('./routes/auth'));
+app.use('/api/auth',          require('./routes/authTwitter'));
 app.use('/api/discount',        require('./routes/discount'));
 app.use('/api/referral',        require('./routes/referral'));
 app.use('/api/users',           require('./routes/users'));
