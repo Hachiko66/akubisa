@@ -8,3 +8,9 @@ backend/.env
 frontend/uploads/kyc/
 frontend/uploads/portfolio/
 frontend/uploads/avatars/
+backend/uploads/uploads/
+backend/uploads/avatar_*
+backend/uploads/images/
+backend/uploads/digital/
+backend/uploads/kyc/
+backend/uploads/portfolio/
