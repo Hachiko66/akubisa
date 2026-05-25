@@ -128,6 +128,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadCategories();
   renderNav();
   if (currentUser) startNotifPoll();
+  // Bersihkan URL dari query params Duitku
+  if (location.search && location.search.includes('resultCode')) {
+    const hashPage = location.hash.replace('#','').split('?')[0] || 'transactions';
+    history.replaceState(null, '', '/#' + hashPage);
+  }
   const hash = location.hash.replace('#','').split('?')[0] || 'home';
   // Handle direct listing link e.g. #listing-26
   if (hash.startsWith('listing-')) {

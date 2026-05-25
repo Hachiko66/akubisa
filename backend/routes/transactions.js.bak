@@ -2,48 +2,27 @@ const router = require('express').Router();
 const auth = require('../middleware/auth');
 const pool = require('../config/db');
 const { sendEmailNotif } = require('../config/email');
-const axios = require('axios');
-const crypto = require('crypto');
-const PLATFORM_FEE = parseInt(process.env.PLATFORM_FEE_PERCENT || 5) / 100;
+const Xendit = require('xendit-node');
+
+const xenditClient = new Xendit.default({ secretKey: process.env.XENDIT_SECRET_KEY });
+const invoiceClient = xenditClient.Invoice;
+
+const PLATFORM_FEE = parseInt(process.env.PLATFORM_FEE_PERCENT || 10) / 100;
 const BASE_URL = process.env.BASE_URL || 'https://akubisa.co';
-const DUITKU_MERCHANT = process.env.DUITKU_MERCHANT_CODE;
-const DUITKU_KEY = process.env.DUITKU_API_KEY;
-const DUITKU_URL = process.env.DUITKU_BASE_URL || 'https://sandbox.duitku.com/webapi/api';
 
-async function createDuitkuInvoice({ orderId, amount, email, name, description, successUrl }) {
-  const timestamp = Date.now().toString();
-  const signature = crypto.createHash('sha256')
-    .update(DUITKU_MERCHANT + timestamp + DUITKU_KEY)
-    .digest('hex');
-
-  const payload = {
-    paymentAmount: amount,
-    merchantOrderId: orderId,
-    productDetails: description,
-    customerVaName: name,
-    email,
-    callbackUrl: `${BASE_URL}/api/transactions/webhook/duitku`,
-    returnUrl: successUrl || `${BASE_URL}/#transactions`,
-    expiryPeriod: 1440,
-    customerDetail: {
-      firstName: name.split(' ')[0],
-      lastName: name.split(' ').slice(1).join(' ') || '',
-      email
-    }
-  };
-
-  const res = await axios.post('https://api-sandbox.duitku.com/api/merchant/createInvoice', payload, {
-    headers: {
-      'Accept': 'application/json',
-      'Content-Type': 'application/json',
-      'x-duitku-signature': signature,
-      'x-duitku-timestamp': timestamp,
-      'x-duitku-merchantcode': DUITKU_MERCHANT
+async function createXenditInvoice({ externalId, amount, payerEmail, description, successUrl }) {
+  return await invoiceClient.createInvoice({
+    data: {
+      externalId,
+      amount,
+      payerEmail,
+      description,
+      successRedirectUrl: successUrl,
+      failureRedirectUrl: `${BASE_URL}/#transactions`,
+      currency: 'IDR',
+      invoiceDuration: 86400,
     }
   });
-
-  if (res.data.statusCode !== '00') throw new Error(res.data.statusMessage || 'Duitku error');
-  return res.data;
 }
 
 // POST buat transaksi baru
@@ -77,21 +56,19 @@ router.post('/', auth, async (req, res) => {
     let invoice = null;
     let invoiceUrl = null;
     try {
-      const orderId = `DP-${t.id}-${Date.now()}`;
-      invoice = await createDuitkuInvoice({
-        orderId,
+      invoice = await createXenditInvoice({
+        externalId: `dp_${t.id}_${Date.now()}`,
         amount: dp_amount,
-        email: client.email,
-        name: client.full_name,
+        payerEmail: client.email,
         description: `DP 50% - ${notes || 'Transaksi AkuBisa'} (ID: ${t.id})`,
         successUrl: `${BASE_URL}/#transactions`
       });
-      invoiceUrl = invoice.paymentUrl;
+      invoiceUrl = invoice.invoiceUrl || invoice.invoice_url;
       await pool.query(`
         UPDATE transactions SET xendit_dp_invoice_id=$1, xendit_dp_invoice_url=$2 WHERE id=$3
-      `, [orderId, invoiceUrl, t.id]);
-    } catch(duitkuErr) {
-      console.error('Duitku error detail:', duitkuErr.response?.data || duitkuErr.message);
+      `, [invoice.id, invoiceUrl, t.id]);
+    } catch(xenditErr) {
+      console.error('Xendit error:', JSON.stringify(xenditErr));
     }
 
     res.status(201).json({
@@ -247,57 +224,118 @@ router.patch('/:id/dispute', auth, async (req, res) => {
   }
 });
 
-// POST Duitku Webhook
-router.post('/webhook/duitku', async (req, res) => {
+// POST Xendit Webhook
+router.post('/webhook/xendit', async (req, res) => {
+  const token = req.headers['x-callback-token'];
+  if (token !== process.env.XENDIT_WEBHOOK_TOKEN && process.env.XENDIT_WEBHOOK_TOKEN) {
+    return res.status(403).json({ message: 'Invalid token' });
+  }
   try {
-    const { merchantCode, amount, merchantOrderId, resultCode, signature } = req.body;
-    const expectedSig = crypto.createHash('md5')
-      .update(merchantCode + amount + merchantOrderId + DUITKU_KEY)
-      .digest('hex');
-    if (signature !== expectedSig) {
-      console.error('Invalid Duitku webhook signature');
-      return res.status(400).send('Invalid signature');
-    }
-    if (resultCode !== '00') return res.send('OK');
+    const { external_id, status } = req.body;
+    if (status !== 'PAID') return res.json({ message: 'Ignored' });
 
-    if (merchantOrderId.startsWith('DP-')) {
-      const trxId = merchantOrderId.split('-')[1];
-      await pool.query(
-        "UPDATE transactions SET status='dp_paid', dp_paid_at=NOW() WHERE id=$1 AND status='waiting_dp'",
-        [trxId]
-      );
+    if (external_id.startsWith('dp_')) {
+      const trxId = external_id.split('_')[1];
+      await pool.query(`
+        UPDATE transactions SET status='dp_paid', dp_paid_at=NOW() WHERE id=$1 AND status='waiting_dp'
+      `, [trxId]);
+      // Notif ke worker: DP masuk, mulai kerja
       const t = await pool.query('SELECT * FROM transactions WHERE id=$1', [trxId]);
       if (t.rows[0]) {
-        await pool.query(`INSERT INTO notifications (user_id, type, title, message, link) VALUES ($1,'transaction','💰 DP Masuk!','DP 50% telah dibayar. Silakan mulai pengerjaan.','#transactions')`, [t.rows[0].worker_id]);
-        await pool.query(`INSERT INTO notifications (user_id, type, title, message, link) VALUES ($1,'transaction','✅ Pembayaran DP Berhasil','DP 50% kamu berhasil diterima.','#transactions')`, [t.rows[0].client_id]);
-        const clientData = await pool.query('SELECT full_name FROM users WHERE id=$1', [t.rows[0].client_id]);
+        await pool.query(`
+          INSERT INTO notifications (user_id, type, title, message, link)
+          VALUES ($1,'transaction','💰 DP Masuk!','DP 50% telah dibayar. Silakan mulai pengerjaan.','#transactions')
+        `, [t.rows[0].worker_id]);
+        await pool.query(`
+          INSERT INTO notifications (user_id, type, title, message, link)
+          VALUES ($1,'transaction','✅ Pembayaran DP Berhasil','DP 50% kamu berhasil diterima. Pekerja akan segera mulai.','#transactions')
+        `, [t.rows[0].client_id]);
+        // Email notif DP masuk ke worker
+        const clientNameDP = await pool.query('SELECT full_name FROM users WHERE id=$1', [t.rows[0].client_id]);
         sendEmailNotif(t.rows[0].worker_id, 'new_transaction', {
-          clientName: clientData.rows[0]?.full_name || 'Klien',
+          clientName: clientNameDP.rows[0]?.full_name || 'Klien',
           amount: 'Rp ' + parseInt(t.rows[0].dp_amount).toLocaleString('id'),
           description: t.rows[0].notes || 'Proyek #' + trxId
         }, pool);
       }
-    } else if (merchantOrderId.startsWith('FINAL-')) {
-      const trxId = merchantOrderId.split('-')[1];
-      await pool.query(
-        "UPDATE transactions SET status='completed', final_paid_at=NOW() WHERE id=$1 AND status='waiting_final'",
-        [trxId]
-      );
+    } else if (external_id.startsWith('final_')) {
+      const trxId = external_id.split('_')[1];
+      await pool.query(`
+        UPDATE transactions SET status='completed', final_paid_at=NOW() WHERE id=$1 AND status='waiting_final'
+      `, [trxId]);
+      // Notif ke worker: pembayaran lunas
       const t = await pool.query('SELECT * FROM transactions WHERE id=$1', [trxId]);
       if (t.rows[0]) {
-        await pool.query(`INSERT INTO notifications (user_id, type, title, message, link) VALUES ($1,'transaction','🎉 Pembayaran Lunas!','Klien telah melunasi pembayaran. Dana akan segera dicairkan.','#transactions')`, [t.rows[0].worker_id]);
-        await pool.query(`INSERT INTO notifications (user_id, type, title, message, link) VALUES ($1,'transaction','✅ Pembayaran Selesai','Terima kasih! Proyek telah selesai.','#transactions')`, [t.rows[0].client_id]);
-        // Update badge worker
-        const workerCount = await pool.query("SELECT COUNT(*) FROM transactions WHERE worker_id=$1 AND status='completed'", [t.rows[0].worker_id]);
-        const n = parseInt(workerCount.rows[0].count);
-        const level = n >= 50 ? 'elite' : n >= 20 ? 'expert' : n >= 5 ? 'pro' : 'pemula';
-        await pool.query('UPDATE users SET badge_level=$1 WHERE id=$2', [level, t.rows[0].worker_id]);
+        const trx = t.rows[0];
+        // Email notif transaksi selesai ke worker
+        sendEmailNotif(trx.worker_id, 'transaction_completed', {
+          amount: 'Rp ' + parseInt(trx.total_amount - trx.platform_fee).toLocaleString('id')
+        }, pool);
+        const workerEarning = trx.total_amount - trx.platform_fee;
+
+        // Update saldo pekerja
+        await pool.query(`
+          INSERT INTO worker_balances (worker_id, total_earned, balance)
+          VALUES ($1, $2, $2)
+          ON CONFLICT (worker_id) DO UPDATE SET
+            total_earned = worker_balances.total_earned + $2,
+            balance = worker_balances.balance + $2,
+            updated_at = NOW()
+        `, [trx.worker_id, workerEarning]);
+
+        // Auto buat portfolio item - ambil judul listing
+        let portfolioTitle = 'Pekerjaan Selesai';
+        if (trx.listing_id) {
+          const listingRes = await pool.query('SELECT title FROM listings WHERE id=$1', [trx.listing_id]);
+          if (listingRes.rows[0]) portfolioTitle = listingRes.rows[0].title;
+        }
+        await pool.query(`
+          INSERT INTO portfolio_items (transaction_id, worker_id, title, description, is_public)
+          VALUES ($1, $2, $3, $4, true)
+          ON CONFLICT DO NOTHING
+        `, [trx.id, trx.worker_id, portfolioTitle, trx.notes || '']);
+
+        await pool.query(`
+          INSERT INTO notifications (user_id, type, title, message, link)
+          VALUES ($1,'transaction','🎉 Pembayaran Lunas!','Pelunasan 50% telah diterima. Saldo kamu bertambah Rp ${workerEarning.toLocaleString()}.','#transactions')
+        `, [trx.worker_id]);
+        await pool.query(`
+          INSERT INTO notifications (user_id, type, title, message, link)
+          VALUES ($1,'transaction','✅ Transaksi Selesai','Pembayaran lunas. Terima kasih telah menggunakan AkuBisa!','#transactions')
+        `, [trx.client_id]);
+
+        // Notif review ke client
+        await pool.query(`
+          INSERT INTO notifications (user_id, type, title, message, metadata, action, link)
+          VALUES ($1,'review','⭐ Beri Ulasan','Bagaimana pengalamanmu? Beri ulasan untuk pekerja ini.',
+            $2::jsonb, 'open_review', '#transactions')
+        `, [trx.client_id, JSON.stringify({ transaction_id: trx.id, worker_id: trx.worker_id })]);
+
+        // Notif review ke worker
+        await pool.query(`
+          INSERT INTO notifications (user_id, type, title, message, metadata, action, link)
+          VALUES ($1,'review','⭐ Beri Ulasan','Beri ulasan untuk klien yang sudah bekerja sama denganmu.',
+            $2::jsonb, 'open_review', '#transactions')
+        `, [trx.worker_id, JSON.stringify({ transaction_id: trx.id, reviewed_id: trx.client_id })]);
       }
     }
-    res.send('OK');
+
+    res.json({ message: 'OK' });
   } catch(e) {
-    console.error('Duitku webhook error:', e.message);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ message: e.message });
   }
 });
+
 module.exports = router;
+// Helper: update badge level worker
+async function updateWorkerBadge(workerId) {
+  try {
+    const count = await pool.query(
+      "SELECT COUNT(*) FROM transactions WHERE worker_id=$1 AND status='completed'",
+      [workerId]
+    );
+    const n = parseInt(count.rows[0].count);
+    const level = n >= 50 ? 'elite' : n >= 20 ? 'expert' : n >= 5 ? 'pro' : 'pemula';
+    await pool.query('UPDATE users SET badge_level=$1 WHERE id=$2', [level, workerId]);
+  } catch(e) { console.error('Badge update error:', e.message); }
+}

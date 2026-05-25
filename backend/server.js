@@ -56,6 +56,7 @@ app.use('/api/auth',          authLimiter, require('./routes/auth'));
 app.use('/api/auth',          require('./routes/authTwitter'));
 app.use('/api/discount',        require('./routes/discount'));
 app.use('/api/referral',        require('./routes/referral'));
+app.use('/api/duitku',          require('./routes/duitku'));
 app.use('/api/users',           require('./routes/users'));
 app.use('/api/listings',                   require('./routes/listings'));
 

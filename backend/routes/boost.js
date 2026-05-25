@@ -1,11 +1,13 @@
 const router = require('express').Router();
 const auth = require('../middleware/auth');
 const pool = require('../config/db');
-const Xendit = require('xendit-node');
+const axios = require('axios');
+const crypto = require('crypto');
 const { BASE_URL } = process.env;
 
-const xenditClient = new Xendit.default({ secretKey: process.env.XENDIT_SECRET_KEY });
-const invoiceClient = xenditClient.Invoice;
+const DUITKU_MERCHANT = process.env.DUITKU_MERCHANT_CODE;
+const DUITKU_KEY = process.env.DUITKU_API_KEY;
+const DUITKU_URL = process.env.DUITKU_BASE_URL || 'https://sandbox.duitku.com/webapi/api';
 
 const PACKAGES = {
   '3day':  { days: 3,   amount: 15000,  label: 'Boost 3 Hari' },
@@ -32,29 +34,42 @@ router.post('/buy', auth, async (req, res) => {
     const userRes = await pool.query('SELECT email, full_name FROM users WHERE id=$1', [req.user.id]);
     const user = userRes.rows[0];
 
-    // Buat Xendit invoice
+    // Buat Duitku invoice
     let invoiceUrl = null;
-    let xenditId = null;
+    let duitkuOrderId = `BOOST-${listing_id}-${Date.now()}`;
     try {
-      const inv = await invoiceClient.createInvoice({
-        externalId: `boost_${listing_id}_${Date.now()}`,
-        amount: p.amount,
-        payerEmail: user.email,
-        description: `${p.label} - "${listing.rows[0].title}"`,
-        successRedirectURL: `${BASE_URL}/#my-listings`,
-        failureRedirectURL: `${BASE_URL}/#my-listings`,
+      const timestamp = Date.now().toString();
+      const signature = crypto.createHash('sha256')
+        .update(DUITKU_MERCHANT + timestamp + DUITKU_KEY)
+        .digest('hex');
+      const inv = await axios.post('https://api-sandbox.duitku.com/api/merchant/createInvoice', {
+        paymentAmount: p.amount,
+        merchantOrderId: duitkuOrderId,
+        productDetails: `${p.label} - "${listing.rows[0].title}"`,
+        customerVaName: user.full_name,
+        email: user.email,
+        returnUrl: `${BASE_URL}/#dashboard`,
+        callbackUrl: `${BASE_URL}/api/boost/webhook`,
+        expiryPeriod: 1440
+      }, {
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'x-duitku-signature': signature,
+          'x-duitku-timestamp': timestamp,
+          'x-duitku-merchantcode': DUITKU_MERCHANT
+        }
       });
-      invoiceUrl = inv.invoiceUrl || inv.invoice_url;
-      xenditId = inv.id;
+      if (inv.data.statusCode === '00') invoiceUrl = inv.data.paymentUrl;
     } catch(e) {
-      console.error('Xendit boost error:', e.message);
+      console.error('Duitku boost error:', e.message);
     }
 
     // Simpan order
     const order = await pool.query(`
       INSERT INTO boost_orders (listing_id, user_id, package, amount, days, xendit_invoice_id, xendit_invoice_url)
       VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *
-    `, [listing_id, req.user.id, pkg, p.amount, p.days, xenditId, invoiceUrl]);
+    `, [listing_id, req.user.id, pkg, p.amount, p.days, duitkuOrderId, invoiceUrl]);
 
     res.json({ message: 'Order dibuat!', invoice_url: invoiceUrl, order_id: order.rows[0].id });
   } catch(e) {

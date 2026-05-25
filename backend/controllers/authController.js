@@ -26,9 +26,12 @@ exports.register = async (req, res) => {
 
     const result = await pool.query(
       `INSERT INTO users (full_name, email, password, role, city, phone, verify_token, referral_code, referred_by)
-       VALUES ($1,$2,$3,$4,$5,$6,$7)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
        RETURNING id, full_name, email, role, city, email_verified`,
-      [full_name, email, hash, role, city||null, phone||null, verifyToken]
+      [full_name, email, hash, role, city||null, phone||null, verifyToken,
+        require('crypto').createHash('md5').update(email + Date.now()).digest('hex').slice(0,8).toUpperCase(),
+        ref_code ? (await pool.query('SELECT id FROM users WHERE referral_code=UPPER($1)', [ref_code])).rows[0]?.id || null : null
+      ]
     );
     const user = result.rows[0];
     const token = signJWT(user);
