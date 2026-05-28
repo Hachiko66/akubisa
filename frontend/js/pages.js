@@ -69,7 +69,7 @@ async function fetchExplore(reset = true) {
   if (reset) {
     explorePage = 1;
     exploreHasMore = true;
-    document.getElementById('explore-grid').innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:3rem"><div style="width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite;display:inline-block"></div></div>`;
+    document.getElementById('explore-grid').innerHTML = skeletonCards(6);
   }
   if (exploreLoading || !exploreHasMore) return;
   exploreLoading = true;
@@ -95,7 +95,7 @@ async function fetchExplore(reset = true) {
     if (reset) grid.innerHTML = '';
 
     if (listings.length === 0 && reset) {
-      grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--muted)">Tidak ada penawaran ditemukan.</p>';
+      grid.innerHTML = emptyState('🔍', 'Tidak ada penawaran', 'Coba ubah filter atau kata kunci pencarian.', 'Reset Filter', 'resetExploreFilters()');
     } else {
       listings.forEach(l => {
         const div = document.createElement('div');

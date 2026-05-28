@@ -854,3 +854,59 @@ window.addEventListener('scroll', () => {
   nav.style.background = 'var(--ink)';
   nav.style.boxShadow = window.scrollY > 10 ? '0 2px 20px rgba(0,0,0,.2)' : 'none';
 });
+
+// ===== SKELETON LOADING =====
+function skeletonCards(count = 6) {
+  return Array(count).fill(0).map(() => `
+    <div class="skeleton-card">
+      <div class="skeleton" style="height:160px;margin-bottom:1rem"></div>
+      <div class="skeleton" style="height:16px;width:70%;margin-bottom:.5rem"></div>
+      <div class="skeleton" style="height:14px;width:50%;margin-bottom:.8rem"></div>
+      <div style="display:flex;gap:.5rem">
+        <div class="skeleton" style="height:12px;width:30%"></div>
+        <div class="skeleton" style="height:12px;width:30%"></div>
+      </div>
+    </div>`).join('');
+}
+
+// ===== EMPTY STATE =====
+function emptyState(icon, title, desc, btnText, btnAction) {
+  return `<div class="empty-state" style="grid-column:1/-1">
+    <div class="empty-icon">${icon}</div>
+    <h3>${title}</h3>
+    <p>${desc}</p>
+    ${btnText ? `<button class="btn btn-primary" onclick="${btnAction}" style="border-radius:100px;padding:.7rem 2rem">${btnText}</button>` : ''}
+  </div>`;
+}
+
+// ===== SCROLL TO TOP =====
+window.addEventListener('scroll', () => {
+  const btn = document.getElementById('scroll-top-btn');
+  if (btn) btn.style.display = window.scrollY > 400 ? 'flex' : 'none';
+});
+
+// ===== IMAGE ZOOM =====
+function openImageZoom(src) {
+  const overlay = document.createElement('div');
+  overlay.className = 'img-zoom-overlay';
+  overlay.innerHTML = `<img src="${src}" alt="Preview">`;
+  overlay.onclick = () => overlay.remove();
+  document.body.appendChild(overlay);
+}
+
+// ===== KONFIRMASI HAPUS =====
+function confirmDelete(message, onConfirm) {
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:1rem';
+  modal.innerHTML = `
+    <div style="background:white;border-radius:20px;padding:2rem;max-width:400px;width:100%;text-align:center">
+      <div style="font-size:2.5rem;margin-bottom:1rem">⚠️</div>
+      <h3 style="font-weight:700;margin-bottom:.5rem;color:var(--ink)">Konfirmasi Hapus</h3>
+      <p style="color:var(--muted);font-size:.88rem;margin-bottom:1.5rem">${message}</p>
+      <div style="display:flex;gap:.8rem;justify-content:center">
+        <button onclick="this.closest('[style*=fixed]').remove()" class="btn btn-outline" style="border-radius:100px;padding:.6rem 1.5rem">Batal</button>
+        <button onclick="(${onConfirm.toString()})();this.closest('[style*=fixed]').remove()" class="btn btn-danger" style="border-radius:100px;padding:.6rem 1.5rem">Ya, Hapus</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+}
