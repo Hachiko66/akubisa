@@ -265,8 +265,7 @@ function updateNavTheme(page) {
   const nav = document.getElementById('main-nav');
   if (!nav) return;
   // Navbar selalu dark solid
-  nav.setAttribute('data-theme', 'dark');
-  nav.style.background = 'var(--ink)';
+  nav.style.background = document.documentElement.getAttribute('data-theme')==='dark' ? '#0f172a' : '#0f0e0d';
   nav.style.borderBottom = 'none';
   nav.style.boxShadow = 'none';
 }
@@ -851,7 +850,7 @@ function closeImageSlider() {
 window.addEventListener('scroll', () => {
   const nav = document.getElementById('main-nav');
   if (!nav) return;
-  nav.style.background = 'var(--ink)';
+  nav.style.background = document.documentElement.getAttribute('data-theme')==='dark' ? '#0f172a' : '#0f0e0d';
   nav.style.boxShadow = window.scrollY > 10 ? '0 2px 20px rgba(0,0,0,.2)' : 'none';
 });
 
@@ -910,3 +909,25 @@ function confirmDelete(message, onConfirm) {
     </div>`;
   document.body.appendChild(modal);
 }
+
+// ===== DARK MODE =====
+function toggleDarkMode() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const newTheme = isDark ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', newTheme);
+  localStorage.setItem('akubisa_theme', newTheme);
+  const btn = document.getElementById('dark-toggle');
+  if (btn) btn.textContent = newTheme === 'dark' ? '☀️' : '🌙';
+}
+
+function initDarkMode() {
+  const saved = localStorage.getItem('akubisa_theme') || 'light';
+  document.documentElement.setAttribute('data-theme', saved);
+  const btn = document.getElementById('dark-toggle');
+  if (btn) btn.textContent = saved === 'dark' ? '☀️' : '🌙';
+}
+
+// Init dark mode saat load
+document.addEventListener('DOMContentLoaded', () => {
+  initDarkMode();
+});

@@ -222,6 +222,44 @@
   border-radius: 8px;
 }
 
+
+/* ===== DARK MODE ===== */
+[data-theme="dark"] {
+  --ink: #f1f5f9;
+  --nav-bg: #0f172a;
+  --muted: #94a3b8;
+  --border: #334155;
+  --cream: #0f172a;
+  --bg: #1e293b;
+  --card-bg: #1e293b;
+  --accent: #f97316;
+}
+[data-theme="dark"] body { background: #0f172a; color: #f1f5f9; }
+[data-theme="dark"] .card { background: #1e293b; border-color: #334155; }
+[data-theme="dark"] .modal { background: #1e293b; }
+[data-theme="dark"] .form-input { background: #334155; border-color: #475569; color: #f1f5f9; }
+[data-theme="dark"] .form-textarea { background: #334155; border-color: #475569; color: #f1f5f9; }
+[data-theme="dark"] .listing-card { background: #1e293b; border-color: #334155; }
+[data-theme="dark"] nav { background: #0f172a !important; }
+[data-theme="dark"] .footer { background: #020617; }
+[data-theme="dark"] .skeleton { background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%); background-size: 200% 100%; }
+[data-theme="dark"] .skeleton-card { background: #1e293b; }
+[data-theme="dark"] #page-register, [data-theme="dark"] #page-login { background: #0f172a; }
+[data-theme="dark"] .dark-section { background: #020617; }
+
+/* Dark mode toggle button */
+#dark-toggle {
+  background: none;
+  border: 1.5px solid var(--border);
+  border-radius: 100px;
+  padding: .3rem .7rem;
+  cursor: pointer;
+  font-size: .85rem;
+  color: var(--ink);
+  transition: all .2s;
+}
+#dark-toggle:hover { background: var(--border); }
+
 </style>
 <style>
 /* ===== LANDING PAGE SPECIFIC ===== */
@@ -730,7 +768,7 @@ body { font-family: var(--font-body); }
 <body>
 
 <!-- NAV -->
-<nav id="main-nav" style="background:transparent;position:fixed;top:0;left:0;right:0;z-index:100;transition:background .3s,box-shadow .3s">
+<nav id="main-nav" style="background:var(--ink);position:fixed;top:0;left:0;right:0;z-index:100;transition:background .3s,box-shadow .3s">
   <a onclick="goTo('home');closeMobileMenu()" style="cursor:pointer;display:flex;align-items:center"><img src="/logonobg.png" alt="AkuBisa" style="height:40px;object-fit:contain"></a>
   <div class="nav-links" id="nav-links"></div>
   <button id="hamburger-btn" onclick="toggleMobileMenu()" style="display:none;background:none;border:none;cursor:pointer;padding:.4rem;flex-direction:column;gap:5px;z-index:1002">
@@ -2146,16 +2184,23 @@ body { font-family: var(--font-body); }
 window.addEventListener('scroll', () => {
   const nav = document.getElementById('main-nav');
   if (!nav) return;
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  nav.style.background = isDark ? '#0f172a' : '#0f0e0d';
+  nav.style.backdropFilter = 'blur(10px)';
+  nav.style.boxShadow = '0 2px 20px rgba(0,0,0,.3)';
+});
+  const nav = document.getElementById('main-nav');
+  if (!nav) return;
   if (window.scrollY > 50) {
-    nav.style.background = 'rgba(15,14,13,.95)';
+  if (window.scrollY > 50) {
+    nav.style.background = document.documentElement.getAttribute('data-theme')==='dark' ? 'rgba(15,23,42,.98)' : 'rgba(15,14,13,.98)';
     nav.style.backdropFilter = 'blur(10px)';
     nav.style.boxShadow = '0 2px 20px rgba(0,0,0,.3)';
-  } else {
+  } else if (typeof currentPage !== 'undefined' && currentPage === 'home') {
     nav.style.background = 'transparent';
     nav.style.backdropFilter = 'none';
     nav.style.boxShadow = 'none';
   }
-});
 
 // Scroll reveal untuk how-steps
 const observer = new IntersectionObserver((entries) => {
