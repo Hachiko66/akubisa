@@ -390,6 +390,12 @@ function shareToLinkedin(id, title) {
   const url = encodeURIComponent(window.location.origin + '/#listing-' + id);
   window.open('https://www.linkedin.com/sharing/share-offsite/?url=' + url, '_blank');
 }
+function shareToWhatsapp(id, title) {
+  const url = window.location.origin + '/listing/' + listingSlug(title, id);
+  const text = encodeURIComponent('Lihat penawaran ini di AkuBisa: ' + title + ' ' + url);
+  window.open('https://wa.me/?text=' + text, '_blank');
+}
+
 function copyListingLink(id, btn) {
   const url = window.location.origin + '/listing/' + (btn?.dataset?.slug || id);
   navigator.clipboard.writeText(url).then(() => {
