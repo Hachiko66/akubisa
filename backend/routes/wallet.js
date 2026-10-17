@@ -41,7 +41,7 @@ router.get('/earnings', auth, async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT t.id, t.total_amount, t.platform_fee,
-        (t.total_amount - t.platform_fee) as earned,
+        t.total_amount as earned,
         t.final_paid_at as paid_at, t.notes,
         uc.full_name as client_name
       FROM transactions t

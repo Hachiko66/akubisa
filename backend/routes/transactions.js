@@ -60,9 +60,10 @@ router.post('/', auth, async (req, res) => {
     if (kycStatus !== 'approved') {
       return res.status(403).json({ message: 'Verifikasi identitas (KYC) diperlukan sebelum melakukan transaksi.', kyc_required: true });
     }
-    const dp_amount = Math.ceil(total_amount * 0.5);
-    const final_amount = total_amount - dp_amount;
     const platform_fee = Math.ceil(total_amount * PLATFORM_FEE);
+    const billed_amount = total_amount + platform_fee;
+    const dp_amount = Math.ceil(billed_amount * 0.5);
+    const final_amount = billed_amount - dp_amount;
 
     const trx = await pool.query(`
       INSERT INTO transactions 
@@ -74,31 +75,10 @@ router.post('/', auth, async (req, res) => {
     const clientData = await pool.query('SELECT email, full_name FROM users WHERE id=$1', [req.user.id]);
     const client = clientData.rows[0];
 
-    let invoice = null;
-    let invoiceUrl = null;
-    try {
-      const orderId = `DP-${t.id}-${Date.now()}`;
-      invoice = await createDuitkuInvoice({
-        orderId,
-        amount: dp_amount,
-        email: client.email,
-        name: client.full_name,
-        description: `DP 50% - ${notes || 'Transaksi AkuBisa'} (ID: ${t.id})`,
-        successUrl: `${BASE_URL}/#transactions`
-      });
-      invoiceUrl = invoice.paymentUrl;
-      await pool.query(`
-        UPDATE transactions SET xendit_dp_invoice_id=$1, xendit_dp_invoice_url=$2 WHERE id=$3
-      `, [orderId, invoiceUrl, t.id]);
-    } catch(duitkuErr) {
-      console.error('Duitku error detail:', duitkuErr.response?.data || duitkuErr.message);
-    }
-
     res.status(201).json({
-      message: 'Transaksi dibuat!',
+      message: 'Transaksi dibuat! Silakan lakukan pembayaran DP.',
       transaction_id: t.id,
-      dp_amount,
-      invoice_url: invoiceUrl
+      dp_amount
     });
   } catch(e) {
     res.status(500).json({ message: e.message });
@@ -194,27 +174,12 @@ router.patch('/:id/approve', auth, async (req, res) => {
     const clientData = await pool.query('SELECT email FROM users WHERE id=$1', [req.user.id]);
     const trx = t.rows[0];
 
-    let invoice = null;
-    let invoiceUrl = null;
-    try {
-      invoice = await createXenditInvoice({
-        externalId: `final_${trx.id}_${Date.now()}`,
-        amount: trx.final_amount,
-        payerEmail: clientData.rows[0].email,
-        description: `Pelunasan 50% - Transaksi #${trx.id}`,
-        successUrl: `${BASE_URL}/#transactions`
-      });
-      invoiceUrl = invoice.invoiceUrl || invoice.invoice_url;
-    } catch(xenditErr) {
-      console.error('Xendit error approve:', JSON.stringify(xenditErr));
-    }
+    await pool.query(
+      "UPDATE transactions SET status='waiting_final', client_approved_at=NOW() WHERE id=$1",
+      [trx.id]
+    );
 
-    await pool.query(`
-      UPDATE transactions SET status='waiting_final', client_approved_at=NOW(),
-        xendit_final_invoice_id=$1, xendit_final_invoice_url=$2 WHERE id=$3
-    `, [invoice ? invoice.id : null, invoiceUrl, trx.id]);
-
-    res.json({ message: 'Disetujui! Silakan lakukan pelunasan.', invoice_url: invoiceUrl });
+    res.json({ message: 'Disetujui! Silakan lakukan pelunasan.' });
   } catch(e) {
     res.status(500).json({ message: e.message });
   }

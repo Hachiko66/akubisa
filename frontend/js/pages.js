@@ -1323,13 +1323,13 @@ function transactionCardHTML(t) {
         <span>Fee platform: <strong>Rp ${parseInt(t.platform_fee).toLocaleString('id')}</strong></span>
       </div>
       <div style="display:flex;gap:.6rem;flex-wrap:wrap">
-        ${t.status==='waiting_dp' && isClient ? `<a href="${t.xendit_dp_invoice_url}" target="_blank" class="btn btn-primary btn-sm">💳 Bayar DP Sekarang</a>` : ''}
+        ${t.status==='waiting_dp' && isClient ? `<button class="btn btn-primary btn-sm" onclick="bayarPakasir(${t.id},'dp',this)">💳 Bayar DP Sekarang</button>` : ''}
         ${t.status==='dp_paid' && !isClient ? `<button class="btn btn-primary btn-sm" onclick="submitWork(${t.id})">✅ Tandai Selesai</button>` : ''}
         ${t.status==='submitted' && isClient ? `
           <button class="btn btn-primary btn-sm" onclick="approveWork(${t.id})">✅ Approve & Lunasi</button>
           <button class="btn btn-danger btn-sm" onclick="openDisputeModal(${t.id})">⚠️ Dispute</button>
         ` : ''}
-        ${t.status==='waiting_final' && isClient ? `<a href="${t.xendit_final_invoice_url}" target="_blank" class="btn btn-primary btn-sm">💳 Bayar Pelunasan</a>` : ''}
+        ${t.status==='waiting_final' && isClient ? `<button class="btn btn-primary btn-sm" onclick="bayarPakasir(${t.id},'final',this)">💳 Bayar Pelunasan</button>` : ''}
         ${t.status==='dp_paid' && isClient ? `<button class="btn btn-danger btn-sm" onclick="openDisputeModal(${t.id})">⚠️ Dispute</button>` : ''}
         ${t.status==='completed' && isClient && !t.reviewed_by_client ? `
           <button class="btn btn-sm" style="background:#fef9c3;color:#854d0e;border:1.5px solid #fde047;font-weight:600" onclick="openReviewFromTrx(${t.id},${t.worker_id},'${(t.worker_name||'').replace(/'/g,"\'")}',${t.listing_id||null})">${t('btn_give_review')}</button>
@@ -1374,9 +1374,8 @@ async function submitWork(id) {
 
 async function approveWork(id) {
   const res = await api.approveTransaction(id);
-  if (res.invoice_url) {
-    showToast('Disetujui! Mengarahkan ke halaman pembayaran...', 'success');
-    setTimeout(() => window.open(res.invoice_url, '_blank'), 1000);
+  if (res.message && !res.error) {
+    showToast(res.message, 'success');
     renderTransactions();
   } else {
     showToast(res.message || 'Gagal', 'error');
@@ -1493,16 +1492,10 @@ async function submitCreateTransaction() {
 
   btn.innerHTML = 'Bayar DP Sekarang →'; btn.disabled = false;
 
-  if (res.invoice_url) {
+  if (res.transaction_id) {
     closeCreateTrxModal();
-    showToast('Transaksi dibuat! Mengarahkan ke pembayaran...', 'success');
+    showToast('Transaksi dibuat! Silakan bayar DP di halaman transaksi.', 'success');
     goTo('transactions');
-    setTimeout(() => {
-      const newTab = window.open(res.invoice_url, '_blank');
-      if (!newTab || newTab.closed || typeof newTab.closed === 'undefined') {
-        window.location.href = res.invoice_url;
-      }
-    }, 800);
   } else if (res.kyc_required) {
     closeCreateTrxModal();
     showToast('Verifikasi identitas diperlukan untuk melakukan transaksi', 'error');
@@ -2008,4 +2001,22 @@ async function searchUsers(query) {
           </div>
         </div>`).join('') + '</div>';
   } catch(e) { container.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--danger)">Gagal memuat.</div>'; }
+}
+
+// ===== PEMBAYARAN PAKASIR =====
+async function bayarPakasir(transactionId, paymentType, btn) {
+  const original = btn.innerHTML;
+  btn.innerHTML = '⏳ Memuat...'; btn.disabled = true;
+  try {
+    const res = await api.post('/pakasir/create', { transaction_id: transactionId, payment_type: paymentType });
+    if (res.payment_url) {
+      window.location.href = res.payment_url;
+    } else {
+      showToast(res.message || 'Gagal membuat pembayaran', 'error');
+      btn.innerHTML = original; btn.disabled = false;
+    }
+  } catch (e) {
+    showToast('Terjadi kesalahan. Coba lagi.', 'error');
+    btn.innerHTML = original; btn.disabled = false;
+  }
 }
