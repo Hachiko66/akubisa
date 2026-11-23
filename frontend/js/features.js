@@ -18,12 +18,12 @@ function openBoostModal(listingId, title) {
   const pkgContainer = document.getElementById('boost-packages');
   pkgContainer.innerHTML = Object.entries(BOOST_PACKAGES).map(([key, p]) => `
     <div class="boost-pkg-card ${key === '7day' ? 'selected' : ''}" onclick="selectBoostPkg('${key}')" data-pkg="${key}"
-      style="border:2px solid ${key === '7day' ? '#e8521a' : 'var(--border)'};border-radius:12px;padding:.8rem 1rem;cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:all .2s;background:${key === '7day' ? 'var(--accent-soft)' : 'var(--surface)'}">
+      style="border:2px solid ${key === '7day' ? 'var(--accent)' : 'var(--border)'};border-radius:12px;padding:.8rem 1rem;cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:all .2s;background:${key === '7day' ? 'var(--accent-soft)' : 'var(--surface)'}">
       <div>
         <div style="font-weight:700;font-size:.9rem;color:#0f0e0d">${p.label}</div>
         <div style="font-size:.75rem;color:#888;margin-top:.1rem">Aktif selama ${p.days} hari</div>
       </div>
-      <div style="font-weight:800;font-size:1rem;color:${key === '7day' ? '#e8521a' : '#0f0e0d'}">${p.price}</div>
+      <div style="font-weight:800;font-size:1rem;color:${key === '7day' ? 'var(--accent)' : '#0f0e0d'}">${p.price}</div>
     </div>
   `).join('');
 
@@ -34,10 +34,10 @@ function selectBoostPkg(pkg) {
   boostSelectedPkg = pkg;
   document.querySelectorAll('.boost-pkg-card').forEach(el => {
     const isSelected = el.dataset.pkg === pkg;
-    el.style.borderColor = isSelected ? '#e8521a' : 'var(--border)';
+    el.style.borderColor = isSelected ? 'var(--accent)' : 'var(--border)';
     el.style.background = isSelected ? 'var(--accent-soft)' : 'var(--surface)';
     el.querySelector('div > div:first-child').style.color = '#0f0e0d';
-    el.querySelector('div:last-child').style.color = isSelected ? '#e8521a' : '#0f0e0d';
+    el.querySelector('div:last-child').style.color = isSelected ? 'var(--accent)' : '#0f0e0d';
   });
 }
 
