@@ -62,6 +62,7 @@ async function submitBoost() {
         amountUsdcDisplay: res.amount_usdc_display,
         amountIdr: res.amount,
         rate: res.rate_idr_per_usdc,
+        rateLockedUntil: res.rate_locked_until,
         verify: (sig) => api.verifyBoostPayment(res.order_id, sig),
         onSuccess: () => showToast('Boost aktif! Listing kamu kini di posisi teratas.', 'success')
       });
@@ -565,6 +566,10 @@ async function purchaseAndDownload(listingId) {
         amountUsdcDisplay: res.amount_usdc_display,
         amountIdr: res.amount,
         rate: res.rate_idr_per_usdc,
+        rateLockedUntil: res.rate_locked_until,
+        breakdown: (res.platform_fee > 0 && res.price != null)
+          ? ('Harga Rp ' + parseInt(res.price).toLocaleString('id') + ' + fee 5% Rp ' + parseInt(res.platform_fee).toLocaleString('id') + ' = Rp ' + parseInt(res.amount).toLocaleString('id'))
+          : '',
         verify: (sig) => api.verifyDigitalPayment(listingId, res.purchase_id, sig),
         onSuccess: () => {
           showToast('Pembelian berhasil! File sedang didownload...', 'success');
@@ -629,4 +634,63 @@ function closeMobileMenu() {
     lines[2].style.transform = '';
   }
   document.body.style.overflow = '';
+}
+
+// ===== AKUBISA PRO — Rp49.000 / 30 hari =====
+// Manfaat: badge PRO, listing tampil lebih dulu di Jelajahi dan di
+// "Talent untuk Diikuti", bebas biaya penarikan. Tidak ada
+// perpanjangan otomatis; masa aktif berakhir sendiri.
+async function openProModal() {
+  if (!currentUser) { goTo('login'); return; }
+  const statusEl = document.getElementById('pro-status');
+  const btnEl = document.getElementById('pro-subscribe-btn');
+  try {
+    const st = await api.getProStatus();
+    if (st.is_pro) {
+      if (statusEl) statusEl.innerHTML = '⭐ <strong>Member Pro aktif</strong>' + (st.expires_at ? ' sampai ' + new Date(st.expires_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '') + '.';
+      if (btnEl) btnEl.style.display = 'none';
+    } else {
+      if (statusEl) statusEl.textContent = '';
+      if (btnEl) btnEl.style.display = '';
+    }
+  } catch (e) { /* biarkan modal tetap bisa dibuka */ }
+  document.getElementById('pro-modal').classList.add('open');
+}
+function closeProModal() { document.getElementById('pro-modal').classList.remove('open'); }
+
+async function subscribePro() {
+  const btn = document.getElementById('pro-subscribe-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Memproses...'; }
+  try {
+    const res = await api.subscribePro();
+    if (res.already_pro) {
+      showToast(res.message || 'Kamu sudah member Pro.', 'success');
+      closeProModal();
+      if (typeof renderProfile === 'function') renderProfile();
+      return;
+    }
+    if (!res.escrow_address || !res.amount_usdc) {
+      showToast(res.message || 'Gagal membuat langganan', 'error');
+      return;
+    }
+    closeProModal();
+    openSolanaPayModal({
+      title: 'Langganan AkuBisa Pro',
+      escrowAddress: res.escrow_address,
+      amountUsdcDisplay: res.amount_usdc_display,
+      amountIdr: res.amount,
+      rate: res.rate_idr_per_usdc,
+      rateLockedUntil: res.rate_locked_until,
+      verify: (sig) => api.verifyProPayment(res.subscription_id, sig),
+      onSuccess: () => {
+        showToast('AkuBisa Pro aktif! Selamat datang di Pro.', 'success');
+        if (typeof renderProfile === 'function') renderProfile();
+        if (typeof renderNav === 'function') renderNav();
+      }
+    });
+  } catch (e) {
+    showToast('Koneksi gagal', 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Langganan Pro — Rp49.000/bulan'; }
+  }
 }
