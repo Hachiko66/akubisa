@@ -323,6 +323,15 @@ const LANGS = {
     hero_eyebrow: 'One Stop Services',
     hero_cta_start: 'Mulai Gratis →',
     hero_desc: 'Dari bikin website, ngajar privat, hingga desain logo — setiap keahlian punya pasarnya. Mulai tawarkan atau temukan talent terbaik Indonesia.',
+    // FOOTER (sebelumnya hanya ada di blok EN, jadi tampil mentah di bahasa Indonesia)
+    footer_desc: 'Platform freelance Indonesia yang menghubungkan talent lokal dengan klien yang tepat. Semua kemampuan berharga.',
+    footer_platform: 'Platform',
+    footer_category: 'Kategori',
+    footer_info: 'Info',
+    footer_follow: 'Ikuti Kami',
+    footer_help: 'Bantuan',
+    footer_copyright: '© 2025 AkuBisa. Dibuat dengan ❤️ untuk talent Indonesia.',
+    boost_benefit: '⭐ Tampil di bagian teratas halaman Jelajahi',
   },
 
   en: {
