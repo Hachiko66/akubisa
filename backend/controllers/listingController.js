@@ -41,12 +41,13 @@ exports.getAll = async (req, res) => {
   try {
     const result = await pool.query(
       `SELECT l.*, c.name as category_name, c.slug as category_slug, c.icon as category_icon,
-              u.full_name, u.avatar, u.is_verified, u.city as user_city
+              u.full_name, u.avatar, u.is_verified, u.city as user_city,
+              EXISTS (SELECT 1 FROM subscriptions s WHERE s.user_id = l.user_id AND s.plan='pro' AND s.status='active' AND s.expires_at > NOW()) AS is_pro
        FROM listings l
        LEFT JOIN categories c ON l.category_id = c.id
        LEFT JOIN users u ON l.user_id = u.id
        ${whereStr}
-       ORDER BY l.is_featured DESC, RANDOM()
+       ORDER BY l.is_featured DESC, is_pro DESC, RANDOM()
        LIMIT $${i} OFFSET $${i+1}`,
       [...params, limit, offset]
     );
@@ -63,6 +64,7 @@ exports.getOne = async (req, res) => {
     const result = await pool.query(
       `SELECT l.*, c.name as category_name, c.slug as category_slug, c.icon as category_icon,
               u.full_name, u.avatar, u.is_verified, u.bio, u.city as user_city, u.phone,
+              EXISTS (SELECT 1 FROM subscriptions s WHERE s.user_id = l.user_id AND s.plan='pro' AND s.status='active' AND s.expires_at > NOW()) AS is_pro,
               COALESCE(AVG(r.rating),0) as avg_rating, COUNT(r.id) as review_count
        FROM listings l
        LEFT JOIN categories c ON l.category_id = c.id
