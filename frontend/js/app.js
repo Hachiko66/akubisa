@@ -187,9 +187,9 @@ window.addEventListener('hashchange', () => {
   if (page === 'wallet') renderWallet();
   if (page === 'bookmarks') renderBookmarks();
   if (page === 'admin')     renderAdmin();
-  if (page === 'terms' || page === 'privacy') {} // static pages
+  if (page === 'terms' || page === 'privacy' || page === 'faq') {} // static pages
   if (!document.getElementById('page-' + page)) { navigate('404'); }
-  if (page === 'terms' || page === 'privacy') {} // static pages
+  if (page === 'terms' || page === 'privacy' || page === 'faq') {} // static pages
   if (!document.getElementById('page-' + page)) { navigate('404'); }
 });
 
@@ -252,9 +252,9 @@ function goTo(page) {
   if (page === 'wallet') renderWallet();
   if (page === 'bookmarks') renderBookmarks();
   if (page === 'admin')     renderAdmin();
-  if (page === 'terms' || page === 'privacy') {} // static pages
+  if (page === 'terms' || page === 'privacy' || page === 'faq') {} // static pages
   if (!document.getElementById('page-' + page)) { navigate('404'); }
-  if (page === 'terms' || page === 'privacy') {} // static pages
+  if (page === 'terms' || page === 'privacy' || page === 'faq') {} // static pages
   if (!document.getElementById('page-' + page)) { navigate('404'); }
 }
 
