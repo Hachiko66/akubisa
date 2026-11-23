@@ -56,8 +56,6 @@ app.use('/api/auth',          authLimiter, require('./routes/auth'));
 app.use('/api/auth',          require('./routes/authTwitter'));
 app.use('/api/discount',        require('./routes/discount'));
 app.use('/api/referral',        require('./routes/referral'));
-app.use('/api/duitku',          require('./routes/duitku'));
-app.use('/api/pakasir', require('./routes/pakasir'));
 app.use('/api/users',           require('./routes/users'));
 app.use('/api/listings',                   require('./routes/listings'));
 
@@ -76,6 +74,7 @@ app.use('/api/bookmarks',                  require('./routes/bookmarks'));
 app.use('/api/boost', require('./routes/boost'));
 app.use('/api/notifications',              require('./routes/notifications'));
 app.use('/api/reports',                    require('./routes/reports'));
+app.use('/api/social',                     require('./routes/social'));
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -106,6 +105,38 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server berjalan di http://localhost:${PORT}`);
 });
+
+// ===== AUTO-RELEASE: lepas dana bila client diam 7 hari =====
+// Dulu auto_release_at hanya DITULIS saat worker submit (transactions.js)
+// tapi TIDAK PERNAH DIBACA — tidak ada cron/interval, jadi client yang
+// diam = worker tidak pernah dibayar. Job ini berjalan tiap 15 menit.
+//
+// Idempotent: UPDATE memakai guard WHERE status='submitted', dan kredit
+// worker HANYA diberikan untuk baris yang berhasil dikunci oleh UPDATE
+// itu (RETURNING). Jalan kedua tidak menemukan baris lagi, jadi tidak
+// ada double-credit. Jendela 7 hari TIDAK diubah (keputusan produk).
+const { creditWorker, updateWorkerBadge } = require('./utils/ledger');
+const AUTO_RELEASE_INTERVAL_MS = 15 * 60 * 1000;
+async function autoReleaseDueTransactions() {
+  try {
+    const due = await pool.query(`
+      UPDATE transactions
+      SET status='completed', final_paid_at=NOW(), auto_released=true
+      WHERE status='submitted' AND auto_release_at <= NOW()
+      RETURNING id, worker_id, client_id, total_amount
+    `);
+    for (const t of due.rows) {
+      await creditWorker(pool, t.worker_id, parseInt(t.total_amount));
+      await updateWorkerBadge(pool, t.worker_id);
+      await pool.query(`INSERT INTO notifications (user_id, type, title, message, link) VALUES ($1,'transaction','🎉 Pembayaran Lunas!','Dana escrow dilepas otomatis setelah 7 hari tanpa respon klien. Dana masuk ke dompetmu.','#wallet')`, [t.worker_id]);
+      await pool.query(`INSERT INTO notifications (user_id, type, title, message, link) VALUES ($1,'transaction','✅ Pembayaran Selesai','Terima kasih! Proyek telah selesai (dana dilepas otomatis setelah 7 hari).','#transactions')`, [t.client_id]);
+    }
+    if (due.rows.length) console.log(`[auto-release] ${due.rows.length} transaksi dilepas otomatis`);
+  } catch (e) {
+    console.error('[auto-release] gagal:', e.message);
+  }
+}
+setInterval(autoReleaseDueTransactions, AUTO_RELEASE_INTERVAL_MS);
 
 // Dynamic Sitemap
 app.get('/sitemap.xml', async (req, res) => {
