@@ -21,18 +21,19 @@ echo "--- 2. Install dependensi backend ---"
 npm ci --omit=dev || npm install --omit=dev
 
 echo "--- 3. Migrasi database (menu + sosial) ---"
-for v in DATABASE_URL DB_HOST DB_USER DB_PASS DB_NAME DB_PORT; do
+for v in DATABASE_URL DB_HOST DB_USER DB_PASSWORD DB_NAME DB_PORT; do
   val=$(grep -E "^$v=" .env 2>/dev/null | cut -d= -f2- | tr -d '"' | tr -d "'" || true)
   [ -n "$val" ] && export "$v=$val"
 done
 if [ -n "${DATABASE_URL:-}" ] || [ -n "${DB_NAME:-}" ]; then
+  echo "Mode koneksi: $([ -n "${DATABASE_URL:-}" ] && echo DATABASE_URL || echo DB_HOST/DB_USER/DB_PASSWORD/DB_NAME)"
   node -e "
     const { Client } = require('pg');
     const fs = require('fs');
     (async () => {
       const cfg = process.env.DATABASE_URL
         ? { connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } }
-        : { host: process.env.DB_HOST || 'localhost', user: process.env.DB_USER, password: process.env.DB_PASS, database: process.env.DB_NAME, port: process.env.DB_PORT || 5432 };
+        : { host: process.env.DB_HOST || 'localhost', user: process.env.DB_USER, password: process.env.DB_PASSWORD, database: process.env.DB_NAME, port: process.env.DB_PORT || 5432 };
       const c = new Client(cfg);
       await c.connect();
       for (const f of ['config/migrate-menus.sql', 'config/migrate-social.sql']) {
