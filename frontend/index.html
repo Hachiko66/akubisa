@@ -1235,6 +1235,7 @@ body { font-family: var(--font-body); }
           <span id="profile-bio-preview" style="font-size:.8rem;color:rgba(255,255,255,.5)"></span>
           <div id="self-social-links"></div>
         </div>
+        <div id="profile-pro-area"></div>
       </div>
       <button class="btn btn-outline btn-sm" style="color:white;border-color:rgba(255,255,255,.3)" onclick="openEditProfile()"><span data-i18n="profile_edit">Edit Profil</span></button>
     </div>
@@ -1335,6 +1336,7 @@ body { font-family: var(--font-body); }
       <div style="flex:1;min-width:200px">
         <div style="display:flex;align-items:center;gap:.8rem;flex-wrap:wrap;margin-bottom:.3rem">
           <div class="profile-name" id="pub-name" style="font-size:1.6rem">-</div>
+          <span id="pub-pro-badge" class="pro-badge" style="display:none">⭐ PRO</span>
           <span id="pub-badge-level" style="margin-right:.3rem"></span><span id="pub-verified" style="display:none;font-size:.75rem;font-weight:700;color:white;background:#1d9bf0;padding:.2rem .6rem;border-radius:100px;display:none;align-items:center;gap:.3rem"><svg width="11" height="11" viewBox="0 0 24 24" fill="white"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg> Terverifikasi</span>
         </div>
         <div class="profile-meta" style="margin-bottom:.5rem"><span id="pub-city">-</span></div>
@@ -1576,7 +1578,9 @@ body { font-family: var(--font-body); }
     <div class="notice notice-success" style="text-align:center">
       <div id="sp-amount-idr" style="font-size:1.3rem;font-weight:800;color:var(--success-text)">-</div>
       <div id="sp-amount-usdc" style="font-size:.8rem;color:var(--success-text)"></div>
+      <div id="sp-breakdown" style="font-size:.78rem;color:var(--text);margin-top:.3rem"></div>
       <div id="sp-rate" style="font-size:.72rem;color:var(--muted);margin-top:.2rem"></div>
+      <div id="sp-rate-until" style="font-size:.72rem;color:var(--muted)"></div>
     </div>
     <div class="form-group">
       <label class="form-label">Bukti Transaksi (Signature) *</label>
@@ -1665,8 +1669,9 @@ body { font-family: var(--font-body); }
     </div>
     <div class="form-group">
       <label class="form-label"><span data-i18n="wd_amount">Jumlah Withdraw (Rp) *</span></label>
-      <input class="form-input" id="wd-amount" type="number" placeholder="Minimum Rp 50.000">
+      <input class="form-input" id="wd-amount" type="number" placeholder="Minimum Rp 50.000" oninput="updateWithdrawFeePreview()">
     </div>
+    <div id="wd-fee-info" style="font-size:.8rem;color:var(--muted);margin-bottom:.5rem"></div>
     <div class="form-group">
       <label class="form-label">Alamat Payout Solana (USDC)</label>
       <div style="font-size:.85rem;font-weight:700;word-break:break-all" id="wd-solana-address">— belum diisi —</div>
@@ -1677,6 +1682,31 @@ body { font-family: var(--font-body); }
     <div style="display:flex;gap:.8rem;justify-content:flex-end;margin-top:1rem">
       <button class="btn btn-outline" onclick="closeWithdrawModal()"><span data-i18n="btn_cancel">Batal</span></button>
       <button class="btn btn-primary" id="wd-btn" onclick="submitWithdraw()">Tarik Saldo</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL AKUBISA PRO -->
+<div class="modal-overlay" id="pro-modal" onclick="if(event.target===this)closeProModal()">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-header">
+      <div class="modal-title">⭐ AkuBisa Pro</div>
+      <button class="modal-close" onclick="closeProModal()">✕</button>
+    </div>
+    <p style="font-size:.85rem;color:var(--muted);margin-bottom:1rem">Membership bulanan untuk Pekerja — tampil lebih menonjol, tanpa biaya penarikan.</p>
+    <div style="display:flex;flex-direction:column;gap:.6rem;margin-bottom:1rem;font-size:.88rem">
+      <div>🏅 <strong>Badge PRO</strong> di profil dan penawaranmu</div>
+      <div>⬆️ <strong>Listing tampil lebih dulu</strong> di Jelajahi dan di "Talent untuk Diikuti"</div>
+      <div>💸 <strong>Bebas biaya penarikan</strong> selama masa aktif</div>
+    </div>
+    <div class="notice notice-success" style="text-align:center;margin-bottom:1rem">
+      <div style="font-size:1.3rem;font-weight:800;color:var(--success-text)">Rp 49.000<span style="font-size:.85rem;font-weight:600"> / 30 hari</span></div>
+      <div style="font-size:.75rem;color:var(--muted);margin-top:.2rem">Tidak diperpanjang otomatis · Tidak ada refund untuk sisa masa aktif</div>
+    </div>
+    <div id="pro-status" style="font-size:.85rem;margin-bottom:.8rem"></div>
+    <div style="display:flex;gap:.8rem;justify-content:flex-end">
+      <button class="btn btn-outline" onclick="closeProModal()"><span data-i18n="btn_cancel">Batal</span></button>
+      <button class="btn btn-primary" id="pro-subscribe-btn" onclick="subscribePro()">Langganan Pro — Rp49.000/bulan</button>
     </div>
   </div>
 </div>
@@ -2153,8 +2183,8 @@ body { font-family: var(--font-body); }
       <p>Kamu bertanggung jawab atas keamanan akun dan semua aktivitas yang terjadi di bawah akunmu. AkuBisa berhak menangguhkan atau menghapus akun yang melanggar ketentuan ini.</p>
 
       <h2 style="color:var(--ink);font-size:1.2rem;font-weight:700;margin:2rem 0 .8rem">4. Transaksi & Pembayaran</h2>
-      <p>Semua transaksi dilakukan melalui sistem escrow AkuBisa. Platform fee sebesar 10% dikenakan dari total nilai transaksi. Dana akan dilepas ke Pekerja setelah Klien menyetujui hasil pekerjaan.</p>
-      <p>Pembayaran dilakukan dengan USDC di jaringan Solana: Klien mengirim USDC ke alamat escrow AkuBisa lalu menyerahkan bukti transaksi (signature) untuk diverifikasi sistem. Kurs IDR ke USDC dikunci saat transaksi dibuat. Penarikan saldo oleh Pekerja juga dibayarkan dalam USDC ke alamat Solana yang terdaftar di profilnya.</p>
+      <p>Semua transaksi dilakukan melalui sistem escrow AkuBisa. Platform fee sebesar 5% dikenakan dari total nilai transaksi. Fee 5% yang sama juga berlaku untuk pembelian produk digital. Dana akan dilepas ke Pekerja setelah Klien menyetujui hasil pekerjaan.</p>
+      <p>Pembayaran dilakukan dengan USDC di jaringan Solana: Klien mengirim USDC ke alamat escrow AkuBisa lalu menyerahkan bukti transaksi (signature) untuk diverifikasi sistem. Kurs IDR ke USDC dikunci saat transaksi dibuat dan berlaku 24 jam. Penarikan saldo oleh Pekerja juga dibayarkan dalam USDC ke alamat Solana yang terdaftar di profilnya, dengan biaya penarikan 1% (minimal Rp1.000, maksimal Rp10.000; gratis untuk member AkuBisa Pro).</p>
 
       <h2 style="color:var(--ink);font-size:1.2rem;font-weight:700;margin:2rem 0 .8rem">5. Larangan</h2>
       <p>Pengguna dilarang: melakukan penipuan, menyebarkan konten ilegal, melecehkan pengguna lain, mencoba meretas sistem, atau melakukan transaksi di luar platform untuk menghindari fee.</p>
@@ -2237,14 +2267,14 @@ body { font-family: var(--font-body); }
       <details class="faq-item">
         <summary>Berapa fee platform?</summary>
         <div class="faq-answer">
-          <p>Platform mengenakan fee 10% dari nilai transaksi, dan fee ini dibebankan ke Klien di atas harga Pekerja. Contoh: harga Pekerja Rp100.000, maka Klien membayar total Rp110.000 (DP Rp55.000 + pelunasan Rp55.000). Pekerja menerima Rp100.000 penuh tanpa potongan.</p>
-          <p>Produk digital tidak dikenai fee — penjual menerima harga penuh.</p>
+          <p>Platform mengenakan fee 5% dari nilai transaksi, dan fee ini dibebankan ke Klien di atas harga Pekerja. Contoh: harga Pekerja Rp100.000, maka Klien membayar total Rp105.000 (DP Rp52.500 + pelunasan Rp52.500). Pekerja menerima Rp100.000 penuh tanpa potongan.</p>
+          <p>Produk digital juga dikenai fee 5% yang sama: harga Rp100.000, pembeli membayar Rp105.000, dan penjual menerima Rp100.000 penuh.</p>
         </div>
       </details>
       <details class="faq-item">
         <summary>Bagaimana cara membayar?</summary>
         <div class="faq-answer">
-          <p>Semua harga di AkuBisa dalam Rupiah, dan pembayaran dilakukan dengan USDC di jaringan Solana. Caranya: buat transaksi, lalu sistem menampilkan alamat wallet escrow AkuBisa dan jumlah USDC yang harus dikirim. Kurs IDR ke USDC dikunci saat transaksi dibuat, jadi jumlahnya tidak berubah.</p>
+          <p>Semua harga di AkuBisa dalam Rupiah, dan pembayaran dilakukan dengan USDC di jaringan Solana. Caranya: buat transaksi, lalu sistem menampilkan alamat wallet escrow AkuBisa dan jumlah USDC yang harus dikirim. Kurs IDR ke USDC dikunci saat transaksi dibuat dan berlaku 24 jam — kalau kamu membayar lebih dari 24 jam setelah transaksi dibuat, tutup dan buka lagi pembayarannya untuk kurs terbaru.</p>
           <p>Kirim USDC dari wallet kamu (misalnya Phantom) ke alamat escrow tersebut, lalu masukkan signature transaksi ke AkuBisa untuk diverifikasi otomatis di blockchain. Transaksi minimal Rp10.000. Pembayaran dibagi dua tahap: DP 50% di awal dan pelunasan 50% setelah hasil pekerjaan diserahkan.</p>
         </div>
       </details>
@@ -2253,6 +2283,7 @@ body { font-family: var(--font-body); }
         <div class="faq-answer">
           <p>Pastikan kamu sudah mengisi alamat payout Solana di profil (alamat ini tidak tampil di profil publik). Lalu ajukan penarikan dari halaman Dompet, minimal Rp50.000. Saldo yang ditarik akan dibekukan, dan setelah admin menyetujui, USDC dikirim dari escrow ke alamat yang kamu konfirmasi saat mengajukan penarikan.</p>
           <p>Perlu diingat: alamat tujuan dicatat saat kamu mengajukan — kalau kamu mengganti alamat di profil setelahnya, dana tetap dikirim ke alamat yang sudah kamu konfirmasi. Kurs USDC dikunci pada saat admin menyetujui penarikan.</p>
+          <p>Penarikan dikenai biaya 1% dari jumlah yang ditarik (minimal Rp1.000, maksimal Rp10.000) — biaya dipotong dari jumlah yang kamu terima. Contoh: tarik Rp500.000, biayanya Rp5.000, jadi yang kamu terima Rp495.000. Member AkuBisa Pro bebas biaya penarikan.</p>
         </div>
       </details>
       <details class="faq-item">
@@ -2287,6 +2318,13 @@ body { font-family: var(--font-body); }
         <summary>Apa itu Boost penawaran?</summary>
         <div class="faq-answer">
           <p>Boost membuat penawaranmu tampil di bagian teratas halaman Jelajahi selama paket yang kamu pilih: 3 hari Rp15.000, 7 hari Rp25.000, 30 hari Rp75.000, atau 1 tahun Rp300.000. Boost dibayar dengan USDC seperti pembayaran lainnya, dan status featured langsung aktif setelah pembayaranmu terverifikasi.</p>
+        </div>
+      </details>
+      <details class="faq-item">
+        <summary>Apa itu AkuBisa Pro?</summary>
+        <div class="faq-answer">
+          <p>AkuBisa Pro adalah membership bulanan untuk Pekerja seharga Rp49.000 per 30 hari. Manfaatnya: badge PRO di profil dan penawaranmu, penawaranmu tampil lebih dulu di halaman Jelajahi dan di daftar "Talent untuk Diikuti", serta bebas biaya penarikan saldo.</p>
+          <p>Berlangganan dari halaman Profil, lalu bayar seperti pembayaran lainnya (USDC ke escrow). Membership tidak diperpanjang otomatis — setelah 30 hari masa aktif berakhir sendiri dan kamu bisa memperpanjang lagi bila mau. Tidak ada refund untuk sisa masa aktif yang tidak terpakai.</p>
         </div>
       </details>
       <details class="faq-item">
