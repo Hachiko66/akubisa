@@ -18,7 +18,7 @@ function openBoostModal(listingId, title) {
   const pkgContainer = document.getElementById('boost-packages');
   pkgContainer.innerHTML = Object.entries(BOOST_PACKAGES).map(([key, p]) => `
     <div class="boost-pkg-card ${key === '7day' ? 'selected' : ''}" onclick="selectBoostPkg('${key}')" data-pkg="${key}"
-      style="border:2px solid ${key === '7day' ? '#e8521a' : '#e0ddd8'};border-radius:12px;padding:.8rem 1rem;cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:all .2s;background:${key === '7day' ? '#fff8f5' : 'white'}">
+      style="border:2px solid ${key === '7day' ? '#e8521a' : 'var(--border)'};border-radius:12px;padding:.8rem 1rem;cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:all .2s;background:${key === '7day' ? 'var(--accent-soft)' : 'var(--surface)'}">
       <div>
         <div style="font-weight:700;font-size:.9rem;color:#0f0e0d">${p.label}</div>
         <div style="font-size:.75rem;color:#888;margin-top:.1rem">Aktif selama ${p.days} hari</div>
@@ -34,8 +34,8 @@ function selectBoostPkg(pkg) {
   boostSelectedPkg = pkg;
   document.querySelectorAll('.boost-pkg-card').forEach(el => {
     const isSelected = el.dataset.pkg === pkg;
-    el.style.borderColor = isSelected ? '#e8521a' : '#e0ddd8';
-    el.style.background = isSelected ? '#fff8f5' : 'white';
+    el.style.borderColor = isSelected ? '#e8521a' : 'var(--border)';
+    el.style.background = isSelected ? 'var(--accent-soft)' : 'var(--surface)';
     el.querySelector('div > div:first-child').style.color = '#0f0e0d';
     el.querySelector('div:last-child').style.color = isSelected ? '#e8521a' : '#0f0e0d';
   });
@@ -54,10 +54,17 @@ async function submitBoost() {
   btn.textContent = 'Memproses...';
   try {
     const res = await api.post('/boost/buy', { listing_id: boostListingId, package: boostSelectedPkg });
-    if (res.invoice_url) {
+    if (res.escrow_address && res.amount_usdc) {
       closeBoostModal();
-      window.open(res.invoice_url, '_blank');
-      showToast('Halaman pembayaran dibuka! Listing aktif otomatis setelah bayar.', 'success');
+      openSolanaPayModal({
+        title: 'Bayar Boost — USDC (Solana)',
+        escrowAddress: res.escrow_address,
+        amountUsdcDisplay: res.amount_usdc_display,
+        amountIdr: res.amount,
+        rate: res.rate_idr_per_usdc,
+        verify: (sig) => api.verifyBoostPayment(res.order_id, sig),
+        onSuccess: () => showToast('Boost aktif! Listing kamu kini di posisi teratas.', 'success')
+      });
     } else {
       showToast(res.message || 'Gagal membuat order', 'error');
     }
@@ -201,8 +208,8 @@ async function loadNotifPanel() {
       const trxId = meta ? (meta.transaction_id || null) : null;
       const action = n.action || '';
       return `<div onclick="clickNotif(${n.id},'${n.link||''}',${trxId},'${action}')"
-        style="padding:.9rem 1rem;border-bottom:1px solid var(--border);cursor:pointer;display:flex;gap:.8rem;align-items:flex-start;background:${n.is_read?'white':'#fff8f6'};transition:background .2s"
-        onmouseover="this.style.background='var(--warm)'" onmouseout="this.style.background='${n.is_read?'white':'#fff8f6'}'">
+        style="padding:.9rem 1rem;border-bottom:1px solid var(--border);cursor:pointer;display:flex;gap:.8rem;align-items:flex-start;background:${n.is_read?'var(--surface)':'var(--accent-soft)'};transition:background .2s"
+        onmouseover="this.style.background='var(--warm)'" onmouseout="this.style.background='${n.is_read?'var(--surface)':'var(--accent-soft)'}'">
         <div style="font-size:1.1rem;margin-top:.1rem">${notifIcon(n.type)}</div>
         <div style="flex:1;min-width:0">
           <div style="font-size:.82rem;font-weight:${n.is_read?'500':'700'}">${n.title}</div>
@@ -236,20 +243,13 @@ async function clickNotif(id, link, trxId, action) {
   await api.readNotif(id);
   closeNotifPanel();
   if (action === 'approve' && trxId) {
-    // Langsung approve & buat invoice pelunasan
+    // Approve pekerjaan, lalu client membayar pelunasan via USDC
+    // (tombol "Bayar Pelunasan" di halaman transaksi).
     goTo('transactions');
     setTimeout(async () => {
       const res = await api.approveTransaction(trxId);
-      if (res.invoice_url) {
-        showToast('Mengarahkan ke halaman pelunasan...', 'success');
-        setTimeout(() => {
-          const tab = window.open(res.invoice_url, '_blank');
-          if (!tab || tab.closed) window.location.href = res.invoice_url;
-        }, 800);
-        renderTransactions();
-      } else {
-        showToast(res.message || 'Gagal membuat invoice', 'error');
-      }
+      showToast(res.message || 'Disetujui! Silakan lakukan pelunasan.', 'success');
+      renderTransactions();
     }, 300);
   } else if (link) {
     if (link.startsWith('#')) goTo(link.replace('#',''));
@@ -403,7 +403,7 @@ function openPromoteModal(listingId, title) {
   // Reset pkg selection
   document.querySelectorAll('.promote-pkg').forEach(p => {
     p.style.borderColor = p.dataset.days == 14 ? 'var(--accent)' : 'var(--border)';
-    p.style.background  = p.dataset.days == 14 ? '#fff8f6' : '';
+    p.style.background  = p.dataset.days == 14 ? 'var(--accent-soft)' : '';
     p.style.transform = '';
   });
   document.getElementById('promote-modal').classList.add('open');
@@ -421,7 +421,7 @@ function selectPkg(el, days, price) {
     p.style.transform = '';
   });
   el.style.borderColor = 'var(--accent)';
-  el.style.background = '#fff8f6';
+  el.style.background = 'var(--accent-soft)';
   el.style.transform = 'translateY(-2px)';
   document.getElementById('promote-selected').textContent =
     `Paket dipilih: ${days} hari — ${price}`;
@@ -485,16 +485,16 @@ function setListingType(type) {
 
   if (type === 'service') {
     serviceCard.style.borderColor = 'var(--accent)';
-    serviceCard.style.background = '#fff8f6';
+    serviceCard.style.background = 'var(--accent-soft)';
     digitalCard.style.borderColor = 'var(--border)';
-    digitalCard.style.background = 'white';
+    digitalCard.style.background = 'var(--surface)';
     uploadSection.style.display = 'none';
     document.getElementById('post-price-unit').value = '/jam';
   } else {
     digitalCard.style.borderColor = 'var(--accent)';
-    digitalCard.style.background = '#fff8f6';
+    digitalCard.style.background = 'var(--accent-soft)';
     serviceCard.style.borderColor = 'var(--border)';
-    serviceCard.style.background = 'white';
+    serviceCard.style.background = 'var(--surface)';
     uploadSection.style.display = 'block';
     document.getElementById('post-price-unit').value = '/produk';
   }
@@ -545,7 +545,28 @@ async function purchaseAndDownload(listingId) {
 
   try {
     const res = await api.purchaseDigital(listingId);
-    if (res.success) {
+    if (res.success && res.requires_payment && res.escrow_address) {
+      // Produk berbayar: kirim USDC ke escrow, lalu verifikasi dengan
+      // signature. Download baru terbuka setelah verifikasi on-chain.
+      openSolanaPayModal({
+        title: 'Beli Produk Digital — USDC (Solana)',
+        escrowAddress: res.escrow_address,
+        amountUsdcDisplay: res.amount_usdc_display,
+        amountIdr: res.amount,
+        rate: res.rate_idr_per_usdc,
+        verify: (sig) => api.verifyDigitalPayment(listingId, res.purchase_id, sig),
+        onSuccess: () => {
+          showToast('Pembelian berhasil! File sedang didownload...', 'success');
+          setTimeout(() => {
+            window.open(`/api/listings/${listingId}/download`, '_blank');
+            btn.innerHTML = '⬇️ Download Lagi';
+            btn.disabled = false;
+          }, 500);
+        }
+      });
+      btn.innerHTML = '🛒 Dapatkan Sekarang';
+      btn.disabled = false;
+    } else if (res.success) {
       showToast('Pembelian berhasil! File sedang didownload...', 'success');
       setTimeout(() => {
         window.open(`/api/listings/${listingId}/download`, '_blank');
