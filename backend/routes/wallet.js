@@ -4,6 +4,7 @@ const pool = require('../config/db');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const { getUsdcIdrRate, idrToMicroUsdc, formatUsdc, isValidSolanaAddress } = require('../utils/solana');
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -53,33 +54,60 @@ router.get('/earnings', auth, async (req, res) => {
   } catch(e) { res.status(500).json({ message: e.message }); }
 });
 
-// POST request withdraw
+// POST request withdraw — PENCAIRAN VIA SOLANA USDC (bukan bank).
+// Saldo worker dihitung dalam Rupiah (lihat worker_balances), tapi
+// yang dikirim adalah USDC dari wallet escrow ke alamat payout Solana
+// worker (diisi di profil, kolom users.solana_address).
+//
+// ATURAN (keputusan produk 2026-11-23):
+// - Minimum Rp 50.000 (tetap, sama seperti dulu). Konversi ke USDC
+//   dihitung saat request dibuat HANYA sebagai estimasi tampilan
+//   (usdc_estimate) — jumlah USDC yang BENAR-BENAR dikirim dikunci
+//   pada kurs saat admin menyetujui (saat transfer on-chain terjadi),
+//   karena konversi baru terjadi di momen itu. Selisih kurs antara
+//   request dan approve ditanggung platform (risiko FX, lihat
+//   docs/pembayaran-solana.md).
+// - Alamat payout DI-SNAPSHOT saat request dibuat (kolom solana_address
+//   di withdraw_requests): bila worker mengganti alamat profil setelah
+//   request, dana tetap ke alamat yang ia konfirmasi saat request.
+// - Saldo dibekukan saat request (balance -= amount); bila admin
+//   menolak, saldo dikembalikan (lihat admin.js).
 router.post('/withdraw', auth, async (req, res) => {
-  const { amount, bank_name, account_number, account_name } = req.body;
+  const { amount } = req.body;
   if (!amount || amount < 50000) return res.status(400).json({ message: 'Minimum withdraw Rp 50.000' });
-  if (!bank_name || !account_number || !account_name) return res.status(400).json({ message: 'Data rekening lengkap' });
   try {
+    const user = await pool.query('SELECT solana_address FROM users WHERE id=$1', [req.user.id]);
+    const payout = user.rows[0]?.solana_address;
+    if (!payout || !isValidSolanaAddress(payout)) {
+      return res.status(400).json({ message: 'Isi dulu alamat payout Solana di profilmu (dompet USDC, mis. Phantom) sebelum withdraw.', solana_address_required: true });
+    }
     const bal = await pool.query('SELECT balance FROM worker_balances WHERE worker_id=$1', [req.user.id]);
     if (!bal.rows[0] || bal.rows[0].balance < amount) return res.status(400).json({ message: 'Saldo tidak cukup' });
 
     const pending = await pool.query(`SELECT id FROM withdraw_requests WHERE worker_id=$1 AND status='pending'`, [req.user.id]);
     if (pending.rows.length > 0) return res.status(400).json({ message: 'Masih ada request withdraw yang menunggu' });
 
+    // Estimasi USDC saat request (tampilan saja; penguncian final di approve).
+    let rateInfo;
+    try { rateInfo = await getUsdcIdrRate(); }
+    catch (e) { return res.status(503).json({ message: 'Kurs USDC/IDR tidak tersedia: ' + e.message }); }
+    const usdcEstimate = idrToMicroUsdc(amount, rateInfo.rate);
+
     // Freeze saldo
     await pool.query('UPDATE worker_balances SET balance = balance - $1 WHERE worker_id = $2', [amount, req.user.id]);
 
     await pool.query(`
-      INSERT INTO withdraw_requests (worker_id, amount, bank_name, account_number, account_name)
+      INSERT INTO withdraw_requests (worker_id, amount, solana_address, rate_idr_per_usdc, usdc_estimate)
       VALUES ($1,$2,$3,$4,$5)
-    `, [req.user.id, amount, bank_name, account_number, account_name]);
+    `, [req.user.id, amount, payout, rateInfo.rate, usdcEstimate]);
 
     // Notif
     await pool.query(`
       INSERT INTO notifications (user_id, type, title, message, link)
-      VALUES ($1,'wallet','💸 Request Withdraw Dikirim','Request withdraw Rp ${parseInt(amount).toLocaleString()} sedang diproses admin.','#wallet')
+      VALUES ($1,'wallet','💸 Request Withdraw Dikirim','Request withdraw Rp ${parseInt(amount).toLocaleString()} (~${formatUsdc(usdcEstimate)}) ke alamat Solanamu sedang diproses admin.','#wallet')
     `, [req.user.id]);
 
-    res.json({ message: 'Request withdraw berhasil dikirim! Diproses dalam 1x24 jam.' });
+    res.json({ message: 'Request withdraw berhasil dikirim! Diproses dalam 1x24 jam.', usdc_estimate: usdcEstimate, usdc_estimate_display: formatUsdc(usdcEstimate), rate_idr_per_usdc: rateInfo.rate });
   } catch(e) { res.status(500).json({ message: e.message }); }
 });
 
