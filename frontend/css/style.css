@@ -8,24 +8,24 @@
   --font-display:Georgia,'Times New Roman',serif;
   --font-body:'Segoe UI',system-ui,-apple-system,sans-serif;
   /* Identitas brand (tetap di kedua tema) */
-  --ink:#0f0e0d; --cream:#f5f0e8; --warm:#ede7d9;
-  --accent:#e8521a; --accent2:#2a6b4a; --accent3:#d4a017;
+  --ink:#0f0e0d; --cream:#f3ecdd; --warm:#ece2cd;
+  --accent:#d2693c; --accent2:#5b7d64; --accent3:#bd9242;
   --danger:#dc2626; --success:#16a34a;
-  /* Permukaan & teks — TEMA TERANG */
-  --bg:var(--cream); --surface:#ffffff; --surface-2:#faf8f4; --surface-3:#f0ede6;
-  --text:var(--ink); --muted:#8a8070; --border:#ddd8ce;
-  --input-bg:#faf8f4;
-  --accent-soft:#fff4e6; --accent-soft-border:#fcd8c8;
+  /* Permukaan & teks — TEMA TERANG (soft: tanpa putih terang) */
+  --bg:var(--cream); --surface:#fbf8f1; --surface-2:#f5efe3; --surface-3:#ece4d3;
+  --text:var(--ink); --muted:#7a6f5e; --border:#e3d9c4;
+  --input-bg:#f7f1e5;
+  --accent-soft:#fbeedd; --accent-soft-border:#f3d3bd;
   --shadow:0 1px 3px rgba(15,14,13,.06); --shadow-md:0 8px 32px rgba(15,14,13,.10); --shadow-lg:0 20px 60px rgba(15,14,13,.28);
-  --skeleton-1:#f0f0f0; --skeleton-2:#e0e0e0;
-  /* Token semantik — TEMA TERANG */
-  --success-bg:#f0fdf4; --success-text:#166534; --success-border:#bbf7d0;
-  --warning-bg:#fef9c3; --warning-text:#854d0e; --warning-border:#fde047;
-  --danger-bg:#fef2f2; --danger-text:#991b1b; --danger-border:#fecaca;
-  --info-bg:#eff6ff; --info-text:#1e40af; --info-border:#bfdbfe;
-  --neutral-bg:#f8f9fa; --neutral-text:#555555;
-  --cyan-bg:#ecfeff; --cyan-text:#0891b2; --cyan-border:#a5f3fc;
-  --violet-bg:#f5f3ff; --violet-text:#7c3aed; --violet-border:#ddd6fe;
+  --skeleton-1:#e9e1cf; --skeleton-2:#ddd2ba;
+  /* Token semantik — TEMA TERANG (dihangatkan agar selaras dengan krem) */
+  --success-bg:#edf6ea; --success-text:#166534; --success-border:#bbf7d0;
+  --warning-bg:#faf3d3; --warning-text:#854d0e; --warning-border:#fde047;
+  --danger-bg:#fbeeee; --danger-text:#991b1b; --danger-border:#fecaca;
+  --info-bg:#edf2f7; --info-text:#1e40af; --info-border:#bfdbfe;
+  --neutral-bg:#f2ecdf; --neutral-text:#555555;
+  --cyan-bg:#e9f4f2; --cyan-text:#0891b2; --cyan-border:#a5f3fc;
+  --violet-bg:#f1eef7; --violet-text:#7c3aed; --violet-border:#ddd6fe;
   /* Kompatibilitas: nama lama tetap jalan */
   --card:var(--surface);
 }
@@ -75,7 +75,7 @@ nav{display:flex;justify-content:space-between;align-items:center;padding:1rem 5
 .nav-links a:hover{color:var(--ink)}
 .btn{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;font-weight:600;font-size:0.875rem;padding:.6rem 1.4rem;border-radius:100px;border:none;cursor:pointer;transition:all .2s;text-decoration:none;display:inline-block}
 .btn-primary{background:var(--accent);color:white}
-.btn-primary:hover{background:#c94415;transform:translateY(-1px);box-shadow:0 4px 16px rgba(232,82,26,.3)}
+.btn-primary:hover{background:#b25a33;transform:translateY(-1px);box-shadow:0 4px 16px rgba(210,105,60,.3)}
 .btn-outline{background:transparent;color:var(--ink);border:1.5px solid var(--border)}
 .btn-outline:hover{border-color:var(--ink);background:var(--warm)}
 .btn-sm{padding:.4rem 1rem;font-size:.8rem}
@@ -129,10 +129,10 @@ nav{display:flex;justify-content:space-between;align-items:center;padding:1rem 5
 .profile-avatar-lg{width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.8rem;font-weight:800;color:white;border:3px solid rgba(255,255,255,.2)}
 .profile-name{font-family:Georgia,'Times New Roman',serif;font-size:1.6rem;font-weight:800;margin-bottom:.4rem}
 .profile-meta{color:rgba(255,255,255,.6);font-size:.875rem}
-.search-bar-wrap{display:flex;background:#ffffff;border-radius:100px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.1);max-width:600px}
+.search-bar-wrap{display:flex;background:var(--surface);border-radius:100px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.1);max-width:600px}
 .search-bar-wrap input{flex:1;padding:.9rem 1.4rem;border:none;outline:none;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;font-size:.9rem;color:#0f0e0d;background:transparent}
 .search-bar-wrap button{background:var(--accent);color:white;border:none;padding:.8rem 1.5rem;font-weight:700;cursor:pointer;border-radius:100px;margin:.3rem;transition:background .2s}
-.search-bar-wrap button:hover{background:#c94415}
+.search-bar-wrap button:hover{background:#b25a33}
 .chip-wrap{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:1rem}
 .chip{font-size:.78rem;font-weight:500;padding:.35rem 1rem;border-radius:100px;border:1.5px solid rgba(255,255,255,.2);color:rgba(255,255,255,.6);cursor:pointer;transition:all .2s;background:transparent}
 .chip:hover,.chip.active{background:var(--accent);color:white;border-color:var(--accent)}
