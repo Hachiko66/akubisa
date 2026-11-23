@@ -5,11 +5,13 @@ const { sendEmailNotif } = require('../config/email');
 const { creditWorker, updateWorkerBadge } = require('../utils/ledger');
 const { getUsdcIdrRate, idrToMicroUsdc, formatUsdc, escrowAddress, verifyUsdcPayment, reserveSignature } = require('../utils/solana');
 const { notifyUser } = require('../utils/notify');
-// Fee platform 10% dari nilai transaksi (naik dari 5% per keputusan
-// produk 2026-11-23). Tetap dibebankan ke CLIENT di atas harga worker
+const { rateLockExpiresAt, isRateLockExpired } = require('../utils/revenue');
+// Fee platform 5% dari nilai transaksi (keputusan produk
+// 2026-11-23; sempat 10% di ronde crypto, dikembalikan ke 5%).
+// Tetap dibebankan ke CLIENT di atas harga worker
 // (billed = total + fee), jadi worker menerima total_amount penuh.
 // Bisa di-override lewat env PLATFORM_FEE_PERCENT.
-const PLATFORM_FEE = parseInt(process.env.PLATFORM_FEE_PERCENT || 10) / 100;
+const PLATFORM_FEE = parseInt(process.env.PLATFORM_FEE_PERCENT || 5) / 100;
 
 // PEMBAYARAN — HANYA Solana + USDC (escrow kustodial platform).
 // Semua gateway fiat (Pakasir, Duitku, Xendit) sudah DIHAPUS:
@@ -133,10 +135,29 @@ router.get('/:id/payment-info', auth, async (req, res) => {
       'SELECT * FROM transactions WHERE id=$1 AND (client_id=$2 OR worker_id=$2)',
       [req.params.id, req.user.id]
     );
-    const t = result.rows[0];
+    let t = result.rows[0];
     if (!t) return res.status(404).json({ message: 'Tidak ditemukan' });
     if (t.status !== 'waiting_dp' && t.status !== 'waiting_final') {
       return res.json({ payment_type: null, status: t.status, message: 'Transaksi ini tidak menunggu pembayaran.' });
+    }
+    // KUNCI KURS 24 JAM (lihat utils/revenue.js): bila kunci sudah
+    // kedaluwarsa, segarkan di sini dengan kurs terbaru supaya pesan
+    // "buka lagi pembayaran untuk kurs terbaru" di verify-payment
+    // benar-benar berlaku. Gagal segarkan (kurs tidak tersedia) =
+    // biarkan nilai lama; verify-payment yang akan menolak dengan
+    // pesan yang ramah.
+    if (isRateLockExpired(t.rate_locked_at)) {
+      try {
+        const fresh = await getUsdcIdrRate();
+        const newDp = idrToMicroUsdc(parseInt(t.dp_amount, 10), fresh.rate);
+        const newFinal = idrToMicroUsdc(parseInt(t.final_amount, 10), fresh.rate);
+        const upd = await pool.query(
+          `UPDATE transactions SET dp_usdc_amount=$1, final_usdc_amount=$2,
+             usdc_rate_locked=$3, rate_locked_at=NOW() WHERE id=$4 RETURNING *`,
+          [newDp, newFinal, fresh.rate, t.id]
+        );
+        if (upd.rows[0]) t = upd.rows[0];
+      } catch (e) { /* biarkan nilai lama; verify akan menolak */ }
     }
     const isDp = t.status === 'waiting_dp';
     const amountIdr = parseInt(isDp ? t.dp_amount : t.final_amount, 10);
@@ -152,6 +173,7 @@ router.get('/:id/payment-info', auth, async (req, res) => {
       amount_usdc_display: formatUsdc(amountUsdc),
       rate_idr_per_usdc: parseFloat(t.usdc_rate_locked),
       rate_locked_at: t.rate_locked_at,
+      rate_locked_until: rateLockExpiresAt(t.rate_locked_at),
       escrow_address: escrowAddress().toBase58(),
       network: require('../utils/solana').NETWORK,
     });
@@ -165,7 +187,7 @@ router.get('/:id/payment-info', auth, async (req, res) => {
 //    transfer USDC ke escrow, jumlah PERSIS yang terkunci.
 // 2) Dalam SATU transaksi DB: kunci signature (tolak pemakaian ulang)
 //    + ubah status dengan guard (tolak verifikasi ganda) + untuk
-//    pelunasan: kredit worker (total_amount penuh, fee 10% sudah
+//    pelunasan: kredit worker (total_amount penuh, fee 5% sudah
 //    dibayar client di atas total — lihat utils/ledger.js).
 // Email dikirim SETELAH commit (best-effort) supaya kegagalan email
 // tidak membatalkan pembayaran yang sudah terverifikasi.
@@ -187,6 +209,11 @@ router.post('/:id/verify-payment', auth, async (req, res) => {
     else return res.status(400).json({ message: 'Transaksi ini tidak menunggu pembayaran (status: ' + t.status + ').' });
     if (!Number.isFinite(expected) || expected <= 0) {
       return res.status(400).json({ message: 'Transaksi ini dibuat sebelum migrasi Solana (tidak ada jumlah USDC terkunci). Hubungi admin.' });
+    }
+    // KUNCI KURS 24 JAM: tolak sebelum verifikasi on-chain supaya
+    // client tidak mengirim USDC dengan kurs yang sudah basi.
+    if (isRateLockExpired(t.rate_locked_at)) {
+      return res.status(400).json({ message: 'Kurs sudah berubah, silakan tutup dan buka lagi pembayaran untuk kurs terbaru.' });
     }
 
     let v;
