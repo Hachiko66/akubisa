@@ -401,6 +401,7 @@ router.get('/discover', optionalAuth, async (req, res) => {
     const limit = Math.min(12, Math.max(1, parseInt(req.query.limit) || 8));
     const result = await pool.query(
       `SELECT u.id, u.full_name, u.avatar, u.role, u.city, u.is_verified,
+              EXISTS (SELECT 1 FROM subscriptions s WHERE s.user_id = u.id AND s.plan='pro' AND s.status='active' AND s.expires_at > NOW()) AS is_pro,
               COUNT(DISTINCT l.id) AS listing_count,
               COUNT(DISTINCT t.id) AS completed_transactions,
               COUNT(DISTINCT f.id) AS followers_count
@@ -412,13 +413,13 @@ router.get('/discover', optionalAuth, async (req, res) => {
          AND ($1::int IS NULL OR u.id <> $1)
          AND ($1::int IS NULL OR NOT EXISTS (SELECT 1 FROM follows f2 WHERE f2.follower_id = $1 AND f2.following_id = u.id))
        GROUP BY u.id
-       ORDER BY completed_transactions DESC, followers_count DESC, u.created_at DESC
+       ORDER BY is_pro DESC, completed_transactions DESC, followers_count DESC, u.created_at DESC
        LIMIT $2`,
       [req.viewerId, limit]
     );
     res.json(result.rows.map(u => ({
       id: u.id, full_name: u.full_name, avatar: u.avatar, role: u.role,
-      city: u.city, is_verified: u.is_verified,
+      city: u.city, is_verified: u.is_verified, is_pro: !!u.is_pro,
       listing_count: parseInt(u.listing_count),
       completed_transactions: parseInt(u.completed_transactions),
       followers_count: parseInt(u.followers_count),
