@@ -57,7 +57,7 @@ async function submitBoost() {
     if (res.escrow_address && res.amount_usdc) {
       closeBoostModal();
       openSolanaPayModal({
-        title: 'Bayar Boost — USDC (Solana)',
+        title: 'Bayar Boost',
         escrowAddress: res.escrow_address,
         amountUsdcDisplay: res.amount_usdc_display,
         amountIdr: res.amount,
@@ -560,7 +560,7 @@ async function purchaseAndDownload(listingId) {
       // Produk berbayar: kirim USDC ke escrow, lalu verifikasi dengan
       // signature. Download baru terbuka setelah verifikasi on-chain.
       openSolanaPayModal({
-        title: 'Beli Produk Digital — USDC (Solana)',
+        title: 'Beli Produk Digital',
         escrowAddress: res.escrow_address,
         amountUsdcDisplay: res.amount_usdc_display,
         amountIdr: res.amount,
