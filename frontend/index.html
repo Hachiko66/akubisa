@@ -1562,10 +1562,10 @@ body { font-family: var(--font-body); }
 <div class="modal-overlay" id="solana-pay-modal" onclick="if(event.target===this)closeSolanaPayModal()">
   <div class="modal" style="max-width:460px">
     <div class="modal-header">
-      <div class="modal-title" id="sp-title">Bayar dengan USDC (Solana)</div>
+      <div class="modal-title" id="sp-title">Bayar</div>
       <button class="modal-close" onclick="closeSolanaPayModal()">✕</button>
     </div>
-    <p style="font-size:.85rem;color:var(--muted);margin-bottom:1rem">Kirim USDC dari wallet kamu (mis. Phantom) ke alamat escrow di bawah, <strong>persis</strong> sejumlah yang terkunci. Lalu tempel signature transaksinya dan tekan Verifikasi.</p>
+    <p style="font-size:.85rem;color:var(--muted);margin-bottom:1rem">Bayar sejumlah di bawah dari dompet kamu (mis. Phantom). Jumlah USDC sudah dihitung otomatis dari kurs yang terkunci — kamu cukup kirim <strong>persis</strong> sejumlah itu ke alamat escrow, lalu tempel bukti transaksinya dan tekan Verifikasi.</p>
     <div class="form-group">
       <label class="form-label">Alamat Escrow AkuBisa</label>
       <div style="display:flex;gap:.5rem">
@@ -1574,13 +1574,13 @@ body { font-family: var(--font-body); }
       </div>
     </div>
     <div class="notice notice-success" style="text-align:center">
-      <div id="sp-amount-usdc" style="font-size:1.3rem;font-weight:800;color:var(--success-text)">-</div>
-      <div id="sp-amount-idr" style="font-size:.8rem;color:var(--success-text)"></div>
+      <div id="sp-amount-idr" style="font-size:1.3rem;font-weight:800;color:var(--success-text)">-</div>
+      <div id="sp-amount-usdc" style="font-size:.8rem;color:var(--success-text)"></div>
       <div id="sp-rate" style="font-size:.72rem;color:var(--muted);margin-top:.2rem"></div>
     </div>
     <div class="form-group">
-      <label class="form-label">Signature Transaksi Solana *</label>
-      <input class="form-input" id="sp-signature" placeholder="Tempel signature setelah mengirim USDC" style="font-size:.78rem">
+      <label class="form-label">Bukti Transaksi (Signature) *</label>
+      <input class="form-input" id="sp-signature" placeholder="Tempel bukti transaksi setelah mengirim" style="font-size:.78rem">
     </div>
     <div id="sp-error" style="font-size:.82rem;color:var(--danger);min-height:1rem"></div>
     <div style="display:flex;gap:.8rem;justify-content:flex-end;margin-top:1rem">
