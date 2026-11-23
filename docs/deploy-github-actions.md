@@ -13,7 +13,7 @@ Setiap push ke branch `main` repo `Hachiko66/akubisa` otomatis men-deploy ke VPS
 4. Migrasi database `config/migrate-menus.sql` + `config/migrate-social.sql`
    (idempotent, aman diulang) — dijalankan lewat `node` + `pg` memakai koneksi
    yang sama dengan backend (`.env`: `DATABASE_URL` atau `DB_HOST/DB_USER/
-   DB_PASS/DB_NAME/DB_PORT`). Auto-migrate `config/schema.sql` saat boot tetap
+   DB_PASSWORD/DB_NAME/DB_PORT`). Auto-migrate `config/schema.sql` saat boot tetap
    jalan sebagai jaring pengaman kedua.
 5. Restart PM2 (`pm2 restart server`, fallback `sudo -n pm2 restart server`,
    fallback start baru bila proses belum ada). Proses backend bernama `server`
