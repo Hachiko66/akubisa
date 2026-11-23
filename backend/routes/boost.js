@@ -2,6 +2,7 @@ const router = require('express').Router();
 const auth = require('../middleware/auth');
 const pool = require('../config/db');
 const { getUsdcIdrRate, idrToMicroUsdc, formatUsdc, escrowAddress, verifyUsdcPayment, reserveSignature } = require('../utils/solana');
+const { rateLockExpiresAt, isRateLockExpired } = require('../utils/revenue');
 
 const PACKAGES = {
   '3day':  { days: 3,   amount: 15000,  label: 'Boost 3 Hari' },
@@ -43,10 +44,12 @@ router.post('/buy', auth, async (req, res) => {
     catch (e) { return res.status(503).json({ message: 'Pembayaran Solana belum siap: ' + e.message }); }
     const usdcAmount = idrToMicroUsdc(p.amount, rateInfo.rate);
 
-    // Simpan order (status 'pending' sampai verifikasi on-chain lolos)
+    // Simpan order (status 'pending' sampai verifikasi on-chain lolos).
+    // rate_locked_at dicatat supaya masa berlaku kunci kurs 24 jam
+    // bisa diperiksa di verify-payment (lihat utils/revenue.js).
     const order = await pool.query(`
-      INSERT INTO boost_orders (listing_id, user_id, package, amount, days, usdc_amount, rate_idr_per_usdc)
-      VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *
+      INSERT INTO boost_orders (listing_id, user_id, package, amount, days, usdc_amount, rate_idr_per_usdc, rate_locked_at)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,NOW()) RETURNING *
     `, [listing_id, req.user.id, pkg, p.amount, p.days, usdcAmount, rateInfo.rate]);
 
     res.json({
@@ -56,7 +59,9 @@ router.post('/buy', auth, async (req, res) => {
       amount: p.amount,
       amount_usdc: usdcAmount,
       amount_usdc_display: formatUsdc(usdcAmount),
-      rate_idr_per_usdc: rateInfo.rate
+      rate_idr_per_usdc: rateInfo.rate,
+      rate_locked_at: order.rows[0].rate_locked_at,
+      rate_locked_until: rateLockExpiresAt(order.rows[0].rate_locked_at)
     });
   } catch(e) {
     res.status(500).json({ message: e.message });
@@ -87,6 +92,12 @@ router.post('/verify-payment', auth, async (req, res) => {
     const expected = parseInt(o.usdc_amount, 10);
     if (!Number.isFinite(expected) || expected <= 0) {
       return res.status(400).json({ message: 'Order ini dibuat sebelum migrasi Solana (tidak ada jumlah USDC terkunci). Hubungi admin.' });
+    }
+    // KUNCI KURS 24 JAM: tolak sebelum verifikasi on-chain. Buat
+    // order baru untuk kurs terbaru (POST /buy selalu mengunci kurs
+    // baru saat order dibuat).
+    if (isRateLockExpired(o.rate_locked_at || o.created_at)) {
+      return res.status(400).json({ message: 'Kurs sudah berubah, silakan tutup dan buka lagi pembayaran untuk kurs terbaru.' });
     }
 
     let v;
