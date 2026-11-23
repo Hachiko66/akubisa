@@ -430,16 +430,6 @@ body { font-family: var(--font-body); }
   bottom: -50px; left: 50%;
 }
 
-/* Diagonal divider */
-.hero-divider {
-  position: absolute;
-  right: 0; top: 0; bottom: 0;
-  width: 60px;
-  background: var(--cream);
-  clip-path: polygon(60% 0, 100% 0, 100% 100%, 0% 100%);
-  z-index: 3;
-}
-
 /* ===== HOW IT WORKS ===== */
 .how-section {
   padding: 7rem 8vw;
@@ -707,7 +697,6 @@ body { font-family: var(--font-body); }
   .hero { grid-template-columns: 1fr; }
   .hero-right { display: none; }
   .hero-left { padding: 7rem 5vw 5rem; }
-  .hero-divider { display: none; }
   .how-grid { grid-template-columns: 1fr; }
   .how-visual { display: none; }
   .cat-grid { grid-template-columns: repeat(2, 1fr); }
@@ -819,8 +808,6 @@ body { font-family: var(--font-body); }
         </div>
       </div>
     </div>
-
-    <div class="hero-divider"></div>
   </section>
 
   <!-- ===== HOW IT WORKS ===== -->
