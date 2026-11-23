@@ -6,7 +6,19 @@ exports.getAll = async (req, res) => {
   let where = ['l.is_active = true'];
   let params = [];
   let i = 1;
-  if (category) { where.push(`c.slug = $${i++}`); params.push(category); }
+  // Filter kategori: slug induk (mis. 'freelance') ikut menampilkan
+  // listing semua subkategorinya; slug subkategori hanya dirinya
+  // sendiri. Slug yang tidak dikenal -> tidak ada hasil (FALSE).
+  if (category) {
+    let cats;
+    try {
+      cats = await pool.query(
+        'SELECT id FROM categories WHERE slug = $1 OR parent_slug = $1', [category]);
+    } catch (e) { return res.status(500).json({ message: 'Server error', error: e.message }); }
+    const ids = cats.rows.map(r => r.id);
+    if (ids.length) { where.push(`l.category_id = ANY($${i++})`); params.push(ids); }
+    else where.push('FALSE');
+  }
   if (search) { where.push(`(l.title ILIKE $${i} OR l.description ILIKE $${i})`); params.push(`%${search}%`); i++; }
   if (city) { where.push(`l.city ILIKE $${i++}`); params.push(`%${city}%`); }
   const user_id = req.query.user_id;
