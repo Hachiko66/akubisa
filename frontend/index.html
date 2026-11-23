@@ -93,7 +93,7 @@
 
 /* ===== SKELETON LOADING ===== */
 .skeleton {
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background: linear-gradient(90deg, var(--skeleton-1) 25%, var(--skeleton-2) 50%, var(--skeleton-1) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
   border-radius: 8px;
@@ -103,7 +103,7 @@
   100% { background-position: -200% 0; }
 }
 .skeleton-card {
-  background: white;
+  background: var(--surface);
   border-radius: 16px;
   padding: 1.2rem;
   box-shadow: 0 1px 3px rgba(0,0,0,.06);
@@ -162,7 +162,7 @@
 
 /* ===== SKELETON LOADING ===== */
 .skeleton {
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background: linear-gradient(90deg, var(--skeleton-1) 25%, var(--skeleton-2) 50%, var(--skeleton-1) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
   border-radius: 8px;
@@ -172,7 +172,7 @@
   100% { background-position: -200% 0; }
 }
 .skeleton-card {
-  background: white;
+  background: var(--surface);
   border-radius: 16px;
   padding: 1.2rem;
   box-shadow: 0 1px 3px rgba(0,0,0,.06);
@@ -223,42 +223,6 @@
 }
 
 
-/* ===== DARK MODE ===== */
-[data-theme="dark"] {
-  --ink: #f1f5f9;
-  --nav-bg: #0f172a;
-  --muted: #94a3b8;
-  --border: #334155;
-  --cream: #0f172a;
-  --bg: #1e293b;
-  --card-bg: #1e293b;
-  --accent: #f97316;
-}
-[data-theme="dark"] body { background: #0f172a; color: #f1f5f9; }
-[data-theme="dark"] .card { background: #1e293b; border-color: #334155; }
-[data-theme="dark"] .modal { background: #1e293b; }
-[data-theme="dark"] .form-input { background: #334155; border-color: #475569; color: #f1f5f9; }
-[data-theme="dark"] .form-textarea { background: #334155; border-color: #475569; color: #f1f5f9; }
-[data-theme="dark"] .listing-card { background: #1e293b; border-color: #334155; }
-[data-theme="dark"] nav { background: #0f172a !important; }
-[data-theme="dark"] .footer { background: #020617; }
-[data-theme="dark"] .skeleton { background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%); background-size: 200% 100%; }
-[data-theme="dark"] .skeleton-card { background: #1e293b; }
-[data-theme="dark"] #page-register, [data-theme="dark"] #page-login { background: #0f172a; }
-[data-theme="dark"] .dark-section { background: #020617; }
-
-/* Dark mode toggle button */
-#dark-toggle {
-  background: none;
-  border: 1.5px solid var(--border);
-  border-radius: 100px;
-  padding: .3rem .7rem;
-  cursor: pointer;
-  font-size: .85rem;
-  color: var(--ink);
-  transition: all .2s;
-}
-#dark-toggle:hover { background: var(--border); }
 
 </style>
 <style>
@@ -419,7 +383,7 @@ body { font-family: var(--font-body); }
 
 .float-card-main {
   position: relative;
-  background: white;
+  background: var(--surface);
   border-radius: 20px;
   padding: 1.8rem;
   box-shadow: 0 30px 80px rgba(0,0,0,.5);
@@ -557,7 +521,7 @@ body { font-family: var(--font-body); }
 }
 
 .how-mockup {
-  background: white;
+  background: var(--surface);
   border-radius: 24px;
   padding: 1.5rem;
   box-shadow: 0 20px 60px rgba(0,0,0,.1);
@@ -647,7 +611,7 @@ body { font-family: var(--font-body); }
 .testi-track:hover { animation-play-state: paused; }
 
 .testi-card {
-  background: white;
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 20px;
   padding: 1.8rem;
@@ -1011,12 +975,12 @@ body { font-family: var(--font-body); }
       <div style="margin-bottom:1.2rem">
         <div class="form-label" style="margin-bottom:.5rem" data-i18n="register_role_label">Saya ingin:</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem">
-          <div id="reg-card-worker" onclick="setRegRole('worker')" style="border:2px solid var(--accent);border-radius:12px;padding:.9rem;cursor:pointer;background:#fff8f6;transition:all .2s;text-align:center">
+          <div id="reg-card-worker" onclick="setRegRole('worker')" style="border:2px solid var(--accent);border-radius:12px;padding:.9rem;cursor:pointer;background:var(--accent-soft);transition:all .2s;text-align:center">
             <div style="font-size:1.3rem;margin-bottom:.3rem">⚡</div>
             <div style="font-weight:700;font-size:.85rem;color:var(--ink)"><span data-i18n="register_offer">Menawarkan Jasa</span></div>
             <div style="font-size:.72rem;color:var(--muted);margin-top:.2rem"><span data-i18n="register_offer_sub">Posting kemampuanku</span></div>
           </div>
-          <div id="reg-card-client" onclick="setRegRole('client')" style="border:2px solid var(--border);border-radius:12px;padding:.9rem;cursor:pointer;background:white;transition:all .2s;text-align:center">
+          <div id="reg-card-client" onclick="setRegRole('client')" style="border:2px solid var(--border);border-radius:12px;padding:.9rem;cursor:pointer;background:var(--surface);transition:all .2s;text-align:center">
             <div style="font-size:1.3rem;margin-bottom:.3rem">🔍</div>
             <div style="font-weight:700;font-size:.85rem;color:var(--ink)"><span data-i18n="register_find">Mencari Talent</span></div>
             <div style="font-size:.72rem;color:var(--muted);margin-top:.2rem"><span data-i18n="register_find_sub">Temukan penyedia jasa</span></div>
@@ -1026,7 +990,7 @@ body { font-family: var(--font-body); }
       <input type="hidden" id="reg-ref-code" value="">
       </div>
 
-      <div id="reg-error" style="font-size:.82rem;color:var(--danger);background:#fef2f2;border:1px solid #fecaca;padding:.6rem .8rem;border-radius:8px;margin-bottom:1rem;display:none"></div>
+      <div id="reg-error" style="font-size:.82rem;color:var(--danger);background:var(--danger-bg);border:1px solid var(--danger-border);padding:.6rem .8rem;border-radius:8px;margin-bottom:1rem;display:none"></div>
 
       <div class="form-group"><label class="form-label" data-i18n="register_name_label">Nama Lengkap *</label><input class="form-input" id="reg-name" data-i18n-placeholder="register_name" placeholder="Nama lengkap kamu" type="text"></div>
       <div class="form-group"><label class="form-label" data-i18n="login_email">Email *</label><input class="form-input" id="reg-email" data-i18n-placeholder="login_email" data-i18n-placeholder="login_email" placeholder="email@kamu.com" type="email"></div>
@@ -1038,10 +1002,10 @@ body { font-family: var(--font-body); }
         <div class="form-group"><label class="form-label" data-i18n="label_city">Kota</label><input class="form-input" id="reg-city" placeholder="Jakarta..." type="text"></div>
         <div class="form-group"><label class="form-label" data-i18n="label_phone">No. WhatsApp</label><input class="form-input" id="reg-phone" placeholder="08xx..." type="tel"></div>
       </div>
-      <div class="form-group" id="ref-code-group" style="display:none"><label class="form-label">🎁 Kode Referral</label><input class="form-input" id="reg-ref-display" readonly style="background:#f5f5f5"></div>
+      <div class="form-group" id="ref-code-group" style="display:none"><label class="form-label">🎁 Kode Referral</label><input class="form-input" id="reg-ref-display" readonly style="background:var(--surface-2)"></div>
       <button class="btn btn-primary btn-block" id="reg-btn" onclick="doRegister()" style="padding:.85rem;font-size:.95rem;border-radius:12px;margin-top:.5rem"><span data-i18n="register_btn">Daftar Sekarang →</span></button>
       <div style="text-align:center;margin:1rem 0;color:var(--muted);font-size:.85rem">— atau —</div>
-      <a href="/api/auth/google" class="btn btn-block" style="background:white;border:1.5px solid var(--border);color:var(--ink);border-radius:12px;padding:.85rem;font-size:.95rem;display:flex;align-items:center;justify-content:center;gap:.8rem;text-decoration:none">
+      <a href="/api/auth/google" class="btn btn-block" style="background:var(--surface);border:1.5px solid var(--border);color:var(--ink);border-radius:12px;padding:.85rem;font-size:.95rem;display:flex;align-items:center;justify-content:center;gap:.8rem;text-decoration:none">
         <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
         Daftar dengan Google
       </a>
@@ -1087,7 +1051,7 @@ body { font-family: var(--font-body); }
     <div style="width:100%;max-width:400px">
       <h3 style="font-size:1.6rem;font-weight:800;margin-bottom:.4rem;color:var(--ink)"><span data-i18n="login_title">Masuk ke akun</span></h3>
       <p style="color:var(--muted);font-size:.88rem;margin-bottom:2rem"><span data-i18n="login_no_account">Belum punya akun?</span> <a onclick="goTo('register')" style="color:var(--accent);cursor:pointer;font-weight:700"><span data-i18n="login_register">Daftar gratis →</span></a></p>
-      <div id="login-error" style="font-size:.82rem;color:var(--danger);background:#fef2f2;border:1px solid #fecaca;padding:.6rem .8rem;border-radius:8px;margin-bottom:1rem;display:none"></div>
+      <div id="login-error" style="font-size:.82rem;color:var(--danger);background:var(--danger-bg);border:1px solid var(--danger-border);padding:.6rem .8rem;border-radius:8px;margin-bottom:1rem;display:none"></div>
       <div class="form-group">
         <label class="form-label" data-i18n="login_email">Email</label>
         <input class="form-input" id="login-email" data-i18n-placeholder="login_email" placeholder="email@kamu.com" type="email">
@@ -1101,7 +1065,7 @@ body { font-family: var(--font-body); }
       </div>
       <button class="btn btn-primary btn-block" id="login-btn" onclick="doLogin()" style="padding:.85rem;font-size:.95rem"><span data-i18n="login_btn">Masuk</span></button>
       <div style="text-align:center;margin:.8rem 0;color:var(--muted);font-size:.85rem">— atau —</div>
-      <a href="/api/auth/google" class="btn btn-block" style="background:white;border:1.5px solid var(--border);color:var(--ink);border-radius:12px;padding:.85rem;font-size:.95rem;display:flex;align-items:center;justify-content:center;gap:.8rem;text-decoration:none;margin-bottom:.5rem">
+      <a href="/api/auth/google" class="btn btn-block" style="background:var(--surface);border:1.5px solid var(--border);color:var(--ink);border-radius:12px;padding:.85rem;font-size:.95rem;display:flex;align-items:center;justify-content:center;gap:.8rem;text-decoration:none;margin-bottom:.5rem">
         <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
         Lanjutkan dengan Google
       </a>
@@ -1122,10 +1086,11 @@ body { font-family: var(--font-body); }
         <button id="search-tab-user" onclick="setSearchTab('user')" style="background:rgba(255,255,255,.1);color:rgba(255,255,255,.7);border:none;border-radius:100px;padding:.3rem .9rem;font-size:.78rem;cursor:pointer">👤 Freelancer</button>
       </div>
       <div class="search-bar-wrap"><input type="text" id="explore-search" data-i18n-placeholder="explore_search" placeholder="Cari penawaran..." onkeydown="if(event.key='Enter')doSearch()"><button onclick="doSearch()"><span data-i18n="btn_submit">Cari</span></button></div>
+      <div class="chip-wrap" id="explore-menu-tabs" style="margin-bottom:.5rem"></div>
       <div class="chip-wrap" id="explore-chips"></div>
       <!-- Filter & Sort Bar -->
       <div style="display:flex;gap:.6rem;flex-wrap:wrap;margin-top:.8rem;align-items:center">
-        <select id="explore-sort" onchange="applyExploreFilters()" style="background:var(--ink);border:1px solid rgba(255,255,255,.25);color:white;border-radius:100px;padding:.35rem .9rem;font-size:.78rem;cursor:pointer">
+        <select id="explore-sort" onchange="applyExploreFilters()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.25);color:white;border-radius:100px;padding:.35rem .9rem;font-size:.78rem;cursor:pointer">
           <option value="" data-i18n="sort_default">⇅ Urutkan</option>
           <option value="newest" data-i18n="sort_newest">Terbaru</option>
           <option value="popular" data-i18n="sort_popular">Terpopuler</option>
@@ -1134,7 +1099,7 @@ body { font-family: var(--font-body); }
           <option value="rating" data-i18n="sort_rating">Rating Tertinggi</option>
         </select>
         <div style="position:relative">
-          <input type="text" id="explore-city" list="city-list" placeholder="📍 Semua Kota" onchange="applyExploreFilters()" oninput="applyExploreFilters()" style="background:var(--ink);border:1px solid rgba(255,255,255,.25);color:white;border-radius:100px;padding:.35rem .9rem;font-size:.78rem;cursor:pointer;outline:none;width:140px" />
+          <input type="text" id="explore-city" list="city-list" placeholder="📍 Semua Kota" onchange="applyExploreFilters()" oninput="applyExploreFilters()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.25);color:white;border-radius:100px;padding:.35rem .9rem;font-size:.78rem;cursor:pointer;outline:none;width:140px" />
           <datalist id="city-list">
             <option value="Jakarta">
             <option value="Surabaya">
@@ -1168,12 +1133,12 @@ body { font-family: var(--font-body); }
   </div>
 
   <!-- FEATURED SECTION -->
-  <div id="featured-section" style="display:none;background:linear-gradient(135deg,#fffbeb,#fef3c7);border-bottom:1px solid #fde68a;padding:2rem 5vw">
+  <div id="featured-section" class="featured-section" style="display:none">
     <div style="max-width:1200px;margin:0 auto">
       <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:1.2rem">
         <span style="font-size:1.1rem">⭐</span>
-        <span style="font-weight:800;font-size:1rem;color:#92400e"><span data-i18n="featured_title">Penawaran Unggulan</span></span>
-        <span style="font-size:.72rem;color:#b45309;background:#fef3c7;border:1px solid #fde68a;padding:.15rem .5rem;border-radius:100px;font-weight:600">FEATURED</span>
+        <span class="featured-title"><span data-i18n="featured_title">Penawaran Unggulan</span></span>
+        <span class="featured-tag">FEATURED</span>
       </div>
       <div class="listings-grid" id="featured-grid"></div>
     </div>
@@ -1184,6 +1149,56 @@ body { font-family: var(--font-body); }
       <div style="font-weight:700;font-size:1rem;margin-bottom:1.2rem;color:var(--muted)" id="explore-label"><span data-i18n="explore_title">Semua Penawaran</span></div>
       <div class="listings-grid" id="explore-grid"><p style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--muted)"><span data-i18n="loading">Memuat penawaran...</span></p></div>
     </div>
+  </div>
+</div>
+
+<div id="page-feed" class="page">
+  <div class="dark-section" style="padding:2rem 5vw">
+    <div style="max-width:900px;margin:0 auto">
+      <h2 style="margin-bottom:.3rem">✨ <span data-i18n="feed_title">Feed</span></h2>
+      <p><span data-i18n="feed_sub">Update skill, pamer karya, dan temukan talent terbaik.</span></p>
+    </div>
+  </div>
+  <div style="max-width:900px;margin:0 auto;padding:2rem 5vw">
+    <!-- KOMPOSER -->
+    <div id="feed-composer" class="card feed-composer" style="margin-bottom:1.5rem">
+      <div style="display:flex;gap:.8rem;align-items:flex-start">
+        <div class="avatar" id="feed-composer-avatar" style="background:var(--accent);width:40px;height:40px;font-size:.9rem">?</div>
+        <div style="flex:1">
+          <textarea id="feed-composer-text" class="form-textarea" data-i18n-placeholder="feed_composer_ph" placeholder="Bagikan update skill atau karya terbarumu..." maxlength="2000" rows="3" style="min-height:72px"></textarea>
+          <div style="display:flex;gap:.4rem;flex-wrap:wrap;margin:.6rem 0">
+            <button type="button" class="feed-type-btn active" data-type="update" onclick="setFeedComposerType('update',this)"><span data-i18n="feed_composer_type_update">✍️ Update</span></button>
+            <button type="button" class="feed-type-btn" data-type="portfolio" onclick="setFeedComposerType('portfolio',this)"><span data-i18n="feed_composer_type_portfolio">🗂️ Pamer Portfolio</span></button>
+            <button type="button" class="feed-type-btn" data-type="showcase" onclick="setFeedComposerType('showcase',this)"><span data-i18n="feed_composer_type_showcase">🛠️ Pamer Penawaran</span></button>
+          </div>
+          <select id="feed-composer-attach" class="form-select" style="display:none;margin-bottom:.6rem"></select>
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:.8rem">
+            <span id="feed-composer-count" style="font-size:.75rem;color:var(--muted)">0 / 2000</span>
+            <button class="btn btn-primary btn-sm" id="feed-post-btn" onclick="submitFeedPost()"><span data-i18n="feed_post_btn">Posting</span></button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="feed-login-hint" class="notice notice-info" style="display:none;margin-bottom:1.5rem"><span data-i18n="feed_login_to_post">Login dulu untuk posting dan mengikuti talent.</span> <a href="#login" onclick="goTo('login')" style="font-weight:700;color:var(--info-text)">Masuk →</a></div>
+
+    <!-- DISCOVER: TALENT UNTUK DIIKUTI -->
+    <div id="feed-discover" style="margin-bottom:1.5rem">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:.3rem;margin-bottom:.2rem">
+        <div class="section-heading" style="margin-bottom:0"><span data-i18n="feed_discover_title">✨ Talent untuk Diikuti</span></div>
+        <span style="font-size:.78rem;color:var(--muted)"><span data-i18n="feed_discover_sub">Worker paling aktif di AkuBisa</span></span>
+      </div>
+      <div id="feed-discover-list" style="display:flex;gap:.8rem;overflow-x:auto;padding:.6rem 0"></div>
+    </div>
+
+    <!-- TAB -->
+    <div style="display:flex;gap:.5rem;margin-bottom:1.2rem">
+      <button class="feed-tab active" data-tab="all" onclick="setFeedTab('all',this)"><span data-i18n="feed_tab_all">🌐 Semua</span></button>
+      <button class="feed-tab" data-tab="following" onclick="setFeedTab('following',this)"><span data-i18n="feed_tab_following">👥 Mengikuti</span></button>
+    </div>
+
+    <!-- DAFTAR POSTINGAN -->
+    <div id="feed-list"></div>
+    <div id="feed-load-more" style="text-align:center;padding:1rem"></div>
   </div>
 </div>
 
@@ -1198,15 +1213,15 @@ body { font-family: var(--font-body); }
     </div>
   </div>
   <div id="dash-worker" class="section hidden">
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:1rem;margin-bottom:2rem">
-      <div class="card" style="text-align:center"><div style="font-size:2rem;font-weight:800;color:var(--accent)" id="dash-listing-count">0</div><div style="font-size:.8rem;color:var(--muted)">Penawaran Aktif</div></div>
-      <div class="card" style="text-align:center"><div style="font-size:2rem;font-weight:800;color:var(--accent2)" id="dash-views">0</div><div style="font-size:.8rem;color:var(--muted)"><span data-i18n="dash_views">Total Dilihat</span></div></div>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-icon">📋</div><div class="stat-value" id="dash-listing-count">0</div><div class="stat-label">Penawaran Aktif</div></div>
+      <div class="stat-card"><div class="stat-icon">👁</div><div class="stat-value green" id="dash-views">0</div><div class="stat-label"><span data-i18n="dash_views">Total Dilihat</span></div></div>
     </div>
-    <div style="font-weight:700;font-size:1.1rem;margin-bottom:1rem">Penawaran Saya</div>
+    <div class="section-heading">Penawaran Saya</div>
     <div class="listings-grid" id="dash-my-listings"></div>
   </div>
   <div id="dash-client" class="section hidden">
-    <div class="card" style="margin-bottom:2rem;background:linear-gradient(135deg,#fff4e6,#fce8e4)">
+    <div class="card" style="margin-bottom:2rem;background:var(--accent-soft);border-color:var(--accent-soft-border)">
       <div style="font-weight:700;font-size:1rem;margin-bottom:.4rem"><span data-i18n="dash_client_mode">Kamu dalam Mode Pencari</span></div>
       <p style="font-size:.85rem;color:var(--muted);margin-bottom:1rem">Temukan pekerja berbakat atau posting kebutuhanmu langsung.</p>
       <div style="display:flex;gap:.6rem;flex-wrap:wrap">
@@ -1215,7 +1230,7 @@ body { font-family: var(--font-body); }
         <button class="btn btn-outline btn-sm" onclick="goTo('job-requests')"><span data-i18n="nav_job_requests">Lihat Semua Kebutuhan</span></button>
       </div>
     </div>
-    <div style="font-weight:700;font-size:1.1rem;margin-bottom:1rem"><span data-i18n="dash_for_you">Penawaran Untukmu</span></div>
+    <div class="section-heading"><span data-i18n="dash_for_you">Penawaran Untukmu</span></div>
     <div class="listings-grid" id="dash-client-listings"></div>
   </div>
 </div>
@@ -1277,7 +1292,7 @@ body { font-family: var(--font-body); }
     <div class="card">
       <p style="font-size:.85rem;color:var(--muted);margin-bottom:1.2rem">Masukkan emailmu dan kami akan kirim link reset password.</p>
       <div id="forgot-error" style="font-size:.8rem;color:var(--danger);min-height:1rem;margin-bottom:.3rem"></div>
-      <div id="forgot-success" style="font-size:.85rem;color:var(--success);background:#f0fdf4;border:1px solid #bbf7d0;padding:.8rem;border-radius:8px;display:none;margin-bottom:1rem"></div>
+      <div id="forgot-success" class="notice notice-success" style="display:none"></div>
       <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="forgot-email" type="email" data-i18n-placeholder="login_email" placeholder="email@kamu.com" onkeydown="if(event.key==='Enter')doForgotPassword()"></div>
       <button class="btn btn-primary btn-block" id="forgot-btn" onclick="doForgotPassword()"><span data-i18n="forgot_btn">Kirim Link Reset</span></button>
       <p style="text-align:center;margin-top:1rem;font-size:.83rem"><a onclick="goTo('login')" style="color:var(--accent);cursor:pointer">← Kembali ke Login</a></p>
@@ -1314,6 +1329,7 @@ body { font-family: var(--font-body); }
           <div id="chat-header-avatar" class="avatar" style="width:36px;height:36px"></div>
           <div><div id="chat-header-name" style="font-weight:700;font-size:.9rem"></div><div id="chat-header-listing" style="font-size:.75rem;color:var(--muted)"></div></div>
         </div>
+        <div class="notice notice-warning" style="border-radius:0;border-left:none;border-right:none;border-top:none;margin-bottom:0">⚠️ <strong>Bayar hanya lewat AkuBisa (USDC ke escrow).</strong> Pembayaran di luar platform membatalkan perlindungan escrow &amp; dispute dan dapat berujung penindakan akun.</div>
         <div id="chat-messages" style="flex:1;overflow-y:auto;padding:1.2rem;display:flex;flex-direction:column;gap:.6rem;min-height:300px;max-height:50vh"></div>
         <div style="padding:1rem;border-top:1px solid var(--border);display:flex;gap:.6rem">
           <input class="form-input" id="chat-input" placeholder="Tulis pesan..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChatMessage()}" style="flex:1;border-radius:100px;padding:.6rem 1rem">
@@ -1345,6 +1361,14 @@ body { font-family: var(--font-body); }
             <div style="font-size:1.2rem;font-weight:800;color:white" id="pub-completed-trx">0</div>
             <div style="font-size:.7rem;color:rgba(255,255,255,.5)">Transaksi Selesai</div>
           </div>
+          <div style="text-align:center;cursor:pointer" onclick="openFollowList('followers')">
+            <div style="font-size:1.2rem;font-weight:800;color:white" id="pub-followers">0</div>
+            <div style="font-size:.7rem;color:rgba(255,255,255,.5)"><span data-i18n="feed_followers">Pengikut</span></div>
+          </div>
+          <div style="text-align:center;cursor:pointer" onclick="openFollowList('following')">
+            <div style="font-size:1.2rem;font-weight:800;color:white" id="pub-following">0</div>
+            <div style="font-size:.7rem;color:rgba(255,255,255,.5)"><span data-i18n="feed_following_count">Mengikuti</span></div>
+          </div>
           <div style="text-align:center">
             <div style="font-size:1.2rem;font-weight:800;color:var(--accent)" id="pub-rating-badge">-</div>
             <div style="font-size:.7rem;color:rgba(255,255,255,.5)">Rating</div>
@@ -1353,6 +1377,7 @@ body { font-family: var(--font-body); }
         <div id="pub-social-links"></div>
       </div>
       <div style="display:flex;flex-direction:column;gap:.6rem;min-width:160px" id="pub-actions">
+        <button class="btn btn-primary" id="pub-follow-btn" style="display:none;border-radius:100px" onclick="toggleFollowPubProfile()">+ Ikuti</button>
         <button class="btn btn-primary" id="pub-msg-btn" style="display:none;border-radius:100px">💬 Kirim Pesan</button>
         <button class="btn btn-outline" id="pub-review-btn" style="display:none;color:white;border-color:rgba(255,255,255,.3);border-radius:100px">⭐ Beri Ulasan</button>
       </div>
@@ -1396,7 +1421,7 @@ body { font-family: var(--font-body); }
   <div class="dark-section" style="padding:2rem 5vw">
     <div style="max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem">
       <div>
-        <h2 style="margin-bottom:.3rem"><span data-i18n="job_title">🙋 Aku Butuh</span></h2>
+        <h2 style="margin-bottom:.3rem"><span data-i18n="job_title">🙋 Open to Work</span></h2>
         <p style="color:rgba(255,255,255,.6);font-size:.88rem">Klien posting kebutuhan, pekerja melamar</p>
       </div>
       <button class="btn btn-primary" onclick="openPostJobModal()">+ Posting Kebutuhan</button>
@@ -1420,7 +1445,7 @@ body { font-family: var(--font-body); }
 <div class="modal-overlay" id="post-job-modal" onclick="if(event.target===this)closePostJobModal()">
   <div class="modal">
     <div class="modal-header">
-      <div class="modal-title"><span data-i18n="job_modal_title">🙋 Aku Butuh...</span></div>
+      <div class="modal-title"><span data-i18n="job_modal_title">🙋 Open to Work...</span></div>
       <button class="modal-close" onclick="closePostJobModal()">✕</button>
     </div>
     <div class="form-group"><label class="form-label">Judul Kebutuhan *</label><input class="form-input" id="job-title" placeholder="Contoh: Aku butuh desainer logo untuk startup saya"></div>
@@ -1490,6 +1515,9 @@ body { font-family: var(--font-body); }
     </div>
   </div>
   <div class="section">
+    <div style="max-width:900px;margin:0 auto">
+      <div class="notice notice-warning">⚠️ <strong>Bayar hanya lewat AkuBisa.</strong> Semua pembayaran memakai USDC ke wallet escrow platform dan diverifikasi on-chain. Pembayaran di luar platform membatalkan perlindungan escrow &amp; dispute dan dapat berujung penindakan akun.</div>
+    </div>
     <div style="max-width:900px;margin:0 auto" id="transactions-list">
       <div style="text-align:center;padding:3rem;color:var(--muted)">Memuat...</div>
     </div>
@@ -1503,7 +1531,7 @@ body { font-family: var(--font-body); }
       <div class="modal-title"><span data-i18n="trx_pay_title">💳 Bayar via AkuBisa</span></div>
       <button class="modal-close" onclick="closeCreateTrxModal()">✕</button>
     </div>
-    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:.8rem;margin-bottom:1rem;font-size:.8rem;color:#166534">
+    <div class="notice notice-success">
       🔒 Dana kamu aman — disimpan di escrow AkuBisa sampai pekerjaan selesai
     </div>
     <p style="font-size:.85rem;color:var(--muted);margin-bottom:1rem">Dengan: <strong id="trx-worker-name"></strong></p>
@@ -1539,6 +1567,38 @@ body { font-family: var(--font-body); }
     <div style="display:flex;gap:.8rem;justify-content:flex-end;margin-top:1rem">
       <button class="btn btn-outline" onclick="closeCreateTrxModal()"><span data-i18n="btn_cancel">Batal</span></button>
       <button class="btn btn-primary" id="trx-submit-btn" onclick="submitCreateTransaction()"><span data-i18n="btn_pay_dp">Bayar DP Sekarang →</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL BAYAR SOLANA USDC -->
+<div class="modal-overlay" id="solana-pay-modal" onclick="if(event.target===this)closeSolanaPayModal()">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-header">
+      <div class="modal-title" id="sp-title">Bayar dengan USDC (Solana)</div>
+      <button class="modal-close" onclick="closeSolanaPayModal()">✕</button>
+    </div>
+    <p style="font-size:.85rem;color:var(--muted);margin-bottom:1rem">Kirim USDC dari wallet kamu (mis. Phantom) ke alamat escrow di bawah, <strong>persis</strong> sejumlah yang terkunci. Lalu tempel signature transaksinya dan tekan Verifikasi.</p>
+    <div class="form-group">
+      <label class="form-label">Alamat Escrow AkuBisa</label>
+      <div style="display:flex;gap:.5rem">
+        <input class="form-input" id="sp-escrow" readonly style="flex:1;font-size:.78rem">
+        <button class="btn btn-outline btn-sm" onclick="copyEscrowAddress()">Salin</button>
+      </div>
+    </div>
+    <div class="notice notice-success" style="text-align:center">
+      <div id="sp-amount-usdc" style="font-size:1.3rem;font-weight:800;color:var(--success-text)">-</div>
+      <div id="sp-amount-idr" style="font-size:.8rem;color:var(--success-text)"></div>
+      <div id="sp-rate" style="font-size:.72rem;color:var(--muted);margin-top:.2rem"></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Signature Transaksi Solana *</label>
+      <input class="form-input" id="sp-signature" placeholder="Tempel signature setelah mengirim USDC" style="font-size:.78rem">
+    </div>
+    <div id="sp-error" style="font-size:.82rem;color:var(--danger);min-height:1rem"></div>
+    <div style="display:flex;gap:.8rem;justify-content:flex-end;margin-top:1rem">
+      <button class="btn btn-outline" onclick="closeSolanaPayModal()"><span data-i18n="btn_cancel">Batal</span></button>
+      <button class="btn btn-primary" id="sp-verify-btn" onclick="submitSolanaPayVerify()">Verifikasi Pembayaran</button>
     </div>
   </div>
 </div>
@@ -1621,22 +1681,10 @@ body { font-family: var(--font-body); }
       <input class="form-input" id="wd-amount" type="number" placeholder="Minimum Rp 50.000">
     </div>
     <div class="form-group">
-      <label class="form-label"><span data-i18n="wd_bank">Nama Bank *</span></label>
-      <select class="form-select" id="wd-bank">
-        <option value=""><span data-i18n="wd_select_bank">-- Pilih Bank --</span></option>
-        <option>BCA</option><option>BNI</option><option>BRI</option>
-        <option>Mandiri</option><option>CIMB Niaga</option>
-        <option>Permata</option><option>Danamon</option><option>BSI</option>
-        <option>GoPay</option><option>OVO</option><option>Dana</option>
-      </select>
-    </div>
-    <div class="form-group">
-      <label class="form-label"><span data-i18n="wd_account_number">Nomor Rekening *</span></label>
-      <input class="form-input" id="wd-account-number" placeholder="Nomor rekening/e-wallet">
-    </div>
-    <div class="form-group">
-      <label class="form-label"><span data-i18n="wd_account_name">Nama Pemilik Rekening *</span></label>
-      <input class="form-input" id="wd-account-name" placeholder="Sesuai nama di rekening">
+      <label class="form-label">Alamat Payout Solana (USDC)</label>
+      <div style="font-size:.85rem;font-weight:700;word-break:break-all" id="wd-solana-address">— belum diisi —</div>
+      <div id="wd-solana-warn" style="font-size:.78rem;color:var(--danger);margin-top:.3rem">⚠️ Isi dulu alamat payout Solana di Edit Profil (dompet USDC, mis. Phantom) sebelum withdraw.</div>
+      <div style="font-size:.75rem;color:var(--muted);margin-top:.3rem">USDC dikirim dari wallet escrow AkuBisa ke alamat ini. Jumlah USDC dikunci pada kurs saat admin menyetujui.</div>
     </div>
     <div id="wd-error" style="font-size:.82rem;color:var(--danger);min-height:1rem"></div>
     <div style="display:flex;gap:.8rem;justify-content:flex-end;margin-top:1rem">
@@ -1677,7 +1725,7 @@ body { font-family: var(--font-body); }
 </div>
 
 <!-- NOTIF PANEL -->
-<div id="notif-panel" style="display:none;position:fixed;top:64px;right:1rem;width:320px;max-height:480px;background:white;border:1.5px solid var(--border);border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.15);z-index:500;overflow:hidden;flex-direction:column">
+<div id="notif-panel" style="display:none;position:fixed;top:64px;right:1rem;width:320px;max-height:480px;background:var(--surface);border:1.5px solid var(--border);border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.15);z-index:500;overflow:hidden;flex-direction:column">
   <div style="padding:.8rem 1rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
     <span style="font-weight:700;font-size:.9rem">🔔 Notifikasi</span>
     <div style="display:flex;gap:.5rem">
@@ -1702,12 +1750,12 @@ body { font-family: var(--font-body); }
       <div style="margin-bottom:1.2rem">
         <label class="form-label">Tipe Penawaran</label>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-top:.4rem">
-          <div id="type-service-card" onclick="setListingType('service')" style="border:2px solid var(--accent);background:#fff8f6;border-radius:10px;padding:.75rem;text-align:center;cursor:pointer;transition:all .2s">
+          <div id="type-service-card" onclick="setListingType('service')" style="border:2px solid var(--accent);background:var(--accent-soft);border-radius:10px;padding:.75rem;text-align:center;cursor:pointer;transition:all .2s">
             <div style="font-size:1.4rem">🛠️</div>
             <div style="font-size:.82rem;font-weight:700;margin-top:.2rem">Jasa / Freelance</div>
             <div style="font-size:.72rem;color:var(--muted)">Tawarkan kemampuanmu</div>
           </div>
-          <div id="type-digital-card" onclick="setListingType('digital')" style="border:1.5px solid var(--border);background:white;border-radius:10px;padding:.75rem;text-align:center;cursor:pointer;transition:all .2s">
+          <div id="type-digital-card" onclick="setListingType('digital')" style="border:1.5px solid var(--border);background:var(--surface);border-radius:10px;padding:.75rem;text-align:center;cursor:pointer;transition:all .2s">
             <div style="font-size:1.4rem">📦</div>
             <div style="font-size:.82rem;font-weight:700;margin-top:.2rem">Produk Digital</div>
             <div style="font-size:.72rem;color:var(--muted)">Template, file, prompt</div>
@@ -1787,6 +1835,7 @@ body { font-family: var(--font-body); }
     <div class="form-row">
       <div class="form-group"><label class="form-label">Kota</label><input class="form-input" id="ep-city"></div>
       <div class="form-group"><label class="form-label">No. WhatsApp</label><input class="form-input" id="ep-phone" type="tel"></div>
+      <div class="form-group"><label class="form-label">🪙 Alamat Payout Solana (USDC)</label><input class="form-input" id="ep-solana" placeholder="Alamat dompet USDC kamu (mis. dari Phantom)" style="font-size:.82rem"><div style="font-size:.72rem;color:var(--muted);margin-top:.25rem">Dipakai untuk menerima withdraw (pencairan saldo) dalam USDC. Pastikan alamatnya benar — salah alamat berarti dana terkirim ke orang lain dan tidak bisa ditarik kembali.</div></div>
     </div>
     <div style="border-top:1px solid var(--border);margin:.8rem 0;padding-top:.8rem">
       <div style="font-weight:700;font-size:.85rem;margin-bottom:.8rem;color:var(--muted)">🔗 Sosial Media <span style="font-weight:400;font-size:.75rem">(opsional, isi username saja)</span></div>
@@ -1894,7 +1943,7 @@ body { font-family: var(--font-body); }
         <div style="font-size:1.2rem;font-weight:800;color:var(--accent);margin:.3rem 0">Gratis</div>
         <div style="font-size:.7rem;color:var(--muted)">7 hari</div>
       </div>
-      <div class="promote-pkg" data-days="14" onclick="selectPkg(this,14,'Rp 25.000')" style="border:2px solid var(--accent);border-radius:14px;padding:1rem;text-align:center;cursor:pointer;transition:all .2s;background:#fff8f6;position:relative">
+      <div class="promote-pkg" data-days="14" onclick="selectPkg(this,14,'Rp 25.000')" style="border:2px solid var(--accent);border-radius:14px;padding:1rem;text-align:center;cursor:pointer;transition:all .2s;background:var(--accent-soft);position:relative">
         <div style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--accent);color:white;font-size:.62rem;font-weight:800;padding:.2rem .6rem;border-radius:100px;white-space:nowrap">POPULER</div>
         <div style="font-size:1.3rem;margin-bottom:.3rem">🚀</div>
         <div style="font-weight:700;font-size:.85rem">Pro</div>
@@ -1920,7 +1969,7 @@ body { font-family: var(--font-body); }
       </div>
     </div>
 
-    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:.8rem;margin-bottom:1.2rem;font-size:.8rem;color:#166534">
+    <div style="background:var(--success-bg);border:1px solid var(--success-border);border-radius:10px;padding:.8rem;margin-bottom:1.2rem;font-size:.8rem;color:var(--success-text)">
       💡 <strong>Untuk demo:</strong> Semua paket langsung aktif tanpa pembayaran. Integrasi payment gateway tersedia saat production.
     </div>
 
@@ -1935,9 +1984,9 @@ body { font-family: var(--font-body); }
 
 <!-- MODAL ONBOARDING -->
 <div id="onboarding-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:2000;align-items:center;justify-content:center;padding:1rem">
-  <div style="background:white;border-radius:24px;max-width:480px;width:100%;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+  <div style="background:var(--surface);border-radius:24px;max-width:480px;width:100%;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.3)">
     <!-- Progress bar -->
-    <div style="height:4px;background:#f0f0f0">
+    <div style="height:4px;background:var(--surface-2)">
       <div id="onboard-progress" style="height:100%;background:var(--accent);transition:width .4s;width:25%"></div>
     </div>
     <!-- Steps -->
@@ -2013,7 +2062,7 @@ body { font-family: var(--font-body); }
               <div><div style="font-weight:700;font-size:.88rem">Klien bayar pelunasan 50%</div><div style="font-size:.78rem;color:var(--muted);margin-top:.2rem">Dana masuk ke dompetmu setelah disetujui</div></div>
             </div>
           </div>
-          <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:.8rem;margin-top:1rem;font-size:.78rem;color:#166534">
+          <div style="background:var(--success-bg);border:1px solid var(--success-border);border-radius:10px;padding:.8rem;margin-top:1rem;font-size:.78rem;color:var(--success-text)">
             🔒 Jika ada masalah, ajukan dispute — admin akan membantu
           </div>
         </div>
@@ -2059,7 +2108,7 @@ body { font-family: var(--font-body); }
 
 <!-- MODAL BOOST LISTING -->
 <div id="boost-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;align-items:center;justify-content:center;padding:1rem">
-  <div style="background:white;border-radius:20px;max-width:440px;width:100%;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+  <div style="background:var(--surface);border-radius:20px;max-width:440px;width:100%;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.3)">
     <div style="background:linear-gradient(135deg,#0f0e0d,#1c1a18);padding:1.5rem 2rem">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div>
@@ -2077,7 +2126,7 @@ body { font-family: var(--font-body); }
       <button id="boost-pay-btn" onclick="submitBoost()" class="btn btn-primary btn-block" style="margin-top:1.5rem;border-radius:12px;padding:.9rem;font-size:.95rem;background:linear-gradient(135deg,#e8521a,#c94415)">
         ⚡ Bayar & Aktifkan Boost
       </button>
-      <p style="text-align:center;font-size:.72rem;color:#aaa;margin-top:.8rem">Pembayaran aman via Xendit · Aktif otomatis setelah bayar</p>
+      <p style="text-align:center;font-size:.72rem;color:#aaa;margin-top:.8rem">Pembayaran aman via Solana (USDC) · Aktif otomatis setelah terverifikasi</p>
     </div>
   </div>
 </div>
@@ -2154,7 +2203,7 @@ body { font-family: var(--font-body); }
       <p>Kami menggunakan enkripsi SSL/TLS untuk semua transmisi data. Dokumen KYC disimpan secara aman dan hanya dapat diakses oleh tim verifikasi AkuBisa.</p>
 
       <h2 style="color:var(--ink);font-size:1.2rem;font-weight:700;margin:2rem 0 .8rem">4. Berbagi Data</h2>
-      <p>Kami tidak menjual data pribadimu kepada pihak ketiga. Data hanya dibagikan kepada: payment gateway (Xendit) untuk memproses pembayaran, dan pihak berwenang jika diwajibkan oleh hukum.</p>
+      <p>Kami tidak menjual data pribadimu kepada pihak ketiga. Data hanya dibagikan kepada: jaringan Solana (alamat wallet dan transaksi USDC yang kamu kirim ke escrow, yang memang tercatat publik di blockchain) dan pihak berwenang jika diwajibkan oleh hukum.</p>
 
       <h2 style="color:var(--ink);font-size:1.2rem;font-weight:700;margin:2rem 0 .8rem">5. Hak Pengguna</h2>
       <p>Kamu berhak untuk: mengakses data pribadimu, meminta koreksi data yang tidak akurat, dan meminta penghapusan akun beserta datanya dengan menghubungi kami.</p>
@@ -2184,14 +2233,6 @@ body { font-family: var(--font-body); }
 window.addEventListener('scroll', () => {
   const nav = document.getElementById('main-nav');
   if (!nav) return;
-  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-  nav.style.background = isDark ? '#0f172a' : '#0f0e0d';
-  nav.style.backdropFilter = 'blur(10px)';
-  nav.style.boxShadow = '0 2px 20px rgba(0,0,0,.3)';
-});
-  const nav = document.getElementById('main-nav');
-  if (!nav) return;
-  if (window.scrollY > 50) {
   if (window.scrollY > 50) {
     nav.style.background = document.documentElement.getAttribute('data-theme')==='dark' ? 'rgba(15,23,42,.98)' : 'rgba(15,14,13,.98)';
     nav.style.backdropFilter = 'blur(10px)';
@@ -2201,6 +2242,7 @@ window.addEventListener('scroll', () => {
     nav.style.backdropFilter = 'none';
     nav.style.boxShadow = 'none';
   }
+});
 
 // Scroll reveal untuk how-steps
 const observer = new IntersectionObserver((entries) => {
@@ -2250,10 +2292,10 @@ async function loadHeroStats() {
       document.getElementById('hero-stat-listings').textContent = res.total + '+';
     }
     const cats = await fetch('/api/categories').then(r=>r.json());
-    // Load how mockup
+    // Load how mockup — hanya menu utama (induk + tanpa induk)
     const mockup = document.getElementById('home-categories-preview');
     if (mockup && cats.length) {
-      mockup.innerHTML = cats.slice(0,4).map(c => `
+      mockup.innerHTML = cats.filter(c=>!c.parent_slug).slice(0,4).map(c => `
         <div style="display:flex;align-items:center;gap:.8rem;padding:.7rem;border:1px solid var(--border);border-radius:10px;margin-bottom:.6rem;cursor:pointer;transition:all .2s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'" onclick="filterAndGo('${c.slug}')">
           <span style="font-size:1.3rem">${c.icon}</span>
           <div>
@@ -2273,13 +2315,13 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 <!-- ===== MODAL KYC ===== -->
 <div class="modal-overlay" id="kyc-modal" onclick="if(event.target===this)closeKycModal()">
-  <div class="modal-box" style="max-width:560px;background:white">
+  <div class="modal-box" style="max-width:560px;background:var(--surface)">
     <div class="modal-header">
       <div class="modal-title">🪪 Verifikasi Identitas (KYC)</div>
       <button class="modal-close" onclick="closeKycModal()">×</button>
     </div>
     <div class="modal-body">
-      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:.8rem;margin-bottom:1.2rem;font-size:.82rem;color:#166534">
+      <div style="background:var(--success-bg);border:1px solid var(--success-border);border-radius:10px;padding:.8rem;margin-bottom:1.2rem;font-size:.82rem;color:var(--success-text)">
         🔒 Dokumen kamu aman dan hanya digunakan untuk verifikasi identitas oleh tim AkuBisa.
       </div>
       <div id="kyc-status-info" style="margin-bottom:1rem"></div>
@@ -2322,7 +2364,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 <!-- ===== MODAL BUAT PORTFOLIO ===== -->
 <div class="modal-overlay" id="portfolio-modal" onclick="if(event.target===this)closePortfolioModal()">
-  <div class="modal-box" style="max-width:560px;background:white">
+  <div class="modal-box" style="max-width:560px;background:var(--surface)">
     <div class="modal-header">
       <div class="modal-title">🗂️ Tambah Portfolio</div>
       <button class="modal-close" onclick="closePortfolioModal()">×</button>
