@@ -39,15 +39,12 @@ router.delete('/:id', auth, async (req, res) => {
   } catch(e) { res.status(500).json({ message: e.message }); }
 });
 
-// Helper: buat notifikasi (dipakai route lain)
-const createNotif = async (userId, type, title, message, link=null) => {
-  try {
-    await pool.query(
-      'INSERT INTO notifications (user_id, type, title, message, link) VALUES ($1,$2,$3,$4,$5)',
-      [userId, type, title, message, link]
-    );
-  } catch(e) { console.error('Notif error:', e.message); }
-};
+// Helper: buat notifikasi (dipakai route lain).
+// Implementasi kanonis ada di utils/notify.js — di sini hanya
+// dipertahankan sebagai alias supaya pemanggil lama tetap jalan.
+const { notifyUser } = require('../utils/notify');
+const createNotif = (userId, type, title, message, link = null) =>
+  notifyUser(userId, { type, title, body: message, link });
 
 module.exports = router;
 module.exports.createNotif = createNotif;
