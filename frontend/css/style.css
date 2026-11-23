@@ -440,7 +440,6 @@ body.auth-mode #main-nav {
 [data-theme="dark"] #page-login { background: var(--bg); }
 [data-theme="dark"] .dark-section { background: #020617; }
 [data-theme="dark"] .hero { background: #0f0e0d; }
-[data-theme="dark"] .hero-divider { background: var(--bg); }
 [data-theme="dark"] .profile-header { background: #020617; }
 [data-theme="dark"] .switch-container { background: var(--surface-2); }
 [data-theme="dark"] .admin-table th { background: var(--surface-2); }
