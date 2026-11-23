@@ -479,7 +479,7 @@ function listingCardHTML(l) {
         <div style="display:flex;align-items:center;gap:.5rem">
           <div class="avatar" style="background:${av};width:28px;height:28px;font-size:.7rem">${ini}</div>
           <div>
-            <div style="font-size:.78rem;font-weight:600;cursor:pointer;color:var(--ink)" onclick="event.stopPropagation();openPublicProfile(${l.user_id})">${l.full_name||'Anonim'}</div>
+            <div style="font-size:.78rem;font-weight:600;cursor:pointer;color:var(--ink)" onclick="event.stopPropagation();openPublicProfile(${l.user_id})">${l.full_name||'Anonim'} ${l.is_pro ? '<span class="pro-badge">⭐ PRO</span>' : ''}</div>
             <div style="font-size:.68rem;color:var(--muted)">${l.city||'Indonesia'}${l.is_verified?' · ✓':''}</div>
           </div>
         </div>
@@ -516,7 +516,7 @@ async function openListingDetail(id) {
       <div style="display:flex;align-items:center;gap:1rem">
         <div class="avatar" style="background:${av};width:48px;height:48px;font-size:1rem;flex-shrink:0">${ini}</div>
         <div style="flex:1">
-          <div style="font-weight:700">${l.full_name} ${l.is_verified?'<span style="font-size:.7rem;color:var(--accent2)">✓ Terverifikasi</span>':''}</div>
+          <div style="font-weight:700">${l.full_name} ${l.is_pro ? '<span class="pro-badge">⭐ PRO</span>' : ''} ${l.is_verified?'<span style="font-size:.7rem;color:var(--accent2)">✓ Terverifikasi</span>':''}</div>
           <div style="font-size:.8rem;color:var(--muted)">${l.user_city||''}</div>
           ${l.bio?`<div style="font-size:.8rem;margin-top:.3rem;color:var(--muted)">${l.bio}</div>`:''}
         </div>
