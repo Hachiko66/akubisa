@@ -186,6 +186,14 @@ api.verifyBoostPayment = async (orderId, signature) => {
   const data = await r.json().catch(() => ({}));
   return { ok: r.ok, ...data };
 };
+// ===== AKUBISA PRO =====
+api.getProStatus = () => fetch(`${API}/pro/status`, { headers:headers(true) }).then(r=>r.json());
+api.subscribePro = () => fetch(`${API}/pro/subscribe`, { method:'POST', headers:headers(true) }).then(r=>r.json());
+api.verifyProPayment = async (subscriptionId, signature) => {
+  const r = await fetch(`${API}/pro/verify-payment`, { method:'POST', headers:headers(true), body:JSON.stringify({subscription_id:subscriptionId, signature}) });
+  const data = await r.json().catch(() => ({}));
+  return { ok: r.ok, ...data };
+};
 api.adminRecordWithdrawTx = async (id, txSignature) => {
   const r = await fetch(`${API}/admin/withdrawals/${id}/record-tx`, { method:'POST', headers:headers(true), body:JSON.stringify({tx_signature:txSignature}) });
   const data = await r.json().catch(() => ({}));
