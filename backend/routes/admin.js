@@ -3,6 +3,7 @@ const admin = require('../middleware/admin');
 const pool = require('../config/db');
 const { creditWorker, creditClient, updateWorkerBadge } = require('../utils/ledger');
 const { getUsdcIdrRate, idrToMicroUsdc, formatUsdc, isValidSolanaAddress, verifyUsdcPayment, sendUsdc, reserveSignature } = require('../utils/solana');
+const { calcWithdrawFee, isPro } = require('../utils/revenue');
 
 // ===== DASHBOARD STATS =====
 router.get('/stats', admin, async (req, res) => {
@@ -212,25 +213,36 @@ router.patch('/withdrawals/:id/approve', admin, async (req, res) => {
       return res.status(400).json({ message: 'Request ini tidak punya alamat payout Solana yang valid.' });
     }
 
-    // Kunci kurs SAAT INI (momen transfer) lalu kirim USDC dari escrow
-    // ke alamat payout snapshot request. Bila pengiriman GAGAL (saldo
-    // escrow kurang / RPC down / keypair belum dikonfigurasi), request
-    // TETAP 'pending' — JANGAN tandai approved, supaya admin bisa
-    // mencoba lagi dan saldo worker tidak hilang.
+    // BIAYA PENARIKAN 1% (min Rp1.000, maks Rp10.000; 0 untuk member
+    // Pro) — dihitung SAAT APPROVE dengan kurs saat itu (otoritatif;
+    // status Pro bisa berubah antara request dan approve). Yang
+    // dikirim ke worker adalah JUMLAH BERSIH (amount - fee); fee
+    // tetap di escrow sebagai pemasukan platform. Bila pengiriman
+    // GAGAL (saldo escrow kurang / RPC down / keypair belum
+    // dikonfigurasi), request TETAP 'pending' — JANGAN tandai
+    // approved, supaya admin bisa mencoba lagi dan saldo worker
+    // tidak hilang.
+    const isProMember = await isPro(pool, w.worker_id);
+    const feeRp = isProMember ? 0 : calcWithdrawFee(w.amount);
+    const netRp = parseInt(w.amount, 10) - feeRp;
+
+    // Kunci kurs SAAT INI (momen transfer) lalu kirim USDC BERSIH
+    // dari escrow ke alamat payout snapshot request.
     let rateInfo, usdcAmount, sig;
     try {
       rateInfo = await getUsdcIdrRate();
-      usdcAmount = idrToMicroUsdc(w.amount, rateInfo.rate);
+      usdcAmount = idrToMicroUsdc(netRp, rateInfo.rate);
       sig = await sendUsdc({ toAddress: w.solana_address, microUsdc: usdcAmount });
     } catch (e) {
       console.error('[withdraw] kirim USDC gagal:', e.message);
       return res.status(503).json({ message: 'Gagal mengirim USDC: ' + e.message + ' Request tetap pending.' });
     }
+    const feeUsdc = feeRp > 0 ? idrToMicroUsdc(feeRp, rateInfo.rate) : 0;
 
     await pool.query(`
       UPDATE withdraw_requests SET status='approved', admin_note=$1, processed_at=NOW(),
-        usdc_amount=$2, rate_idr_per_usdc=$3, tx_signature=$4, paid_at=NOW() WHERE id=$5
-    `, [admin_note||null, usdcAmount, rateInfo.rate, sig, req.params.id]);
+        usdc_amount=$2, rate_idr_per_usdc=$3, tx_signature=$4, paid_at=NOW(), fee_rp=$5, fee_usdc=$6 WHERE id=$7
+    `, [admin_note||null, usdcAmount, rateInfo.rate, sig, feeRp, feeUsdc, req.params.id]);
 
     await pool.query(`
       UPDATE worker_balances SET total_withdrawn=total_withdrawn+$1 WHERE worker_id=$2
@@ -238,10 +250,12 @@ router.patch('/withdrawals/:id/approve', admin, async (req, res) => {
 
     await pool.query(`
       INSERT INTO notifications (user_id, type, title, message, link)
-      VALUES ($1,'wallet','✅ Withdraw Disetujui!','Withdraw Rp ${parseInt(w.amount).toLocaleString()} (${formatUsdc(usdcAmount)}) telah dikirim ke alamat Solanamu.','#wallet')
-    `, [w.worker_id]);
+      VALUES ($1,'wallet','✅ Withdraw Disetujui!',$2,'#wallet')
+    `, [w.worker_id, feeRp > 0
+      ? `Withdraw Rp ${parseInt(w.amount).toLocaleString()} (biaya Rp ${feeRp.toLocaleString()}, diterima bersih ${formatUsdc(usdcAmount)}) telah dikirim ke alamat Solanamu.`
+      : `Withdraw Rp ${parseInt(w.amount).toLocaleString()} (${formatUsdc(usdcAmount)}) telah dikirim ke alamat Solanamu. Bebas biaya penarikan (member Pro).`]);
 
-    res.json({ message: 'Withdraw disetujui dan USDC terkirim!', tx_signature: sig, usdc_amount: usdcAmount });
+    res.json({ message: 'Withdraw disetujui dan USDC terkirim!', tx_signature: sig, usdc_amount: usdcAmount, fee_rp: feeRp, net_amount: netRp });
   } catch(e) { res.status(500).json({ message: e.message }); }
 });
 
@@ -267,10 +281,17 @@ router.post('/withdrawals/:id/record-tx', admin, async (req, res) => {
       return res.status(400).json({ message: 'Request ini tidak punya alamat payout Solana yang valid.' });
     }
 
+    // BIAYA PENARIKAN 1% (min Rp1.000, maks Rp10.000; 0 untuk member
+    // Pro) — sama seperti approve otomatis. Yang diverifikasi adalah
+    // transfer JUMLAH BERSIH (amount - fee); fee tetap di escrow.
+    const isProMember = await isPro(client, w.worker_id);
+    const feeRp = isProMember ? 0 : calcWithdrawFee(w.amount);
+    const netRp = parseInt(w.amount, 10) - feeRp;
+
     let rateInfo;
     try { rateInfo = await getUsdcIdrRate(); }
     catch (e) { return res.status(503).json({ message: 'Kurs tidak tersedia: ' + e.message }); }
-    const expected = idrToMicroUsdc(w.amount, rateInfo.rate);
+    const expected = idrToMicroUsdc(netRp, rateInfo.rate);
     const tolerance = Math.max(1000, Math.ceil(expected * 0.02)); // min 0,001 USDC
 
     let v;
@@ -287,11 +308,12 @@ router.post('/withdrawals/:id/record-tx', admin, async (req, res) => {
       await client.query('ROLLBACK');
       return res.status(409).json({ message: 'Signature ini sudah pernah dipakai.' });
     }
+    const feeUsdc = feeRp > 0 ? idrToMicroUsdc(feeRp, rateInfo.rate) : 0;
     const upd = await client.query(
       `UPDATE withdraw_requests SET status='approved', processed_at=NOW(),
-         usdc_amount=$1, rate_idr_per_usdc=$2, tx_signature=$3, paid_at=NOW()
-       WHERE id=$4 AND status='pending' RETURNING *`,
-      [v.amountMicroUsdc, rateInfo.rate, tx_signature, w.id]
+         usdc_amount=$1, rate_idr_per_usdc=$2, tx_signature=$3, paid_at=NOW(), fee_rp=$4, fee_usdc=$5
+       WHERE id=$6 AND status='pending' RETURNING *`,
+      [v.amountMicroUsdc, rateInfo.rate, tx_signature, feeRp, feeUsdc, w.id]
     );
     if (!upd.rows.length) {
       await client.query('ROLLBACK');
@@ -303,11 +325,13 @@ router.post('/withdrawals/:id/record-tx', admin, async (req, res) => {
     );
     await client.query(`
       INSERT INTO notifications (user_id, type, title, message, link)
-      VALUES ($1,'wallet','✅ Withdraw Disetujui!','Withdraw Rp ${parseInt(w.amount).toLocaleString()} (${formatUsdc(v.amountMicroUsdc)}) telah dikirim ke alamat Solanamu.','#wallet')
-    `, [w.worker_id]);
+      VALUES ($1,'wallet','✅ Withdraw Disetujui!',$2,'#wallet')
+    `, [w.worker_id, feeRp > 0
+      ? `Withdraw Rp ${parseInt(w.amount).toLocaleString()} (biaya Rp ${feeRp.toLocaleString()}, diterima bersih ${formatUsdc(v.amountMicroUsdc)}) telah dikirim ke alamat Solanamu.`
+      : `Withdraw Rp ${parseInt(w.amount).toLocaleString()} (${formatUsdc(v.amountMicroUsdc)}) telah dikirim ke alamat Solanamu. Bebas biaya penarikan (member Pro).`]);
     await client.query('COMMIT');
 
-    res.json({ message: 'Tx manual tercatat dan terverifikasi on-chain.', tx_signature, usdc_amount: v.amountMicroUsdc });
+    res.json({ message: 'Tx manual tercatat dan terverifikasi on-chain.', tx_signature, usdc_amount: v.amountMicroUsdc, fee_rp: feeRp, net_amount: netRp });
   } catch (e) {
     try { await client.query('ROLLBACK'); } catch { /* abaikan */ }
     res.status(500).json({ message: e.message });
@@ -405,7 +429,7 @@ router.patch('/disputes/:id/resolve', admin, async (req, res) => {
         VALUES ($1,'transaction','↩️ Dispute Selesai','Admin memutuskan refund untuk klien pada transaksi #${trx.id}.','#transactions')
       `, [trx.worker_id]);
     } else if (decision === 'release') {
-      // Worker menerima total_amount PENUH — fee 10% sudah dibayar client
+      // Worker menerima total_amount PENUH — fee 5% sudah dibayar client
       // di atas total (lihat utils/ledger.js). Aturan lama di sini
       // (total_amount - platform_fee) memotong fee dari worker padahal
       // client sudah membayarnya: worker kena fee dua kali.
