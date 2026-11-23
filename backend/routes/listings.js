@@ -84,6 +84,7 @@ const path = require('path');
 const fs = require('fs');
 const pool = require('../config/db');
 const { getUsdcIdrRate, idrToMicroUsdc, formatUsdc, escrowAddress, verifyUsdcPayment, reserveSignature } = require('../utils/solana');
+const { calcDigitalFee, rateLockExpiresAt, isRateLockExpired } = require('../utils/revenue');
 const { creditWorker } = require('../utils/ledger');
 
 const digitalStorage = multer.diskStorage({
@@ -133,9 +134,13 @@ router.post('/upload-digital', auth, uploadDigital.single('file'), async (req, r
 //   USDC lalu menyerahkan signature ke POST /:id/verify-payment.
 //   Purchase berstatus 'pending' sampai verifikasi on-chain lolos dan
 //   mengubahnya jadi 'paid'. Download menolak status selain 'paid'.
-// Produk digital TIDAK dikenai fee platform (keputusan produk):
-// penjual menerima harga penuh sebagai saldo IDR (lihat creditWorker
-// di verify-payment).
+// FEE PRODUK DIGITAL 5% (keputusan produk 2026-11-23): pembeli
+// membayar harga + fee 5%, penjual menerima harga penuh sebagai
+// saldo IDR (lihat creditWorker di verify-payment); fee mengendap di
+// escrow sebagai pemasukan platform (sama seperti fee transaksi).
+// KUNCI KURS berlaku 24 JAM (lihat utils/revenue.js): purchase yang
+// kuncinya kedaluwarsa disegarkan dengan kurs terbaru saat pemesanan
+// dibuka lagi; verify-payment menolak kunci kedaluwarsa.
 function parsePrice(raw) {
   // Harga disimpan sebagai VARCHAR (mis. "150000" atau "Rp 150.000") —
   // konvensi yang sama dipakai listingController (REGEXP_REPLACE).
@@ -167,40 +172,53 @@ router.post('/:id/purchase', auth, async (req, res) => {
 
     // Sudah lunas sebelumnya?
     const existing = await pool.query(
-      'SELECT id, status, order_id FROM digital_purchases WHERE buyer_id=$1 AND listing_id=$2',
+      'SELECT * FROM digital_purchases WHERE buyer_id=$1 AND listing_id=$2',
       [req.user.id, id]
     );
     if (existing.rows[0]?.status === 'paid') {
       return res.json({ success: true, message: 'Produk sudah dibeli sebelumnya.' });
     }
 
-    let purchaseId, usdcAmount, rateLocked;
+    // FEE 5%: pembeli membayar harga + fee; penjual terima harga penuh.
+    const platformFee = calcDigitalFee(price);
+    const totalIdr = price + platformFee;
+
+    let purchaseId, usdcAmount, rateLocked, rateLockedAt, feeUsed, totalUsed;
     const existingRow = existing.rows[0];
     if (existingRow) {
       purchaseId = existingRow.id;
       usdcAmount = parseInt(existingRow.usdc_amount, 10);
       rateLocked = parseFloat(existingRow.rate_idr_per_usdc);
+      rateLockedAt = existingRow.rate_locked_at || existingRow.created_at;
+      feeUsed = parseInt(existingRow.platform_fee, 10) || 0;
+      totalUsed = parseInt(existingRow.total_amount, 10) || parseInt(existingRow.amount, 10);
     }
     if (!purchaseId) {
       const ins = await pool.query(
-        `INSERT INTO digital_purchases (buyer_id, listing_id, amount, status) VALUES ($1,$2,$3,'pending') RETURNING id`,
-        [req.user.id, id, price]
+        `INSERT INTO digital_purchases (buyer_id, listing_id, amount, platform_fee, total_amount, status) VALUES ($1,$2,$3,$4,$5,'pending') RETURNING id`,
+        [req.user.id, id, price, platformFee, totalIdr]
       );
       purchaseId = ins.rows[0].id;
+      feeUsed = platformFee;
+      totalUsed = totalIdr;
     }
-    if (!Number.isFinite(usdcAmount) || usdcAmount <= 0) {
-      // Kunci kurs saat purchase dibuat (atau perbaiki baris lama yang
-      // dibuat sebelum migrasi Solana). Gagal tertutup bila kurs/escrow
-      // belum siap.
+    // Kunci kurs saat purchase dibuat (atau perbaiki baris lama yang
+    // dibuat sebelum migrasi Solana), dan SEGARKAN bila kunci 24 jam
+    // sudah kedaluwarsa. Gagal tertutup bila kurs/escrow belum siap.
+    const lockExpired = !!existingRow && isRateLockExpired(rateLockedAt);
+    if (!Number.isFinite(usdcAmount) || usdcAmount <= 0 || lockExpired) {
       let rateInfo;
       try { rateInfo = await getUsdcIdrRate(); }
       catch (e) { return res.status(503).json({ message: 'Pembayaran Solana belum siap: ' + e.message }); }
-      usdcAmount = idrToMicroUsdc(price, rateInfo.rate);
+      usdcAmount = idrToMicroUsdc(totalIdr, rateInfo.rate);
       rateLocked = rateInfo.rate;
       await pool.query(
-        'UPDATE digital_purchases SET usdc_amount=$1, rate_idr_per_usdc=$2 WHERE id=$3',
-        [usdcAmount, rateLocked, purchaseId]
+        'UPDATE digital_purchases SET usdc_amount=$1, rate_idr_per_usdc=$2, rate_locked_at=NOW(), platform_fee=$3, total_amount=$4 WHERE id=$5',
+        [usdcAmount, rateLocked, platformFee, totalIdr, purchaseId]
       );
+      rateLockedAt = new Date();
+      feeUsed = platformFee;
+      totalUsed = totalIdr;
     }
 
     res.json({
@@ -208,10 +226,15 @@ router.post('/:id/purchase', auth, async (req, res) => {
       message: 'Silakan kirim USDC ke alamat escrow, lalu verifikasi dengan signature transaksimu.',
       requires_payment: true,
       escrow_address: escrowAddress().toBase58(),
-      amount: price,
+      amount: totalUsed,
+      price,
+      platform_fee: feeUsed,
+      total_amount: totalUsed,
       amount_usdc: usdcAmount,
       amount_usdc_display: formatUsdc(usdcAmount),
       rate_idr_per_usdc: rateLocked,
+      rate_locked_at: rateLockedAt,
+      rate_locked_until: rateLockExpiresAt(rateLockedAt),
       purchase_id: purchaseId
     });
   } catch (e) {
@@ -243,6 +266,11 @@ router.post('/:id/verify-payment', auth, async (req, res) => {
     const expected = parseInt(p.usdc_amount, 10);
     if (!Number.isFinite(expected) || expected <= 0) {
       return res.status(400).json({ message: 'Pembelian ini dibuat sebelum migrasi Solana (tidak ada jumlah USDC terkunci). Hubungi admin.' });
+    }
+    // KUNCI KURS 24 JAM: tolak sebelum verifikasi on-chain supaya
+    // pembeli tidak mengirim USDC dengan kurs yang sudah basi.
+    if (isRateLockExpired(p.rate_locked_at || p.created_at)) {
+      return res.status(400).json({ message: 'Kurs sudah berubah, silakan tutup dan buka lagi pembayaran untuk kurs terbaru.' });
     }
 
     let v;
@@ -328,7 +356,7 @@ router.get('/:id/purchase-status', auth, async (req, res) => {
       [req.user.id, req.params.id]
     );
     const pending = await pool.query(
-      "SELECT id, usdc_amount, rate_idr_per_usdc FROM digital_purchases WHERE buyer_id=$1 AND listing_id=$2 AND status='pending'",
+      "SELECT id, amount, platform_fee, total_amount, usdc_amount, rate_idr_per_usdc, rate_locked_at, created_at FROM digital_purchases WHERE buyer_id=$1 AND listing_id=$2 AND status='pending'",
       [req.user.id, req.params.id]
     );
     const l = await pool.query('SELECT user_id FROM listings WHERE id=$1', [req.params.id]);
@@ -338,9 +366,13 @@ router.get('/:id/purchase-status', auth, async (req, res) => {
       pending: !!pend,
       // Info bayar untuk purchase yang masih pending (kurs terkunci):
       pending_purchase_id: pend?.id || null,
+      pending_amount_idr: pend ? (parseInt(pend.total_amount, 10) || parseInt(pend.amount, 10)) : null,
+      pending_price: pend ? parseInt(pend.amount, 10) : null,
+      pending_platform_fee: pend ? (parseInt(pend.platform_fee, 10) || 0) : null,
       pending_amount_usdc: pend ? parseInt(pend.usdc_amount, 10) : null,
       pending_amount_usdc_display: pend ? formatUsdc(pend.usdc_amount) : null,
       pending_rate_idr_per_usdc: pend ? parseFloat(pend.rate_idr_per_usdc) : null,
+      pending_rate_locked_until: pend ? rateLockExpiresAt(pend.rate_locked_at || pend.created_at) : null,
       escrow_address: pend ? escrowAddress().toBase58() : null
     });
   } catch (e) {
