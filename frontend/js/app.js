@@ -330,6 +330,7 @@ function renderNav() {
       <a onclick="closeMobileMenu();setTimeout(()=>goToMenu('digital'),100)" style="font-size:1.1rem;color:rgba(255,255,255,.85);font-weight:500">${t('nav_digital')}</a>
       <a onclick="closeMobileMenu();setTimeout(()=>goTo('job-requests'),100)" style="font-size:1.1rem;color:rgba(255,255,255,.85);font-weight:500">${t('nav_job_requests')}</a>
       <a onclick="closeMobileMenu();setTimeout(()=>goTo('messages'),100)" style="font-size:1.1rem;color:rgba(255,255,255,.85);font-weight:500">${t('nav_messages')}</a>
+      <a onclick="closeMobileMenu();setTimeout(()=>toggleNotifPanel(),100)" style="font-size:1.1rem;color:rgba(255,255,255,.85);font-weight:500">🔔 Notifikasi <span id="notif-badge-mobile" style="display:none;background:var(--accent);color:white;font-size:.65rem;font-weight:800;padding:.15rem .45rem;border-radius:100px;margin-left:.3rem;vertical-align:middle"></span></a>
       <a onclick="closeMobileMenu();setTimeout(()=>goTo('bookmarks'),100)" style="font-size:1.1rem;color:rgba(255,255,255,.85);font-weight:500">Tersimpan</a>
       <a onclick="closeMobileMenu();setTimeout(()=>goTo('transactions'),100)" style="font-size:1.1rem;color:rgba(255,255,255,.85);font-weight:500">Transaksi</a>
       <a onclick="closeMobileMenu();setTimeout(()=>goTo('wallet'),100)" style="font-size:1.1rem;color:rgba(255,255,255,.85);font-weight:500">Dompet</a>
@@ -735,10 +736,11 @@ window.addEventListener('resize', () => {
 // pollNotifBadge - cek pesan + notifikasi
 async function pollNotifBadge() {
   checkUnreadMessages();
-  // Cek notif badge
+  // Cek notif badge (desktop + mobile diurus updateNotifBadge di features.js)
   try {
     const res = await api.getNotifications();
     const count = res.unread_count || 0;
+    if (typeof updateNotifBadge === 'function') { updateNotifBadge(count); return; }
     const badge = document.getElementById('notif-badge');
     if (badge) {
       if (count > 0) {
