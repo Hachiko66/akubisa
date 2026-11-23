@@ -75,6 +75,7 @@ app.use('/api/boost', require('./routes/boost'));
 app.use('/api/notifications',              require('./routes/notifications'));
 app.use('/api/reports',                    require('./routes/reports'));
 app.use('/api/social',                     require('./routes/social'));
+app.use('/api/pro',                        require('./routes/pro'));
 
 // Health check
 app.get('/api/health', (req, res) => {
