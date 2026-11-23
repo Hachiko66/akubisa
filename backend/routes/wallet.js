@@ -5,6 +5,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const { getUsdcIdrRate, idrToMicroUsdc, formatUsdc, isValidSolanaAddress } = require('../utils/solana');
+const { calcWithdrawFee, isPro } = require('../utils/revenue');
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -87,27 +88,41 @@ router.post('/withdraw', auth, async (req, res) => {
     const pending = await pool.query(`SELECT id FROM withdraw_requests WHERE worker_id=$1 AND status='pending'`, [req.user.id]);
     if (pending.rows.length > 0) return res.status(400).json({ message: 'Masih ada request withdraw yang menunggu' });
 
-    // Estimasi USDC saat request (tampilan saja; penguncian final di approve).
+    // BIAYA PENARIKAN 1% (min Rp1.000, maks Rp10.000) — keputusan
+    // produk 2026-11-23. Member Pro BEBAS biaya penarikan. Fee
+    // dipotong dari jumlah yang dikirim ke worker: fee TIDAK dikirim,
+    // tetap di escrow sebagai pemasukan platform. Fee dalam Rupiah
+    // deterministik dari jumlah; nilai USDC-nya dikunci saat admin
+    // approve dengan kurs saat itu (lihat admin.js).
+    const isProMember = await isPro(pool, req.user.id);
+    const feeRp = isProMember ? 0 : calcWithdrawFee(amount);
+    const netRp = amount - feeRp;
+
+    // Estimasi USDC BERSIH saat request (tampilan saja; penguncian final di approve).
     let rateInfo;
     try { rateInfo = await getUsdcIdrRate(); }
     catch (e) { return res.status(503).json({ message: 'Kurs USDC/IDR tidak tersedia: ' + e.message }); }
-    const usdcEstimate = idrToMicroUsdc(amount, rateInfo.rate);
+    const usdcEstimate = idrToMicroUsdc(netRp, rateInfo.rate);
 
-    // Freeze saldo
+    // Freeze saldo (jumlah penuh; fee dipotong dari yang dikirim,
+    // bukan dari saldo beku — saat reject, jumlah penuh kembali).
     await pool.query('UPDATE worker_balances SET balance = balance - $1 WHERE worker_id = $2', [amount, req.user.id]);
 
     await pool.query(`
-      INSERT INTO withdraw_requests (worker_id, amount, solana_address, rate_idr_per_usdc, usdc_estimate)
-      VALUES ($1,$2,$3,$4,$5)
-    `, [req.user.id, amount, payout, rateInfo.rate, usdcEstimate]);
+      INSERT INTO withdraw_requests (worker_id, amount, fee_rp, solana_address, rate_idr_per_usdc, usdc_estimate)
+      VALUES ($1,$2,$3,$4,$5,$6)
+    `, [req.user.id, amount, feeRp, payout, rateInfo.rate, usdcEstimate]);
 
     // Notif
+    const notifMsg = feeRp > 0
+      ? `Request withdraw Rp ${parseInt(amount).toLocaleString()} (biaya Rp ${feeRp.toLocaleString()}, diterima bersih Rp ${netRp.toLocaleString()} ~${formatUsdc(usdcEstimate)}) ke alamat Solanamu sedang diproses admin.`
+      : `Request withdraw Rp ${parseInt(amount).toLocaleString()} (~${formatUsdc(usdcEstimate)}) ke alamat Solanamu sedang diproses admin. Bebas biaya penarikan (member Pro).`;
     await pool.query(`
       INSERT INTO notifications (user_id, type, title, message, link)
-      VALUES ($1,'wallet','💸 Request Withdraw Dikirim','Request withdraw Rp ${parseInt(amount).toLocaleString()} (~${formatUsdc(usdcEstimate)}) ke alamat Solanamu sedang diproses admin.','#wallet')
-    `, [req.user.id]);
+      VALUES ($1,'wallet','💸 Request Withdraw Dikirim',$2,'#wallet')
+    `, [req.user.id, notifMsg]);
 
-    res.json({ message: 'Request withdraw berhasil dikirim! Diproses dalam 1x24 jam.', usdc_estimate: usdcEstimate, usdc_estimate_display: formatUsdc(usdcEstimate), rate_idr_per_usdc: rateInfo.rate });
+    res.json({ message: 'Request withdraw berhasil dikirim! Diproses dalam 1x24 jam.', usdc_estimate: usdcEstimate, usdc_estimate_display: formatUsdc(usdcEstimate), rate_idr_per_usdc: rateInfo.rate, fee_rp: feeRp, net_amount: netRp, is_pro: isProMember });
   } catch(e) { res.status(500).json({ message: e.message }); }
 });
 
