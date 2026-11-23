@@ -2094,10 +2094,10 @@ async function searchUsers(query) {
 let solanaPayVerify = null;
 let solanaPayOnSuccess = null;
 function openSolanaPayModal({ title, escrowAddress, amountUsdcDisplay, amountIdr, rate, verify, onSuccess }) {
-  document.getElementById('sp-title').textContent = title || 'Bayar dengan USDC (Solana)';
+  document.getElementById('sp-title').textContent = title || 'Bayar';
   document.getElementById('sp-escrow').value = escrowAddress || '';
-  document.getElementById('sp-amount-usdc').textContent = amountUsdcDisplay || '-';
-  document.getElementById('sp-amount-idr').textContent = amountIdr ? ('Rp ' + parseInt(amountIdr).toLocaleString('id')) : '';
+  document.getElementById('sp-amount-usdc').textContent = amountUsdcDisplay ? ('≈ ' + amountUsdcDisplay) : '-';
+  document.getElementById('sp-amount-idr').textContent = amountIdr ? ('Rp ' + parseInt(amountIdr).toLocaleString('id')) : '-';
   document.getElementById('sp-rate').textContent = rate ? ('Kurs terkunci: Rp ' + parseFloat(rate).toLocaleString('id') + ' / USDC') : '';
   document.getElementById('sp-signature').value = '';
   document.getElementById('sp-error').textContent = '';
@@ -2115,7 +2115,7 @@ function copyEscrowAddress() {
 async function submitSolanaPayVerify() {
   const sig = document.getElementById('sp-signature').value.trim();
   const errEl = document.getElementById('sp-error');
-  if (!sig || sig.length < 80 || sig.length > 90) { errEl.textContent = 'Masukkan signature transaksi Solana yang valid.'; return; }
+  if (!sig || sig.length < 80 || sig.length > 90) { errEl.textContent = 'Masukkan bukti transaksi (signature) yang valid.'; return; }
   const btn = document.getElementById('sp-verify-btn');
   btn.innerHTML = '<span class="spinner"></span>Memverifikasi...'; btn.disabled = true;
   try {
@@ -2147,7 +2147,7 @@ async function bayarSolana(transactionId, paymentType, btn) {
     }
     btn.innerHTML = original; btn.disabled = false;
     openSolanaPayModal({
-      title: (paymentType === 'dp' ? 'Bayar DP' : 'Bayar Pelunasan') + ' — USDC (Solana)',
+      title: (paymentType === 'dp' ? 'Bayar DP' : 'Bayar Pelunasan'),
       escrowAddress: info.escrow_address,
       amountUsdcDisplay: info.amount_usdc_display,
       amountIdr: info.amount_idr,
