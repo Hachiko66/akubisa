@@ -60,8 +60,11 @@ async function renderExplore() {
   if (savedMenu) { exploreMenu = savedMenu; exploreFilter = 'semua'; sessionStorage.removeItem('explore_menu'); }
   const saved = sessionStorage.getItem('explore_filter');
   if (saved) {
+    // 'semua' = tanpa filter: jangan sentuh menu (menu mungkin baru saja
+    // disetel dari explore_menu di atas; filterAndGo menulis keduanya).
+    if (saved === 'semua') { exploreFilter = 'semua'; }
     // Filter tersimpan bisa berupa slug induk -> jadikan menu
-    if (categoryHasChildren(saved)) { exploreMenu = saved; exploreFilter = 'semua'; }
+    else if (categoryHasChildren(saved)) { exploreMenu = saved; exploreFilter = 'semua'; }
     else { exploreFilter = saved; exploreMenu = 'semua'; }
     sessionStorage.removeItem('explore_filter');
   }
