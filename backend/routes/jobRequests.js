@@ -10,7 +10,19 @@ router.get('/', async (req, res) => {
   let where = ['jr.is_active = true', "jr.status = 'open'"];
   let params = [];
   let i = 1;
-  if (category) { where.push(`c.slug = $${i++}`); params.push(category); }
+  // Filter kategori: slug induk (mis. 'lowongan') ikut menampilkan
+  // job request semua subkategorinya; slug subkategori hanya
+  // dirinya sendiri. Slug yang tidak dikenal -> tidak ada hasil.
+  if (category) {
+    let cats;
+    try {
+      cats = await pool.query(
+        'SELECT id FROM categories WHERE slug = $1 OR parent_slug = $1', [category]);
+    } catch (e) { return res.status(500).json({ message: e.message }); }
+    const ids = cats.rows.map(r => r.id);
+    if (ids.length) { where.push(`jr.category_id = ANY($${i++})`); params.push(ids); }
+    else where.push('FALSE');
+  }
   if (search) { where.push(`(jr.title ILIKE $${i} OR jr.description ILIKE $${i})`); params.push(`%${search}%`); i++; }
   const whereStr = 'WHERE ' + where.join(' AND ');
   try {
