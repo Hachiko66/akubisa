@@ -139,6 +139,12 @@ CREATE TABLE IF NOT EXISTS notifications (
   created_at TIMESTAMP DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_notif_user ON notifications(user_id, is_read);
+-- Kolom aksi: dipakai notif "Pekerjaan Selesai" (action='approve' +
+-- metadata {trx_id}) supaya klik notifikasi langsung menyetujui
+-- pekerjaan lalu mengarah ke pelunasan. (Dulu insert ini gagal
+-- karena kolomnya belum ada — lihat routes/transactions.js.)
+ALTER TABLE notifications ADD COLUMN IF NOT EXISTS action VARCHAR(50);
+ALTER TABLE notifications ADD COLUMN IF NOT EXISTS metadata JSONB;
 
 -- Bookmarks table
 CREATE TABLE IF NOT EXISTS bookmarks (
