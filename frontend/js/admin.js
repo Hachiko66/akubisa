@@ -82,7 +82,7 @@ async function loadAdminOverview() {
       <div style="display:flex;justify-content:space-between;font-size:.83rem;padding:.6rem;background:var(--warm);border-radius:8px">
         <span>⭐ Featured listing</span><strong>${featured}</strong>
       </div>
-      <div style="display:flex;justify-content:space-between;font-size:.83rem;padding:.6rem;background:${parseInt(stats.reports?.pending)>5?'#fee2e2':'var(--warm)'};border-radius:8px">
+      <div style="display:flex;justify-content:space-between;font-size:.83rem;padding:.6rem;background:${parseInt(stats.reports?.pending)>5?'var(--danger-bg)':'var(--warm)'};border-radius:8px">
         <span>🚩 Laporan pending</span><strong style="color:${parseInt(stats.reports?.pending)>5?'var(--danger)':'inherit'}">${stats.reports?.pending||0}</strong>
       </div>
       <div style="display:flex;justify-content:space-between;font-size:.83rem;padding:.6rem;background:var(--warm);border-radius:8px">
@@ -229,7 +229,7 @@ async function loadAdminListings() {
             <td>
               <div style="display:flex;gap:.3rem;flex-wrap:wrap">
                 <button class="btn btn-outline btn-sm" onclick="adminToggleListing(${l.id})" style="font-size:.7rem">${l.is_active?'Nonaktifkan':'Aktifkan'}</button>
-                ${!l.is_featured?`<button class="btn btn-outline btn-sm" onclick="adminFeatureListing(${l.id})" style="font-size:.7rem;color:#8b5cf6;border-color:#8b5cf6">⭐ Feature</button>`:''}
+                ${!l.is_featured?`<button class="btn btn-outline btn-sm" onclick="adminFeatureListing(${l.id})" style="font-size:.7rem;color:var(--violet-text);border-color:var(--violet-border)">⭐ Feature</button>`:''}
                 <button class="btn btn-danger btn-sm" onclick="adminDeleteListing(${l.id})" style="font-size:.7rem">Hapus</button>
               </div>
             </td>
@@ -321,20 +321,21 @@ async function loadAdminWithdrawals() {
   el.innerHTML = '<div style="padding:2rem;text-align:center;color:var(--muted)">Memuat...</div>';
   const data = await api.adminGetWithdrawals();
   if (!data.length) { el.innerHTML = '<div style="padding:2rem;text-align:center;color:var(--muted)">Tidak ada request withdraw.</div>'; return; }
-  const stColor = { pending:'#d97706', approved:'var(--success)', rejected:'var(--danger)' };
+  const stColor = { pending:'var(--warning-text)', approved:'var(--success)', rejected:'var(--danger)' };
   el.innerHTML = `<table class="admin-table">
-    <thead><tr><th>User</th><th>Bank</th><th>No. Rek</th><th>Jumlah</th><th>Status</th><th>Tanggal</th><th>Aksi</th></tr></thead>
+    <thead><tr><th>User</th><th>Alamat Solana</th><th>USDC / Tx</th><th>Jumlah</th><th>Status</th><th>Tanggal</th><th>Aksi</th></tr></thead>
     <tbody>${data.map(w => `
       <tr>
         <td><strong>${w.full_name}</strong><br><small style="color:var(--muted)">${w.email}</small></td>
-        <td>${w.bank_name}</td>
-        <td>${w.account_number}<br><small>${w.account_name}</small></td>
+        <td style="font-size:.78rem;word-break:break-all">${w.solana_address ? (w.solana_address.slice(0, 8) + '…' + w.solana_address.slice(-6)) : '-'}</td>
+        <td style="font-size:.78rem">${w.usdc_amount ? ((parseInt(w.usdc_amount)/1e6).toLocaleString('en-US',{maximumFractionDigits:6}) + ' USDC') : (w.usdc_estimate ? ('≈ ' + (parseInt(w.usdc_estimate)/1e6).toLocaleString('en-US',{maximumFractionDigits:6}) + ' USDC') : '-')}${w.tx_signature?`<br><small style="color:var(--muted)">Tx: ${w.tx_signature.slice(0, 10)}…${w.tx_signature.slice(-6)}</small>`:''}</td>
         <td><strong>Rp ${parseInt(w.amount).toLocaleString('id')}</strong></td>
         <td><span style="color:${stColor[w.status]||'var(--muted)'};font-weight:700">${w.status}</span></td>
         <td>${new Date(w.created_at).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'})}</td>
         <td>${w.status==='pending' ? `
           <div style="display:flex;gap:.4rem;flex-wrap:wrap">
-            <button class="btn btn-primary btn-sm" onclick="adminApproveWithdraw(${w.id})">✅ Approve</button>
+            <button class="btn btn-primary btn-sm" onclick="adminApproveWithdraw(${w.id})">✅ Approve & Kirim USDC</button>
+            <button class="btn btn-sm" onclick="adminRecordWithdrawTx(${w.id})">📝 Catat Tx Manual</button>
             <button class="btn btn-danger btn-sm" onclick="adminRejectWithdraw(${w.id})">❌ Tolak</button>
           </div>` : w.admin_note || '-'}
         </td>
@@ -344,9 +345,19 @@ async function loadAdminWithdrawals() {
 
 async function adminApproveWithdraw(id) {
   const note = prompt('Catatan (opsional):') || '';
-  if (!confirm('Approve withdraw ini?')) return;
+  if (!confirm('Approve withdraw ini? USDC akan dikirim dari wallet escrow ke alamat payout worker.')) return;
   const res = await api.adminApproveWithdrawal(id, note);
-  showToast(res.message || 'Berhasil!', 'success');
+  showToast(res.message || 'Berhasil!', res.tx_signature ? 'success' : 'error');
+  loadAdminWithdrawals();
+}
+
+// Catat signature pengiriman USDC manual (fallback bila admin mengirim
+// dari wallet escrow di luar backend). Signature diverifikasi on-chain.
+async function adminRecordWithdrawTx(id) {
+  const sig = prompt('Tempel signature transaksi USDC yang sudah kamu kirim manual:');
+  if (!sig || !sig.trim()) return;
+  const res = await api.adminRecordWithdrawTx(id, sig.trim());
+  showToast(res.message || 'Berhasil!', res.ok ? 'success' : 'error');
   loadAdminWithdrawals();
 }
 
@@ -401,16 +412,16 @@ async function loadAdminTransactions() {
   el.innerHTML = '<div style="padding:2rem;text-align:center;color:var(--muted)">Memuat...</div>';
   const { transactions, stats } = await api.adminGetTransactions();
   const stColor = {
-    waiting_dp:'#94a3b8', dp_paid:'#0891b2', submitted:'#d97706',
-    waiting_final:'#7c3aed', completed:'var(--success)',
-    disputed:'var(--danger)', refunded:'#94a3b8', cancelled:'#94a3b8'
+    waiting_dp:'var(--muted)', dp_paid:'var(--cyan-text)', submitted:'var(--warning-text)',
+    waiting_final:'var(--violet-text)', completed:'var(--success)',
+    disputed:'var(--danger)', refunded:'var(--muted)', cancelled:'var(--muted)'
   };
   el.innerHTML = `
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.8rem;margin-bottom:1.5rem">
       <div class="card" style="text-align:center"><div style="font-size:.75rem;color:var(--muted)">Total Transaksi</div><div style="font-size:1.4rem;font-weight:800">${stats.total||0}</div></div>
       <div class="card" style="text-align:center"><div style="font-size:.75rem;color:var(--muted)">Selesai</div><div style="font-size:1.4rem;font-weight:800;color:var(--success)">${stats.completed||0}</div></div>
       <div class="card" style="text-align:center"><div style="font-size:.75rem;color:var(--muted)">Dispute</div><div style="font-size:1.4rem;font-weight:800;color:var(--danger)">${stats.disputed||0}</div></div>
-      <div class="card" style="text-align:center"><div style="font-size:.75rem;color:var(--muted)">Menunggu</div><div style="font-size:1.4rem;font-weight:800;color:#d97706">${stats.pending||0}</div></div>
+      <div class="card" style="text-align:center"><div style="font-size:.75rem;color:var(--muted)">Menunggu</div><div style="font-size:1.4rem;font-weight:800;color:var(--warning-text)">${stats.pending||0}</div></div>
       <div class="card" style="text-align:center"><div style="font-size:.75rem;color:var(--muted)">Total Fee</div><div style="font-size:1.1rem;font-weight:800;color:var(--accent2)">Rp ${parseInt(stats.total_fee||0).toLocaleString('id')}</div></div>
     </div>
     <table class="admin-table">
