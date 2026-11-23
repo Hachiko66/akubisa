@@ -128,11 +128,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadCategories();
   renderNav();
   if (currentUser) startNotifPoll();
-  // Bersihkan URL dari query params Duitku
-  if (location.search && location.search.includes('resultCode')) {
-    const hashPage = location.hash.replace('#','').split('?')[0] || 'transactions';
-    history.replaceState(null, '', '/#' + hashPage);
-  }
   const hash = location.hash.replace('#','').split('?')[0] || 'home';
   // Handle direct listing link e.g. #listing-26
   if (hash.startsWith('listing-')) {
@@ -148,6 +143,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (hash === 'home' || hash === '') renderHome();
   if (hash === 'dashboard') renderDashboard();
   if (hash === 'explore')   { renderExplore(); loadExplore(); }
+  if (hash === 'feed')      renderFeed();
   if (hash === 'profile')   renderProfile();
   if (hash === 'messages')  renderMessages();
   if (hash === 'job-requests') renderJobRequests();
@@ -182,6 +178,7 @@ window.addEventListener('hashchange', () => {
   renderNav();
   if (page === 'home')      renderHome();
   if (page === 'explore')   { renderExplore(); loadExplore(currentCategory); }
+  if (page === 'feed')      renderFeed();
   if (page === 'dashboard') renderDashboard();
   if (page === 'profile')   renderProfile();
   if (page === 'messages')  renderMessages();
@@ -246,6 +243,7 @@ function goTo(page) {
   renderNav();
   if (page === 'home')      renderHome();
   if (page === 'explore')   { renderExplore(); loadExplore(currentCategory); }
+  if (page === 'feed')      renderFeed();
   if (page === 'dashboard') renderDashboard();
   if (page === 'profile')   renderProfile();
   if (page === 'messages')  renderMessages();
@@ -279,6 +277,10 @@ function renderNav() {
     // ===== GUEST NAV =====
     links.innerHTML = `
       <a onclick="goTo('explore')" style="font-size:.88rem;color:rgba(255,255,255,.75);transition:color .2s" onmouseover="this.style.color='white'" onmouseout="this.style.color='rgba(255,255,255,.75)'">${t('nav_explore')}</a>
+      <a onclick="goTo('feed')" style="font-size:.88rem;color:rgba(255,255,255,.75);transition:color .2s" onmouseover="this.style.color='white'" onmouseout="this.style.color='rgba(255,255,255,.75)'">${t('nav_feed')}</a>
+      <a onclick="goToMenu('freelance')" style="font-size:.88rem;color:rgba(255,255,255,.75);transition:color .2s" onmouseover="this.style.color='white'" onmouseout="this.style.color='rgba(255,255,255,.75)'">${t('nav_freelance')}</a>
+      <a onclick="goToMenu('digital')" style="font-size:.88rem;color:rgba(255,255,255,.75);transition:color .2s" onmouseover="this.style.color='white'" onmouseout="this.style.color='rgba(255,255,255,.75)'">${t('nav_digital')}</a>
+      <a onclick="goToMenu('lowongan')" style="font-size:.88rem;color:rgba(255,255,255,.75);transition:color .2s" onmouseover="this.style.color='white'" onmouseout="this.style.color='rgba(255,255,255,.75)'">${t('nav_job_requests')}</a>
       <a onclick="scrollToHow()" style="font-size:.88rem;color:rgba(255,255,255,.75);transition:color .2s" onmouseover="this.style.color='white'" onmouseout="this.style.color='rgba(255,255,255,.75)'">${t('nav_how')}</a>
       <a onclick="goTo('login')" style="font-size:.88rem;color:rgba(255,255,255,.75);transition:color .2s" onmouseover="this.style.color='white'" onmouseout="this.style.color='rgba(255,255,255,.75)'">${t('nav_login')}</a>
       <button class="btn btn-primary btn-sm" onclick="goTo('register')" style="border-radius:100px;padding:.4rem 1.1rem;font-size:.85rem">${t('nav_register')}</button>
@@ -286,8 +288,11 @@ function renderNav() {
 
     if (mobileLinks) mobileLinks.innerHTML = `
       <a onclick="closeMobileMenu();setTimeout(()=>goTo('explore'),100)" style="font-size:1.1rem;color:rgba(255,255,255,.85);font-weight:500">${t('nav_explore')}</a>
-      <a onclick="scrollToHow();closeMobileMenu()" style="font-size:1.1rem;color:rgba(255,255,255,.85);font-weight:500">${t('nav_how')}</a>
+      <a onclick="closeMobileMenu();setTimeout(()=>goTo('feed'),100)" style="font-size:1.1rem;color:rgba(255,255,255,.85);font-weight:500">${t('nav_feed')}</a>
+      <a onclick="closeMobileMenu();setTimeout(()=>goToMenu('freelance'),100)" style="font-size:1.1rem;color:rgba(255,255,255,.85);font-weight:500">${t('nav_freelance')}</a>
+      <a onclick="closeMobileMenu();setTimeout(()=>goToMenu('digital'),100)" style="font-size:1.1rem;color:rgba(255,255,255,.85);font-weight:500">${t('nav_digital')}</a>
       <a onclick="closeMobileMenu();setTimeout(()=>goTo('job-requests'),100)" style="font-size:1.1rem;color:rgba(255,255,255,.85);font-weight:500">${t('nav_job_requests')}</a>
+      <a onclick="scrollToHow();closeMobileMenu()" style="font-size:1.1rem;color:rgba(255,255,255,.85);font-weight:500">${t('nav_how')}</a>
       <div style="display:flex;gap:.8rem;margin-top:.5rem">
         <button class="btn btn-outline" onclick="closeMobileMenu();setTimeout(()=>goTo('login'),100)" style="color:white;border-color:rgba(255,255,255,.3);border-radius:100px;padding:.6rem 1.5rem">${t('nav_login')}</button>
         <button class="btn btn-primary" onclick="closeMobileMenu();setTimeout(()=>goTo('register'),100)" style="border-radius:100px;padding:.6rem 1.5rem">${t('nav_register')}</button>
@@ -303,6 +308,9 @@ function renderNav() {
 
     links.innerHTML = `
       <a onclick="goTo('explore')" class="nav-link-adaptive">${t('nav_explore')}</a>
+      <a onclick="goTo('feed')" class="nav-link-adaptive">${t('nav_feed')}</a>
+      <a onclick="goToMenu('freelance')" class="nav-link-adaptive">${t('nav_freelance')}</a>
+      <a onclick="goToMenu('digital')" class="nav-link-adaptive">${t('nav_digital')}</a>
       <a onclick="goTo('job-requests')" class="nav-link-adaptive">${t('nav_job_requests')}</a>
       <a onclick="goTo('messages')" class="nav-link-adaptive">${t('nav_messages')}</a>
       <button class="lang-switch-btn" onclick="switchLang(getCurrentLang()==='id'?'en':'id')" style="background:none;border:1px solid rgba(255,255,255,.25);color:rgba(255,255,255,.7);border-radius:100px;padding:.25rem .6rem;font-size:.72rem;cursor:pointer">${getCurrentLang()==='id'?'🇬🇧 EN':'🇮🇩 ID'}</button>
@@ -317,7 +325,10 @@ function renderNav() {
     if (mobileLinks) mobileLinks.innerHTML = `
       <a onclick="closeMobileMenu();setTimeout(()=>goTo('dashboard'),100)" style="font-size:1.1rem;color:rgba(255,255,255,.85);font-weight:500">Dashboard</a>
       <a onclick="closeMobileMenu();setTimeout(()=>goTo('explore'),100)" style="font-size:1.1rem;color:rgba(255,255,255,.85);font-weight:500">Jelajahi</a>
-      <a onclick="closeMobileMenu();setTimeout(()=>goTo('job-requests'),100)" style="font-size:1.1rem;color:rgba(255,255,255,.85);font-weight:500">Aku Butuh</a>
+      <a onclick="closeMobileMenu();setTimeout(()=>goTo('feed'),100)" style="font-size:1.1rem;color:rgba(255,255,255,.85);font-weight:500">${t('nav_feed')}</a>
+      <a onclick="closeMobileMenu();setTimeout(()=>goToMenu('freelance'),100)" style="font-size:1.1rem;color:rgba(255,255,255,.85);font-weight:500">${t('nav_freelance')}</a>
+      <a onclick="closeMobileMenu();setTimeout(()=>goToMenu('digital'),100)" style="font-size:1.1rem;color:rgba(255,255,255,.85);font-weight:500">${t('nav_digital')}</a>
+      <a onclick="closeMobileMenu();setTimeout(()=>goTo('job-requests'),100)" style="font-size:1.1rem;color:rgba(255,255,255,.85);font-weight:500">${t('nav_job_requests')}</a>
       <a onclick="closeMobileMenu();setTimeout(()=>goTo('messages'),100)" style="font-size:1.1rem;color:rgba(255,255,255,.85);font-weight:500">${t('nav_messages')}</a>
       <a onclick="closeMobileMenu();setTimeout(()=>goTo('bookmarks'),100)" style="font-size:1.1rem;color:rgba(255,255,255,.85);font-weight:500">Tersimpan</a>
       <a onclick="closeMobileMenu();setTimeout(()=>goTo('transactions'),100)" style="font-size:1.1rem;color:rgba(255,255,255,.85);font-weight:500">Transaksi</a>
@@ -346,6 +357,44 @@ async function loadCategories() {
     const res = await api.getCategories();
     if (Array.isArray(res)) categories = res;
   } catch(e) {}
+}
+
+// ===== KATEGORI: MENU + SUBKATEGORI =====
+// `categories` adalah array datar dari GET /api/categories; pengelompokan
+// dilakukan di sini (client-side) supaya cukup satu fetch.
+const topCategories = () => categories.filter(c => !c.parent_slug);
+const childCategories = (parentSlug) => categories.filter(c => c.parent_slug === parentSlug);
+const categoryBySlug = (slug) => categories.find(c => c.slug === slug);
+const categoryById = (id) => categories.find(c => c.id == id);
+const categoryHasChildren = (slug) => categories.some(c => c.parent_slug === slug);
+
+// <option> kategori untuk form posting, dikelompokkan per menu
+// (<optgroup> induk + anak; kategori tanpa induk jadi option biasa).
+// Bila selectedId menunjuk kategori induk lama (listing lama), induk itu
+// ditambahkan sebagai option terpilih supaya tidak hilang saat edit.
+function categoryOptionsHTML(selectedId) {
+  const sel = selectedId ? categoryById(selectedId) : null;
+  let html = '';
+  if (sel && !sel.parent_slug && categoryHasChildren(sel.slug))
+    html += `<option value="${sel.id}" selected>${sel.icon} ${sel.name}</option>`;
+  html += topCategories().map(p => {
+    const kids = childCategories(p.slug);
+    if (kids.length)
+      return `<optgroup label="${p.icon} ${p.name}">` +
+        kids.map(c => `<option value="${c.id}" ${c.id == selectedId ? 'selected' : ''}>${c.icon} ${c.name}</option>`).join('') +
+        `</optgroup>`;
+    return `<option value="${p.id}" ${p.id == selectedId ? 'selected' : ''}>${p.icon} ${p.name}</option>`;
+  }).join('');
+  return html;
+}
+
+// Buka salah satu dari tiga menu: 'freelance' | 'digital' -> explore,
+// 'lowongan' -> job-requests (Open to Work).
+function goToMenu(menu) {
+  if (menu === 'lowongan') { goTo('job-requests'); return; }
+  sessionStorage.setItem('explore_menu', menu);
+  sessionStorage.setItem('explore_filter', 'semua');
+  goTo('explore');
 }
 
 // ===== TOAST =====
@@ -414,7 +463,7 @@ function listingCardHTML(l) {
         <span class="cat-tag" style="background:${cs.bg};color:${cs.color}">${l.category_icon||'📌'} ${l.category_name||'Umum'}</span>
         <div style="position:relative">
           <button onclick="event.stopPropagation();document.getElementById('share-panel-'+${l.id}).style.display=document.getElementById('share-panel-'+${l.id}).style.display==='none'?'flex':'none'" style="background:none;border:none;cursor:pointer;padding:.2rem .4rem;font-size:.85rem;color:var(--muted);border-radius:6px;transition:background .2s" onmouseover="this.style.background='var(--warm)'" onmouseout="this.style.background='none'" title="Bagikan">↗ Bagikan</button>
-          <div id="share-panel-${l.id}" style="display:none;position:absolute;right:0;top:110%;background:white;border:1.5px solid var(--border);border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,.12);padding:.5rem;flex-direction:column;gap:.3rem;z-index:10;min-width:160px">
+          <div id="share-panel-${l.id}" style="display:none;position:absolute;right:0;top:110%;background:var(--surface);border:1.5px solid var(--border);border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,.12);padding:.5rem;flex-direction:column;gap:.3rem;z-index:10;min-width:160px">
             <button onclick="event.stopPropagation();shareToTwitter(${l.id},'${l.title.replace(/'/g,'\\\'')}')" style="background:none;border:none;cursor:pointer;padding:.4rem .8rem;font-size:.8rem;text-align:left;border-radius:8px;display:flex;align-items:center;gap:.5rem;color:var(--ink);white-space:nowrap" onmouseover="this.style.background='var(--warm)'" onmouseout="this.style.background='none'">𝕏 Twitter / X</button>
             <button onclick="event.stopPropagation();shareToWhatsapp(${l.id},'${l.title.replace(/'/g,'\\\'')}')" style="background:none;border:none;cursor:pointer;padding:.4rem .8rem;font-size:.8rem;text-align:left;border-radius:8px;display:flex;align-items:center;gap:.5rem;color:var(--ink);white-space:nowrap" onmouseover="this.style.background='var(--warm)'" onmouseout="this.style.background='none'">💬 WhatsApp</button>
             <button onclick="event.stopPropagation();shareToLinkedin(${l.id},'${l.title.replace(/'/g,'\\\'')}')" style="background:none;border:none;cursor:pointer;padding:.4rem .8rem;font-size:.8rem;text-align:left;border-radius:8px;display:flex;align-items:center;gap:.5rem;color:var(--ink);white-space:nowrap" onmouseover="this.style.background='var(--warm)'" onmouseout="this.style.background='none'">💼 LinkedIn</button>
@@ -461,22 +510,22 @@ async function openListingDetail(id) {
   document.getElementById('listing-modal-body').innerHTML = `
     <span class="cat-tag" style="background:${cs.bg};color:${cs.color}">${l.category_icon} ${l.category_name}</span>
     <h2 style="font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;margin:.5rem 0 1rem;line-height:1.3">${l.title}</h2>
-    <div class="listing-description" style="font-size:.9rem;line-height:1.7;color:#333;margin-bottom:1.5rem">${l.description}</div>
+    <div class="listing-description" style="font-size:.9rem;line-height:1.7;color:var(--text);margin-bottom:1.5rem">${l.description}</div>
     <div class="card" style="margin-bottom:1rem">
       <div style="display:flex;align-items:center;gap:1rem">
         <div class="avatar" style="background:${av};width:48px;height:48px;font-size:1rem;flex-shrink:0">${ini}</div>
         <div style="flex:1">
           <div style="font-weight:700">${l.full_name} ${l.is_verified?'<span style="font-size:.7rem;color:var(--accent2)">✓ Terverifikasi</span>':''}</div>
           <div style="font-size:.8rem;color:var(--muted)">${l.user_city||''}</div>
-          ${l.bio?`<div style="font-size:.8rem;margin-top:.3rem;color:#555">${l.bio}</div>`:''}
+          ${l.bio?`<div style="font-size:.8rem;margin-top:.3rem;color:var(--muted)">${l.bio}</div>`:''}
         </div>
       </div>
     </div>
     <div style="display:flex;gap:1rem;align-items:center;justify-content:space-between;flex-wrap:wrap">
     <!-- Sample/Preview -->
-    ${l.sample_url ? `<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:.8rem;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between">
-      <span style="font-size:.85rem;color:#166534">👁️ Preview tersedia</span>
-      <a href="${l.sample_url}" target="_blank" class="btn btn-outline btn-sm" style="color:#166534;border-color:#bbf7d0">Lihat Preview →</a>
+    ${l.sample_url ? `<div class="notice notice-success" style="display:flex;align-items:center;justify-content:space-between">
+      <span style="font-size:.85rem">👁️ Preview tersedia</span>
+      <a href="${l.sample_url}" target="_blank" class="btn btn-outline btn-sm" style="color:var(--success-text);border-color:var(--success-border)">Lihat Preview →</a>
     </div>` : ''}
     <!-- Harga & CTA -->
     <div style="background:var(--warm);border-radius:12px;padding:1.2rem;margin-bottom:1rem">
@@ -510,7 +559,7 @@ async function openListingDetail(id) {
       ${l.faq.map(f => `
       <div style="border:1px solid var(--border);border-radius:10px;margin-bottom:.5rem;overflow:hidden">
         <div style="padding:.75rem 1rem;font-weight:600;font-size:.88rem;cursor:pointer;background:var(--warm)" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">${f.q}</div>
-        <div style="padding:.75rem 1rem;font-size:.85rem;color:#555;display:none">${f.a}</div>
+        <div style="padding:.75rem 1rem;font-size:.85rem;color:var(--muted);display:none">${f.a}</div>
       </div>`).join('')}
     </div>` : ''}
     </div>`;
@@ -526,9 +575,9 @@ async function checkDeliveryAccess(listingId) {
     const res = await api.get(`/listings/${listingId}/delivery`);
     if (res.url) {
       const wrap = document.getElementById(`download-btn-wrap-${listingId}`);
-      if (wrap) wrap.innerHTML = `<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:.8rem;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between">
-        <span style="font-size:.85rem;color:#166534">✅ Kamu sudah membeli produk ini</span>
-        <a href="${res.url}" target="_blank" class="btn btn-primary btn-sm" style="background:#166534">⬇️ Download</a>
+      if (wrap) wrap.innerHTML = `<div class="notice notice-success" style="display:flex;align-items:center;justify-content:space-between">
+        <span style="font-size:.85rem">✅ Kamu sudah membeli produk ini</span>
+        <a href="${res.url}" target="_blank" class="btn btn-primary btn-sm" style="background:var(--success)">⬇️ Download</a>
       </div>`;
     }
   } catch(e) {}
@@ -905,7 +954,7 @@ function confirmDelete(message, onConfirm) {
   const modal = document.createElement('div');
   modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:1rem';
   modal.innerHTML = `
-    <div style="background:white;border-radius:20px;padding:2rem;max-width:400px;width:100%;text-align:center">
+    <div style="background:var(--surface);border-radius:20px;padding:2rem;max-width:400px;width:100%;text-align:center">
       <div style="font-size:2.5rem;margin-bottom:1rem">⚠️</div>
       <h3 style="font-weight:700;margin-bottom:.5rem;color:var(--ink)">Konfirmasi Hapus</h3>
       <p style="color:var(--muted);font-size:.88rem;margin-bottom:1.5rem">${message}</p>
