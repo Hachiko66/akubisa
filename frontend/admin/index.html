@@ -11,9 +11,25 @@
   :root {
     --ink:#0f0e0d; --cream:#f5f0e8; --accent:#e8521a; --accent2:#2a6b4a;
     --accent3:#d4a017; --muted:#8a8070; --card:#ffffff; --border:#ddd8ce;
-    --warm:#faf7f2; --danger:#dc2626; --success:#16a34a;
+    --warm:#faf7f2; --danger:#dc2626; --success:#16a34a; --bg:#f1f5f9;
+    --accent-soft:#fff8f6; --accent-soft-border:#fcd8c8;
+    --success-bg:#f0fdf4; --success-border:#bbf7d0; --success-text:#166534;
+    --danger-bg:#fef2f2; --danger-border:#fecaca; --danger-text:#991b1b;
+    --warning-bg:#fffbeb; --warning-border:#fde68a; --warning-text:#854d0e;
+    --cyan-text:#0891b2; --violet-text:#7c3aed; --violet-border:#ddd6fe;
+    --surface-3:#f1f5f9;
   }
-  body { font-family:'Segoe UI',system-ui,sans-serif; background:#f1f5f9; color:var(--ink); }
+  [data-theme="dark"] {
+    --ink:#f1f5f9; --cream:#f5f0e8; --muted:#94a3b8; --card:#1e293b;
+    --border:#334155; --warm:#16213a; --bg:#0f172a;
+    --accent-soft:#2a2118; --accent-soft-border:#5b3a1e;
+    --success-bg:#052e16; --success-border:#14532d; --success-text:#4ade80;
+    --danger-bg:#450a0a; --danger-border:#7f1d1d; --danger-text:#fca5a5;
+    --warning-bg:#451a03; --warning-border:#78350f; --warning-text:#fde047;
+    --cyan-text:#22d3ee; --violet-text:#a78bfa; --violet-border:#4c1d95;
+    --surface-3:#243247;
+  }
+  body { font-family:'Segoe UI',system-ui,sans-serif; background:var(--bg); color:var(--ink); }
 
   /* LOGIN */
   #login-screen {
@@ -21,7 +37,7 @@
     background:linear-gradient(135deg,#0f0e0d 0%,#1a1a2e 100%);
   }
   .login-box {
-    background:white; border-radius:20px; padding:2.5rem;
+    background:var(--card); border-radius:20px; padding:2.5rem;
     width:100%; max-width:380px; box-shadow:0 20px 60px rgba(0,0,0,.4);
   }
   .login-box h1 { font-size:1.5rem; margin-bottom:.3rem; }
@@ -30,6 +46,7 @@
     width:100%; padding:.7rem 1rem; border:1.5px solid var(--border);
     border-radius:10px; font-size:.9rem; margin-bottom:1rem;
     transition:border-color .2s; outline:none;
+    background:var(--card); color:var(--ink);
   }
   .form-input:focus { border-color:var(--accent); }
   .btn-login {
@@ -42,8 +59,8 @@
   .logo-admin { font-size:1.4rem; font-weight:800; margin-bottom:1.5rem; display:block; }
   .logo-admin span { color:var(--accent); }
   .security-note {
-    margin-top:1rem; padding:.6rem; background:#fff8f6; border:1px solid #fcd8c8;
-    border-radius:8px; font-size:.72rem; color:#c2410c; text-align:center;
+    margin-top:1rem; padding:.6rem; background:var(--accent-soft); border:1px solid var(--accent-soft-border);
+    border-radius:8px; font-size:.72rem; color:var(--warning-text); text-align:center;
   }
 
   /* DASHBOARD */
@@ -70,7 +87,7 @@
   /* LAYOUT */
   .dashboard-body { display:flex; }
   .sidebar {
-    width:220px; min-height:calc(100vh - 52px); background:white;
+    width:220px; min-height:calc(100vh - 52px); background:var(--card);
     border-right:1px solid var(--border); padding:1rem 0; flex-shrink:0;
     position:sticky; top:52px; height:calc(100vh - 52px); overflow-y:auto;
   }
@@ -80,15 +97,15 @@
     border-left:3px solid transparent; transition:all .2s;
   }
   .sidebar-item:hover { background:var(--warm); color:var(--ink); }
-  .sidebar-item.active { background:#fff4f0; color:var(--accent); border-left-color:var(--accent); font-weight:700; }
+  .sidebar-item.active { background:var(--accent-soft); color:var(--accent); border-left-color:var(--accent); font-weight:700; }
   .sidebar-section { font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:var(--muted); padding:.8rem 1.2rem .3rem; }
 
   .main-content { flex:1; padding:2rem; min-width:0; }
 
   /* CARDS */
-  .card { background:white; border-radius:14px; padding:1.2rem; border:1px solid var(--border); }
+  .card { background:var(--card); border-radius:14px; padding:1.2rem; border:1px solid var(--border); }
   .stat-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:1rem; margin-bottom:1.5rem; }
-  .stat-card { background:white; border-radius:14px; padding:1.2rem; border:1px solid var(--border); border-left:4px solid var(--accent); }
+  .stat-card { background:var(--card); border-radius:14px; padding:1.2rem; border:1px solid var(--border); border-left:4px solid var(--accent); }
   .stat-label { font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); margin-bottom:.4rem; }
   .stat-value { font-size:2rem; font-weight:800; }
   .stat-sub { font-size:.75rem; color:var(--muted); margin-top:.2rem; }
@@ -103,11 +120,11 @@
 
   /* BADGES */
   .badge { display:inline-block; padding:.2rem .55rem; border-radius:100px; font-size:.7rem; font-weight:700; }
-  .badge-green  { background:#dcfce7; color:#166534; }
-  .badge-red    { background:#fee2e2; color:#991b1b; }
-  .badge-orange { background:#fff7ed; color:#c2410c; }
-  .badge-blue   { background:#dbeafe; color:#1e40af; }
-  .badge-purple { background:#f3e8ff; color:#6b21a8; }
+  .badge-green  { background:var(--success-bg); color:var(--success-text); }
+  .badge-red    { background:var(--danger-bg); color:var(--danger-text); }
+  .badge-orange { background:var(--warning-bg); color:var(--warning-text); }
+  .badge-blue   { background:var(--surface-3); color:var(--cyan-text); }
+  .badge-purple { background:var(--surface-3); color:var(--violet-text); }
 
   /* BUTTONS */
   .btn { padding:.4rem .9rem; border-radius:8px; font-size:.78rem; font-weight:600; cursor:pointer; border:1.5px solid transparent; transition:all .2s; }
@@ -124,6 +141,7 @@
   .search-row input, .search-row select {
     padding:.5rem .9rem; border:1.5px solid var(--border); border-radius:10px;
     font-size:.83rem; outline:none; transition:border-color .2s;
+    background:var(--card); color:var(--ink);
   }
   .search-row input:focus, .search-row select:focus { border-color:var(--accent); }
 
@@ -133,7 +151,7 @@
 
   /* TAB BUTTONS */
   .tab-row { display:flex; gap:.5rem; margin-bottom:1.2rem; flex-wrap:wrap; }
-  .tab-btn { padding:.4rem 1rem; border-radius:100px; font-size:.8rem; font-weight:600; cursor:pointer; border:1.5px solid var(--border); background:white; color:var(--muted); transition:all .2s; }
+  .tab-btn { padding:.4rem 1rem; border-radius:100px; font-size:.8rem; font-weight:600; cursor:pointer; border:1.5px solid var(--border); background:var(--card); color:var(--muted); transition:all .2s; }
   .tab-btn.active { background:var(--accent); color:white; border-color:var(--accent); }
 
   /* TOAST */
@@ -183,6 +201,7 @@
     </div>
     <div class="topbar-right">
       <span class="admin-name" id="admin-display-name">-</span>
+      <button class="btn-logout" id="admin-theme-btn" onclick="toggleAdminTheme()">🌙 Gelap</button>
       <button class="btn-logout" onclick="adminLogout()">Keluar</button>
     </div>
   </div>
@@ -349,10 +368,11 @@
         <h2 style="margin-bottom:1.5rem">🗂 Kelola Kategori</h2>
         <div class="card" style="margin-bottom:1.5rem">
           <div style="font-weight:700;margin-bottom:1rem">Tambah Kategori Baru</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:.8rem;align-items:end">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:.8rem;align-items:end">
             <div><label style="font-size:.8rem;color:var(--muted)">Nama</label><input class="form-input" id="cat-name" placeholder="Desain Grafis"></div>
             <div><label style="font-size:.8rem;color:var(--muted)">Slug</label><input class="form-input" id="cat-slug" placeholder="desain-grafis"></div>
             <div><label style="font-size:.8rem;color:var(--muted)">Icon Emoji</label><input class="form-input" id="cat-icon" placeholder="🎨"></div>
+            <div><label style="font-size:.8rem;color:var(--muted)">Induk (opsional)</label><select class="form-select" id="cat-parent"><option value="">— Tanpa induk (menu utama) —</option></select></div>
             <button class="btn btn-primary" onclick="addCategory()">Tambah</button>
           </div>
         </div>
@@ -396,6 +416,9 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+// Tema gelap/terang — memakai preferensi tersimpan yang sama dengan aplikasi utama (akubisa_theme)
+(function(){const t=localStorage.getItem('akubisa_theme');if(t)document.documentElement.setAttribute('data-theme',t);const b=document.getElementById('admin-theme-btn');if(b)b.textContent=(t==='dark')?'☀️ Terang':'🌙 Gelap';})();
+function toggleAdminTheme(){const cur=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',cur);localStorage.setItem('akubisa_theme',cur);const b=document.getElementById('admin-theme-btn');if(b)b.textContent=cur==='dark'?'☀️ Terang':'🌙 Gelap';}
 const API = '/api';
 let adminToken = sessionStorage.getItem('admin_token'); // sessionStorage, bukan localStorage!
 let adminUser  = JSON.parse(sessionStorage.getItem('admin_user') || 'null');
@@ -528,9 +551,9 @@ async function loadOverview() {
         <div class="stat-value" style="color:var(--danger)">${stats.reports?.pending||0}</div>
         <div class="stat-sub">Pending moderasi</div>
       </div>
-      <div class="stat-card" style="border-left-color:#8b5cf6">
+      <div class="stat-card" style="border-left-color:var(--violet-text)">
         <div class="stat-label">Rating Platform</div>
-        <div class="stat-value" style="color:#8b5cf6">${stats.reviews?.avg||'-'}</div>
+        <div class="stat-value" style="color:var(--violet-text)">${stats.reviews?.avg||'-'}</div>
         <div class="stat-sub">${stats.reviews?.total||0} ulasan</div>
       </div>`;
 
@@ -783,18 +806,19 @@ async function loadWithdrawals() {
       el.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--muted)">Tidak ada request withdraw.</div>';
       return;
     }
-    const stColor = { pending:'#d97706', approved:'var(--success)', rejected:'var(--danger)' };
+    const stColor = { pending:'var(--warning-text)', approved:'var(--success)', rejected:'var(--danger)' };
     el.innerHTML = `<table class="table">
-      <thead><tr><th>User</th><th>Bank</th><th>No. Rekening</th><th>Jumlah</th><th>Status</th><th>Tanggal</th><th>Aksi</th></tr></thead>
+      <thead><tr><th>User</th><th>Alamat Solana</th><th>USDC / Tx</th><th>Jumlah</th><th>Status</th><th>Tanggal</th><th>Aksi</th></tr></thead>
       <tbody>${res.map(w => `<tr>
         <td><strong>${w.full_name}</strong><br><small style="color:var(--muted)">${w.email}</small></td>
-        <td>${w.bank_name}</td>
-        <td>${w.account_number}<br><small>${w.account_name}</small></td>
+        <td style="font-size:.78rem;word-break:break-all">${w.solana_address ? (w.solana_address.slice(0, 8) + '…' + w.solana_address.slice(-6)) : '-'}</td>
+        <td style="font-size:.78rem">${w.usdc_amount ? ((parseInt(w.usdc_amount)/1e6).toLocaleString('en-US',{maximumFractionDigits:6}) + ' USDC') : (w.usdc_estimate ? ('≈ ' + (parseInt(w.usdc_estimate)/1e6).toLocaleString('en-US',{maximumFractionDigits:6}) + ' USDC') : '-')}${w.tx_signature?`<br><small style="color:var(--muted)">Tx: ${w.tx_signature.slice(0, 10)}…${w.tx_signature.slice(-6)}</small>`:''}</td>
         <td><strong>Rp ${parseInt(w.amount).toLocaleString('id')}</strong></td>
-        <td><span style="color:${stColor[w.status]||'#888'};font-weight:700">${w.status}</span>${w.admin_note?`<br><small>${w.admin_note}</small>`:''}</td>
+        <td><span style="color:${stColor[w.status]||'var(--muted)'};font-weight:700">${w.status}</span>${w.admin_note?`<br><small>${w.admin_note}</small>`:''}</td>
         <td>${new Date(w.created_at).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'})}</td>
         <td>${w.status==='pending'?`
-          <button class="btn btn-sm" style="background:var(--success);color:white;margin-bottom:.3rem" onclick="approveWithdraw(${w.id})">✅ Approve</button><br>
+          <button class="btn btn-sm" style="background:var(--success);color:white;margin-bottom:.3rem" onclick="approveWithdraw(${w.id})">✅ Approve & Kirim USDC</button><br>
+          <button class="btn btn-sm" style="margin-bottom:.3rem" onclick="recordTxWithdraw(${w.id})">📝 Catat Tx Manual</button><br>
           <button class="btn btn-sm" style="background:var(--danger);color:white" onclick="rejectWithdraw(${w.id})">❌ Tolak</button>
         `:'-'}</td>
       </tr>`).join('')}</tbody></table>`;
@@ -805,9 +829,19 @@ async function loadWithdrawals() {
 
 async function approveWithdraw(id) {
   const note = prompt('Catatan (opsional):') || '';
-  if (!confirm('Approve withdraw ini?')) return;
+  if (!confirm('Approve withdraw ini? USDC akan dikirim dari wallet escrow ke alamat payout worker.')) return;
   const res = await apiFetch(`/admin/withdrawals/${id}/approve`, 'PATCH', { admin_note: note });
-  showToast(res.message || 'Berhasil!', 'success');
+  showToast(res.message || 'Berhasil!', res.tx_signature ? 'success' : 'error');
+  loadWithdrawals();
+}
+
+// Catat signature pengiriman USDC manual (fallback bila admin mengirim
+// dari wallet escrow di luar backend). Signature diverifikasi on-chain.
+async function recordTxWithdraw(id) {
+  const sig = prompt('Tempel signature transaksi USDC yang sudah kamu kirim manual:');
+  if (!sig || !sig.trim()) return;
+  const res = await apiFetch(`/admin/withdrawals/${id}/record-tx`, 'POST', { tx_signature: sig.trim() });
+  showToast(res.message || 'Berhasil!', res.tx_signature ? 'success' : 'error');
   loadWithdrawals();
 }
 
@@ -867,12 +901,12 @@ async function loadTransactions() {
     const res = await apiFetch('/admin/transactions');
     if (!res) return;
     const { transactions, stats } = res;
-    const stColor = { waiting_dp:'#94a3b8', dp_paid:'#0891b2', submitted:'#d97706', waiting_final:'#7c3aed', completed:'var(--success)', disputed:'var(--danger)', refunded:'#94a3b8', cancelled:'#94a3b8' };
+    const stColor = { waiting_dp:'var(--muted)', dp_paid:'var(--cyan-text)', submitted:'var(--warning-text)', waiting_final:'var(--violet-text)', completed:'var(--success)', disputed:'var(--danger)', refunded:'var(--muted)', cancelled:'var(--muted)' };
     statsEl.innerHTML = `
       <div class="stat-card"><div class="stat-value">${stats.total||0}</div><div class="stat-label">Total</div></div>
       <div class="stat-card"><div class="stat-value" style="color:var(--success)">${stats.completed||0}</div><div class="stat-label">Selesai</div></div>
       <div class="stat-card"><div class="stat-value" style="color:var(--danger)">${stats.disputed||0}</div><div class="stat-label">Dispute</div></div>
-      <div class="stat-card"><div class="stat-value" style="color:#d97706">${stats.pending||0}</div><div class="stat-label">Menunggu DP</div></div>
+      <div class="stat-card"><div class="stat-value" style="color:var(--warning-text)">${stats.pending||0}</div><div class="stat-label">Menunggu DP</div></div>
       <div class="stat-card"><div class="stat-value" style="color:var(--accent2);font-size:1rem">Rp ${parseInt(stats.total_fee||0).toLocaleString('id')}</div><div class="stat-label">Total Fee</div></div>`;
     if (!transactions.length) { el.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--muted)">Belum ada transaksi.</div>'; return; }
     el.innerHTML = `<table class="table">
@@ -883,7 +917,7 @@ async function loadTransactions() {
         <td>${t.worker_name}</td>
         <td>Rp ${parseInt(t.total_amount).toLocaleString('id')}</td>
         <td>Rp ${parseInt(t.platform_fee).toLocaleString('id')}</td>
-        <td><span style="font-size:.75rem;font-weight:700;color:${stColor[t.status]||'#888'}">${t.status}</span></td>
+        <td><span style="font-size:.75rem;font-weight:700;color:${stColor[t.status]||'var(--muted)'}">${t.status}</span></td>
         <td>${new Date(t.created_at).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'})}</td>
       </tr>`).join('')}</tbody></table>`;
   } catch(e) {
@@ -975,7 +1009,7 @@ async function loadBoostOrders(filter='active') {
       <td>${b.user_name||'-'}</td>
       <td>${b.package}</td>
       <td>Rp ${parseInt(b.amount).toLocaleString('id-ID')}</td>
-      <td><span style="background:${b.status==='active'?'#f0fdf4':b.status==='pending'?'#fef9c3':'#f3f4f6'};color:${b.status==='active'?'#166534':b.status==='pending'?'#854d0e':'#6b7280'};padding:.2rem .6rem;border-radius:100px;font-size:.75rem;font-weight:600">${b.status}</span></td>
+      <td><span style="background:${b.status==='active'?'var(--success-bg)':b.status==='pending'?'var(--warning-bg)':'var(--surface-3)'};color:${b.status==='active'?'var(--success-text)':b.status==='pending'?'var(--warning-text)':'var(--muted)'};padding:.2rem .6rem;border-radius:100px;font-size:.75rem;font-weight:600">${b.status}</span></td>
       <td>${b.started_at ? new Date(b.started_at).toLocaleDateString('id-ID') : '-'}</td>
       <td>${b.expires_at ? new Date(b.expires_at).toLocaleDateString('id-ID') : '-'}</td>
     </tr>`).join('')}
@@ -989,14 +1023,23 @@ async function loadCategories() {
   el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted)">Memuat...</div>';
   try {
     const data = await apiFetch('/categories');
+    // Isi dropdown induk (hanya menu utama) di form tambah kategori
+    const parentSel = document.getElementById('cat-parent');
+    if (parentSel) {
+      const cur = parentSel.value;
+      parentSel.innerHTML = '<option value="">— Tanpa induk (menu utama) —</option>' +
+        data.filter(c => !c.parent_slug).map(c => `<option value="${c.slug}">${c.icon} ${c.name}</option>`).join('');
+      parentSel.value = cur;
+    }
     el.innerHTML = `<table class="admin-table"><thead><tr>
-      <th>ID</th><th>Icon</th><th>Nama</th><th>Slug</th><th>Listings</th><th>Aksi</th>
+      <th>ID</th><th>Icon</th><th>Nama</th><th>Slug</th><th>Induk</th><th>Listings</th><th>Aksi</th>
     </tr></thead><tbody>
     ${data.map(c => `<tr>
       <td>${c.id}</td>
       <td style="font-size:1.5rem">${c.icon}</td>
       <td>${c.name}</td>
       <td>${c.slug}</td>
+      <td>${c.parent_slug ? (data.find(p => p.slug === c.parent_slug)?.name || c.parent_slug) : '—'}</td>
       <td>${c.listing_count||0}</td>
       <td><button class="btn btn-danger btn-sm" onclick="deleteCategory(${c.id},'${c.name}')">Hapus</button></td>
     </tr>`).join('')}
@@ -1008,9 +1051,10 @@ async function addCategory() {
   const name = document.getElementById('cat-name').value.trim();
   const slug = document.getElementById('cat-slug').value.trim();
   const icon = document.getElementById('cat-icon').value.trim();
+  const parent_slug = document.getElementById('cat-parent')?.value || null;
   if (!name || !slug || !icon) { showToast('Semua field wajib diisi', 'error'); return; }
-  const res = await apiFetch('/admin/categories', 'POST', { name, slug, icon });
-  if (res.id) { showToast('Kategori ditambahkan!', 'success'); loadCategories(); document.getElementById('cat-name').value=''; document.getElementById('cat-slug').value=''; document.getElementById('cat-icon').value=''; }
+  const res = await apiFetch('/admin/categories', 'POST', { name, slug, icon, parent_slug });
+  if (res.id) { showToast('Kategori ditambahkan!', 'success'); loadCategories(); document.getElementById('cat-name').value=''; document.getElementById('cat-slug').value=''; document.getElementById('cat-icon').value=''; if (document.getElementById('cat-parent')) document.getElementById('cat-parent').value=''; }
   else showToast(res.message||'Gagal', 'error');
 }
 
