@@ -11,7 +11,11 @@
 |---|---|
 | Rel bayar | Transfer USDC (SPL token) di Solana ke wallet escrow platform |
 | Harga di sistem | Tetap **Rupiah (Rp)** — USDC hanya alat bayar |
-| Fee platform | **10%** dari nilai transaksi, dibebankan ke **client** di atas harga worker (naik dari 5%, 2026-11-23). Default bisa di-override env `PLATFORM_FEE_PERCENT` |
+| Fee platform | **5%** dari nilai transaksi, dibebankan ke **client** di atas harga worker (sempat 10% di ronde crypto, dikembalikan ke 5% per keputusan produk 2026-11-23). Default bisa di-override env `PLATFORM_FEE_PERCENT` |
+| Fee produk digital | **5%** dari harga, dibebankan ke **pembeli** di atas harga; penjual menerima harga penuh, fee mengendap di escrow |
+| Biaya penarikan | **1%** dari jumlah withdraw (min Rp1.000, maks Rp10.000); dipotong dari yang dikirim, fee tetap di escrow; **gratis untuk member Pro** |
+| AkuBisa Pro | **Rp49.000 / 30 hari**: badge PRO, listing tampil lebih dulu, bebas biaya penarikan |
+| Masa berlaku kunci kurs | **24 jam** sejak `rate_locked_at`; kunci kedaluwarsa ditolak verify-payment, disegarkan saat pembayaran dibuka lagi |
 | DP | 50% dari tagihan (harga + fee); pelunasan 50% sisanya |
 | Minimum transaksi | Rp 10.000 (tetap) |
 | Minimum withdraw | Rp 50.000 (tetap) |
@@ -63,8 +67,9 @@ Admin approve → backend kirim USDC dari escrow ke alamat payout Solana worker
   (`usdc_rate_locked`, `rate_locked_at`). **Verifikasi pembayaran
   on-chain harus cocok persis dengan jumlah yang terkunci itu.**
 - Produk digital dan boost mengunci kurs dengan cara yang sama saat
-  order dibuat. Produk digital **tidak dikenai fee** (keputusan produk):
-  penjual menerima harga penuh.
+  order dibuat. Produk digital dikenai fee **5%** (keputusan produk
+  2026-11-23): pembeli membayar harga + 5%, penjual menerima harga
+  penuh; fee mengendap di escrow sebagai pemasukan platform.
 
 ## 4. Verifikasi pembayaran on-chain
 
@@ -240,7 +245,7 @@ submitted ──(7 hari tanpa respon)──▶ completed (auto-release, job tiap
 - **Baru:** `backend/utils/solana.js` (kurs, konversi, verifikasi
   on-chain, kirim USDC, keypair), `docs/pembayaran-solana.md` (file ini).
 - **Diubah:** `backend/package.json` (+`@solana/web3.js`,
-  `@solana/spl-token`), `backend/routes/transactions.js` (fee 10%,
+  `@solana/spl-token`), `backend/routes/transactions.js` (fee 5%,
   rate lock, `payment-info`, `verify-payment`),
   `backend/routes/wallet.js` (withdraw USDC),
   `backend/routes/admin.js` (approve withdraw kirim USDC +
@@ -250,9 +255,9 @@ submitted ──(7 hari tanpa respon)──▶ completed (auto-release, job tiap
   + `verify-payment`), `backend/routes/boost.js` (beli boost USDC +
   `verify-payment` + featured benar-benar aktif),
   `backend/server.js` (hapus mount Pakasir; pesan auto-release),
-  `backend/utils/ledger.js` (komentar fee 10%),
+  `backend/utils/ledger.js` (komentar fee 5%),
   `backend/config/schema.sql` (kolom/tabel USDC),
   `backend/.env.example` (variabel Solana),
   frontend: `js/pages.js`, `js/features.js`, `js/api.js`, `js/app.js`,
   `js/i18n.js`, `index.html` (alir bayar USDC, peringatan
-  off-platform, fee 10%, withdraw Solana).
+  off-platform, fee 5%, withdraw Solana).
