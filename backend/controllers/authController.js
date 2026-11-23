@@ -158,6 +158,10 @@ exports.me = async (req, res) => {
       [req.user.id]
     );
     if (!result.rows.length) return res.status(404).json({ message: 'User tidak ditemukan' });
-    res.json(result.rows[0]);
+    const u = result.rows[0];
+    // Status Pro (lazy check; false bila tabel subscriptions belum ada)
+    const { isPro } = require('../utils/revenue');
+    u.is_pro = await isPro(pool, req.user.id);
+    res.json(u);
   } catch(e) { res.status(500).json({ message: e.message }); }
 };
