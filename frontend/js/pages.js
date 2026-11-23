@@ -25,10 +25,10 @@ function renderSocialLinks(profile, darkMode=false) {
 async function renderHome() {
   // Landing page pakai static HTML — hanya isi elemen dinamis
   try {
-    // Kategori grid di landing
+    // Kategori grid di landing: hanya menu utama (induk + tanpa induk)
     const catGrid = document.getElementById('home-categories');
     if (catGrid && categories.length) {
-      catGrid.innerHTML = categories.map(c =>
+      catGrid.innerHTML = topCategories().map(c =>
         `<div class="cat-card" onclick="filterAndGo('${c.slug}')">
           <div class="cat-icon">${c.icon}</div>
           <div class="cat-name">${c.name}</div>
@@ -42,22 +42,72 @@ async function renderHome() {
 
 
 function filterAndGo(slug) {
-  sessionStorage.setItem('explore_filter', slug);
+  // Kartu menu utama -> buka explore di menu itu; kartu biasa -> filter
+  if (categoryHasChildren(slug)) {
+    sessionStorage.setItem('explore_menu', slug);
+    sessionStorage.setItem('explore_filter', 'semua');
+  } else sessionStorage.setItem('explore_filter', slug);
   goTo('explore');
 }
 
 // ===== EXPLORE PAGE =====
 let exploreFilter = 'semua';
+let exploreMenu = 'semua';
 let exploreSearch = '';
 
 async function renderExplore() {
+  const savedMenu = sessionStorage.getItem('explore_menu');
+  if (savedMenu) { exploreMenu = savedMenu; exploreFilter = 'semua'; sessionStorage.removeItem('explore_menu'); }
   const saved = sessionStorage.getItem('explore_filter');
-  if (saved) { exploreFilter = saved; sessionStorage.removeItem('explore_filter'); }
-  const chipWrap = document.getElementById('explore-chips');
-  chipWrap.innerHTML =
-    `<div class="chip ${exploreFilter==='semua'?'active':''}" onclick="setExploreFilter('semua',this)">${t('filter_all')}</div>` +
-    categories.map(c=>`<div class="chip ${exploreFilter===c.slug?'active':''}" onclick="setExploreFilter('${c.slug}',this)">${c.icon} ${c.name}</div>`).join('');
+  if (saved) {
+    // Filter tersimpan bisa berupa slug induk -> jadikan menu
+    if (categoryHasChildren(saved)) { exploreMenu = saved; exploreFilter = 'semua'; }
+    else { exploreFilter = saved; exploreMenu = 'semua'; }
+    sessionStorage.removeItem('explore_filter');
+  }
+  renderExploreMenuTabs();
+  renderExploreChips();
   await fetchExplore();
+}
+
+// Baris tab menu: Semua + menu utama (induk + kategori tanpa induk)
+function renderExploreMenuTabs() {
+  const wrap = document.getElementById('explore-menu-tabs');
+  if (!wrap) return;
+  const tabs = [{ slug:'semua', name: t('filter_all'), icon:'' }, ...topCategories()];
+  wrap.innerHTML = tabs.map(m =>
+    `<div class="chip ${exploreMenu===m.slug?'active':''}" onclick="setExploreMenu('${m.slug}',this)">${m.icon ? m.icon+' ' : ''}${m.name}</div>`).join('');
+}
+
+// Baris chip subkategori: anak dari menu yang dipilih; bila menu
+// 'semua', chip = semua kategori utama (klik induk -> pindah menu).
+function renderExploreChips() {
+  const chipWrap = document.getElementById('explore-chips');
+  if (!chipWrap) return;
+  if (exploreMenu === 'semua') {
+    chipWrap.innerHTML =
+      `<div class="chip ${exploreFilter==='semua'?'active':''}" onclick="setExploreFilter('semua',this)">${t('filter_all')}</div>` +
+      topCategories().map(c=>`<div class="chip ${exploreFilter===c.slug?'active':''}" onclick="setExploreFilter('${c.slug}',this)">${c.icon} ${c.name}</div>`).join('');
+    return;
+  }
+  const parent = categoryBySlug(exploreMenu);
+  const kids = childCategories(exploreMenu);
+  if (!kids.length) {
+    // Menu tanpa anak (kategori datar): satu chip saja
+    chipWrap.innerHTML = `<div class="chip active">${parent ? parent.icon+' '+parent.name : exploreMenu}</div>`;
+    return;
+  }
+  chipWrap.innerHTML =
+    `<div class="chip ${exploreFilter==='semua'?'active':''}" onclick="setExploreFilter('semua',this)">${t('filter_all')} ${parent ? parent.name : ''}</div>` +
+    kids.map(c=>`<div class="chip ${exploreFilter===c.slug?'active':''}" onclick="setExploreFilter('${c.slug}',this)">${c.icon} ${c.name}</div>`).join('');
+}
+
+function setExploreMenu(menu, el) {
+  exploreMenu = menu;
+  exploreFilter = 'semua';
+  renderExploreMenuTabs();
+  renderExploreChips();
+  fetchExplore(true);
 }
 
 let explorePage = 1;
@@ -75,7 +125,10 @@ async function fetchExplore(reset = true) {
   exploreLoading = true;
 
   let params = `limit=${EXPLORE_LIMIT}&page=${explorePage}`;
+  // Subkategori terpilih didahulukan; kalau tidak ada, pakai menu
+  // (induk) — backend mengembangkannya ke semua subkategorinya.
   if (exploreFilter !== 'semua') params += `&category=${exploreFilter}`;
+  else if (exploreMenu !== 'semua') params += `&category=${exploreMenu}`;
   if (exploreSearch) params += `&search=${encodeURIComponent(exploreSearch)}`;
   const sort = document.getElementById('explore-sort')?.value;
   const city = document.getElementById('explore-city')?.value;
@@ -132,9 +185,10 @@ const scrollObserver = new IntersectionObserver((entries) => {
 }, { threshold: 0.1 });
 
 function setExploreFilter(slug, el) {
+  // Klik chip induk di baris 'semua' -> pindah ke menu induk itu
+  if (slug !== 'semua' && categoryHasChildren(slug)) { setExploreMenu(slug); return; }
   exploreFilter = slug;
-  document.querySelectorAll('#explore-chips .chip').forEach(c=>c.classList.remove('active'));
-  if (el) el.classList.add('active');
+  renderExploreChips();
   fetchExplore();
 }
 
@@ -160,8 +214,8 @@ function renderQuickActions() {
   const isWorker = currentUser.role === 'worker';
   const isVerified = currentUser.is_verified;
   const kycBtn = isVerified
-    ? `<button class="btn btn-sm" style="background:#f0fdf4;color:#166534;border:1.5px solid #bbf7d0;border-radius:100px;padding:.35rem .8rem;font-size:.75rem;cursor:default">✅ ${t('profile_verified')}</button>`
-    : `<button class="btn btn-sm" style="background:#fef9c3;color:#854d0e;border:1.5px solid #fde047;border-radius:100px;padding:.35rem .8rem;font-size:.75rem;cursor:pointer;font-weight:600" onclick="openKycModal()">🪪 ${t('dash_kyc_btn')}</button>`;
+    ? `<button class="btn btn-sm pill-success" style="cursor:default">✅ ${t('profile_verified')}</button>`
+    : `<button class="btn btn-sm pill-warning" style="cursor:pointer;font-weight:600" onclick="openKycModal()">🪪 ${t('dash_kyc_btn')}</button>`;
   el.innerHTML = isWorker ? `
     ${kycBtn}
     <button class="btn btn-primary btn-sm" onclick="openPostModal()">⚡ ${t('dash_post_listing')}</button>
@@ -320,7 +374,7 @@ async function openPostModal() {
   editListingId = null;
   document.getElementById('post-modal-title').textContent = t('post_modal_title');
   document.getElementById('post-form').reset();
-  document.getElementById('post-category').innerHTML = categories.map(c=>`<option value="${c.id}">${c.icon} ${c.name}</option>`).join('');
+  document.getElementById('post-category').innerHTML = categoryOptionsHTML();
   document.getElementById('post-modal').classList.add('open');
   setTimeout(initQuillEditor, 100);
 }
@@ -329,7 +383,7 @@ async function openEditListing(id) {
   editListingId = id;
   const l = await api.getListing(id);
   document.getElementById('post-modal-title').textContent = t('btn_edit_listing');
-  document.getElementById('post-category').innerHTML = categories.map(c=>`<option value="${c.id}" ${c.id==l.category_id?'selected':''}>${c.icon} ${c.name}</option>`).join('');
+  document.getElementById('post-category').innerHTML = categoryOptionsHTML(l.category_id);
   document.getElementById('post-title').value = l.title;
   document.getElementById('post-desc').value = l.description;
   if (typeof setQuillContent === 'function') setQuillContent(l.description);
@@ -384,6 +438,8 @@ function openEditProfile() {
   document.getElementById('ep-bio').value   = u.bio || '';
   document.getElementById('ep-city').value  = u.city || '';
   document.getElementById('ep-phone').value = u.phone || '';
+  const epSol = document.getElementById('ep-solana');
+  if (epSol) epSol.value = u.solana_address || '';
   document.getElementById('ep-error').textContent = '';
   // Set avatar preview
   const preview = document.getElementById('avatar-preview');
@@ -443,7 +499,8 @@ async function saveProfile() {
   const social_tiktok   = document.getElementById('ep-tiktok')?.value.trim() || '';
   const social_youtube  = document.getElementById('ep-youtube')?.value.trim() || '';
   const social_telegram = document.getElementById('ep-telegram')?.value.trim() || '';
-  const res = await api.updateProfile({ full_name, bio, city, phone, social_twitter, social_linkedin, social_github, social_tiktok, social_youtube, social_telegram });
+  const solana_address  = document.getElementById('ep-solana')?.value.trim() || '';
+  const res = await api.updateProfile({ full_name, bio, city, phone, social_twitter, social_linkedin, social_github, social_tiktok, social_youtube, social_telegram, solana_address });
   btn.innerHTML = t('profile_save'); btn.disabled = false;
   if (res.token) {
     localStorage.setItem('akubisa_token', res.token);
@@ -701,6 +758,8 @@ async function renderPublicProfile(userId) {
     renderReviewList(reviewData.reviews || []);
     // Portfolio
     loadPublicPortfolio(userId);
+    // Follow: jumlah pengikut/diikuti + status tombol Ikuti
+    loadPubFollowInfo(userId);
   } catch(e) { console.error('renderPublicProfile error:', e); }
 }
 
@@ -715,13 +774,13 @@ async function loadPublicPortfolio(userId) {
     grid.innerHTML = items.map((p,pi) => {
       const photosJson = JSON.stringify(p.photos||[]).replace(/"/g,'&quot;');
       return `
-      <div style="background:white;border:1.5px solid var(--border);border-radius:14px;overflow:hidden;transition:box-shadow .2s;cursor:pointer" onclick="openPortoViewer(${pi})" onmouseover="this.style.boxShadow='0 4px 20px rgba(0,0,0,.1)'" onmouseout="this.style.boxShadow='none'">
+      <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:14px;overflow:hidden;transition:box-shadow .2s;cursor:pointer" onclick="openPortoViewer(${pi})" onmouseover="this.style.boxShadow='0 4px 20px rgba(0,0,0,.1)'" onmouseout="this.style.boxShadow='none'">
         ${p.photos&&p.photos.length
           ? `<div style="position:relative;height:180px;overflow:hidden">
               <img src="${p.photos[0]}" style="width:100%;height:100%;object-fit:cover">
               ${p.photos.length>1?`<span style="position:absolute;bottom:.4rem;right:.4rem;background:rgba(0,0,0,.55);color:white;font-size:.65rem;padding:.2rem .45rem;border-radius:100px">+${p.photos.length-1} foto</span>`:''}
             </div>`
-          : `<div style="height:90px;background:linear-gradient(135deg,var(--warm),#e8e0d5);display:flex;align-items:center;justify-content:center;font-size:2.5rem">🗂️</div>`}
+          : `<div style="height:90px;background:linear-gradient(135deg,var(--warm),var(--surface-3));display:flex;align-items:center;justify-content:center;font-size:2.5rem">🗂️</div>`}
         <div style="padding:.9rem 1rem 1rem">
           <div style="font-weight:700;font-size:.92rem;margin-bottom:.3rem;line-height:1.3">${p.title}</div>
           ${p.description?`<p style="font-size:.78rem;color:var(--muted);line-height:1.5;margin-bottom:.5rem;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden">${p.description}</p>`:''}
@@ -864,7 +923,7 @@ function renderReviewList(reviews) {
           </div>
         </div>
         ${r.listing_title ? `<div style="font-size:.72rem;color:var(--accent);margin-bottom:.4rem">Re: ${r.listing_title}</div>` : ''}
-        ${r.comment ? `<p style="font-size:.83rem;color:#444;line-height:1.55">${r.comment}</p>` : ''}
+        ${r.comment ? `<p style="font-size:.83rem;color:var(--text);line-height:1.55">${r.comment}</p>` : ''}
       </div>`;
   }).join('');
 }
@@ -959,10 +1018,20 @@ function resetExploreFilters() {
   document.getElementById('explore-price-max').value = '';
   document.getElementById('explore-search').value = '';
   exploreSearch = '';
+  exploreMenu = 'semua';
+  exploreFilter = 'semua';
+  sessionStorage.removeItem('explore_menu');
+  renderExploreMenuTabs();
+  renderExploreChips();
   fetchExplore(true);
 }
 
-function loadExplore(cat) { if(cat) exploreFilter = cat; renderExplore(); }
+function loadExplore(cat) {
+  if (!cat) return;
+  if (categoryHasChildren(cat)) { exploreMenu = cat; exploreFilter = 'semua'; }
+  else exploreFilter = cat;
+  renderExplore();
+}
 
 // ===== AKU BUTUH / JOB REQUESTS =====
 let jobPage = 1;
@@ -974,11 +1043,15 @@ let jobFilter = 'semua';
 async function renderJobRequests() {
   jobPage = 1; jobHasMore = true; jobSearch = ''; jobFilter = 'semua';
   
-  // Render category chips
+  // Render category chips: subkategori menu Open to Work (induk
+  // 'lowongan'). Fallback ke semua kategori bila subkategori belum
+  // ada (mis. migrasi DB belum jalan) supaya chip tidak kosong.
   const chipsEl = document.getElementById('job-chips');
-  if (chipsEl && categories.length) {
+  const otw = childCategories('lowongan');
+  const chipCats = otw.length ? otw : categories;
+  if (chipsEl && chipCats.length) {
     chipsEl.innerHTML = `<span class="chip active" onclick="setJobFilter('semua',this)">${t('filter_all')}</span>` +
-      categories.map(c => `<span class="chip" onclick="setJobFilter('${c.slug}',this)">${c.icon} ${c.name}</span>`).join('');
+      chipCats.map(c => `<span class="chip" onclick="setJobFilter('${c.slug}',this)">${c.icon} ${c.name}</span>`).join('');
   }
   await fetchJobRequests(true);
 }
@@ -1060,7 +1133,7 @@ function jobRequestCardHTML(r) {
     <div class="listing-card" onclick="openJobDetail(${r.id})" style="cursor:pointer;border-left:3px solid var(--accent2)">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.5rem">
         <span class="cat-tag" style="background:${cs.bg};color:${cs.color}">${r.category_icon||'🙋'} ${r.category_name||'Umum'}</span>
-        <span style="font-size:.7rem;color:var(--accent2);font-weight:700;background:#f0fdf4;padding:.15rem .5rem;border-radius:100px">BUTUH JASA</span>
+        <span style="font-size:.7rem;color:var(--accent2);font-weight:700;background:var(--success-bg);padding:.15rem .5rem;border-radius:100px">BUTUH JASA</span>
       </div>
       <div style="font-weight:700;font-size:.95rem;margin-bottom:.4rem;line-height:1.3">${r.title}</div>
       <p style="font-size:.8rem;color:var(--muted);margin-bottom:.8rem;line-height:1.55">${r.description.slice(0,100)}${r.description.length>100?'…':''}</p>
@@ -1135,10 +1208,10 @@ function closeJobDetailModal() { document.getElementById('job-detail-modal').cla
 
 function openPostJobModal() {
   if (!currentUser) { goTo('login'); return; }
-  // Populate kategori
+  // Populate kategori (dikelompokkan per menu)
   const sel = document.getElementById('job-category');
   sel.innerHTML = '<option value="">-- Pilih Kategori --</option>' +
-    categories.map(c => `<option value="${c.id}">${c.icon} ${c.name}</option>`).join('');
+    categoryOptionsHTML();
   document.getElementById('job-title').value = '';
   document.getElementById('job-desc').value = '';
   document.getElementById('job-budget-min').value = '';
@@ -1237,9 +1310,9 @@ async function viewMyApplications(jobId) {
                 <div style="font-weight:700;font-size:.88rem">${a.full_name}</div>
                 <div style="font-size:.72rem;color:var(--muted)">${a.city||''} ${a.avg_rating>0?`· ⭐ ${parseFloat(a.avg_rating).toFixed(1)}`:''}</div>
               </div>
-              <span style="font-size:.72rem;font-weight:700;padding:.2rem .6rem;border-radius:100px;background:${a.status==='accepted'?'#f0fdf4':a.status==='rejected'?'#fef2f2':'#f8f9fa'};color:${a.status==='accepted'?'var(--success)':a.status==='rejected'?'var(--danger)':'var(--muted)'}">${a.status==='accepted'?'✓ Diterima':a.status==='rejected'?'✗ Ditolak':'Menunggu'}</span>
+              <span class="pill ${a.status==='accepted'?'pill-success':a.status==='rejected'?'pill-danger':'pill-neutral'}">${a.status==='accepted'?'✓ Diterima':a.status==='rejected'?'✗ Ditolak':'Menunggu'}</span>
             </div>
-            <p style="font-size:.82rem;color:#444;line-height:1.6;margin-bottom:.8rem">${a.cover_letter}</p>
+            <p style="font-size:.82rem;color:var(--text);line-height:1.6;margin-bottom:.8rem">${a.cover_letter}</p>
             <div style="display:flex;gap:1rem;font-size:.75rem;color:var(--muted);margin-bottom:.8rem">
               ${a.offered_price?`<span>💰 Rp ${parseInt(a.offered_price).toLocaleString('id')}</span>`:''}
               ${a.estimated_days?`<span>📅 ${a.estimated_days} hari</span>`:''}
@@ -1295,16 +1368,16 @@ function transactionCardHTML(t) {
   const isClient = currentUser.id === t.client_id;
   const otherName = isClient ? t.worker_name : t.client_name;
   const statusMap = {
-    'waiting_dp': { label:'Menunggu DP', color:'var(--muted)', bg:'#f8f9fa' },
-    'dp_paid': { label:'DP Dibayar • Dalam Pengerjaan', color:'#0891b2', bg:'#ecfeff' },
-    'submitted': { label:'Menunggu Review Klien', color:'#d97706', bg:'#fffbeb' },
-    'waiting_final': { label:'Menunggu Pelunasan', color:'#7c3aed', bg:'#f5f3ff' },
-    'completed': { label:'✅ Selesai', color:'var(--success)', bg:'#f0fdf4' },
-    'disputed': { label:'⚠️ Dispute', color:'var(--danger)', bg:'#fef2f2' },
-    'refunded': { label:'↩️ Refund', color:'var(--muted)', bg:'#f8f9fa' },
-    'cancelled': { label:'❌ Dibatalkan', color:'var(--danger)', bg:'#fef2f2' },
+    'waiting_dp': { label:'Menunggu DP', cls:'pill-neutral' },
+    'dp_paid': { label:'DP Dibayar • Dalam Pengerjaan', cls:'pill-cyan' },
+    'submitted': { label:'Menunggu Review Klien', cls:'pill-warning' },
+    'waiting_final': { label:'Menunggu Pelunasan', cls:'pill-violet' },
+    'completed': { label:'✅ Selesai', cls:'pill-success' },
+    'disputed': { label:'⚠️ Dispute', cls:'pill-danger' },
+    'refunded': { label:'↩️ Refund', cls:'pill-neutral' },
+    'cancelled': { label:'❌ Dibatalkan', cls:'pill-danger' },
   };
-  const st = statusMap[t.status] || { label: t.status, color:'var(--muted)', bg:'#f8f9fa' };
+  const st = statusMap[t.status] || { label: t.status, cls:'pill-neutral' };
   const title = t.listing_title || t.job_title || t.notes || t('trx_title_short');
   const date = new Date(t.created_at).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'});
 
@@ -1315,7 +1388,7 @@ function transactionCardHTML(t) {
           <div style="font-weight:700;font-size:.95rem">${title}</div>
           <div style="font-size:.78rem;color:var(--muted);margin-top:.2rem">${isClient?'Kepada':'Dari'}: ${otherName} · ${date}</div>
         </div>
-        <span style="font-size:.75rem;font-weight:700;padding:.25rem .7rem;border-radius:100px;background:${st.bg};color:${st.color}">${st.label}</span>
+        <span class="pill ${st.cls}">${st.label}</span>
       </div>
       <div style="display:flex;gap:1.5rem;font-size:.82rem;color:var(--muted);margin-bottom:1rem;flex-wrap:wrap">
         <span>Total: <strong style="color:var(--ink)">Rp ${parseInt(t.total_amount).toLocaleString('id')}</strong></span>
@@ -1323,19 +1396,19 @@ function transactionCardHTML(t) {
         <span>Fee platform: <strong>Rp ${parseInt(t.platform_fee).toLocaleString('id')}</strong></span>
       </div>
       <div style="display:flex;gap:.6rem;flex-wrap:wrap">
-        ${t.status==='waiting_dp' && isClient ? `<button class="btn btn-primary btn-sm" onclick="bayarPakasir(${t.id},'dp',this)">💳 Bayar DP Sekarang</button>` : ''}
+        ${t.status==='waiting_dp' && isClient ? `<button class="btn btn-primary btn-sm" onclick="bayarSolana(${t.id},'dp',this)">💳 Bayar DP Sekarang</button>` : ''}
         ${t.status==='dp_paid' && !isClient ? `<button class="btn btn-primary btn-sm" onclick="submitWork(${t.id})">✅ Tandai Selesai</button>` : ''}
         ${t.status==='submitted' && isClient ? `
           <button class="btn btn-primary btn-sm" onclick="approveWork(${t.id})">✅ Approve & Lunasi</button>
           <button class="btn btn-danger btn-sm" onclick="openDisputeModal(${t.id})">⚠️ Dispute</button>
         ` : ''}
-        ${t.status==='waiting_final' && isClient ? `<button class="btn btn-primary btn-sm" onclick="bayarPakasir(${t.id},'final',this)">💳 Bayar Pelunasan</button>` : ''}
+        ${t.status==='waiting_final' && isClient ? `<button class="btn btn-primary btn-sm" onclick="bayarSolana(${t.id},'final',this)">💳 Bayar Pelunasan</button>` : ''}
         ${t.status==='dp_paid' && isClient ? `<button class="btn btn-danger btn-sm" onclick="openDisputeModal(${t.id})">⚠️ Dispute</button>` : ''}
         ${t.status==='completed' && isClient && !t.reviewed_by_client ? `
-          <button class="btn btn-sm" style="background:#fef9c3;color:#854d0e;border:1.5px solid #fde047;font-weight:600" onclick="openReviewFromTrx(${t.id},${t.worker_id},'${(t.worker_name||'').replace(/'/g,"\'")}',${t.listing_id||null})">${t('btn_give_review')}</button>
+          <button class="btn btn-sm pill-warning" style="font-weight:600" onclick="openReviewFromTrx(${t.id},${t.worker_id},'${(t.worker_name||'').replace(/'/g,"\'")}',${t.listing_id||null})">${t('btn_give_review')}</button>
         ` : ''}
         ${t.status==='completed' && !isClient && !t.reviewed_by_worker ? `
-          <button class="btn btn-sm" style="background:#fef9c3;color:#854d0e;border:1.5px solid #fde047;font-weight:600" onclick="openReviewFromTrx(${t.id},${t.client_id},'${(t.client_name||'').replace(/'/g,"\'")}',${t.listing_id||null})">${t('btn_give_review')}</button>
+          <button class="btn btn-sm pill-warning" style="font-weight:600" onclick="openReviewFromTrx(${t.id},${t.client_id},'${(t.client_name||'').replace(/'/g,"\'")}',${t.listing_id||null})">${t('btn_give_review')}</button>
         ` : ''}
         ${t.status==='completed' && (isClient ? t.reviewed_by_client : t.reviewed_by_worker) ? `
           <span style="font-size:.75rem;color:var(--success);font-weight:600">✅ Sudah diulas</span>
@@ -1442,7 +1515,7 @@ async function openCreateTrxModal(workerId, workerName, listingId = null, type =
     if (listingPrice) { amountEl.value = listingPrice; amountEl.readOnly = true; }
     document.getElementById('trx-notes').value = 'Pembelian produk digital';
     if (listingPrice && listingPrice >= 10000) {
-      const fee = Math.ceil(listingPrice * 0.05);
+      const fee = Math.ceil(listingPrice * 0.10);
       document.getElementById('trx-dp-amount').textContent = 'Rp ' + listingPrice.toLocaleString('id');
       document.getElementById('trx-final-amount').textContent = 'Rp 0 (lunas)';
       document.getElementById('trx-fee-amount').textContent = 'Rp ' + fee.toLocaleString('id');
@@ -1456,7 +1529,7 @@ async function openCreateTrxModal(workerId, workerName, listingId = null, type =
       if (amt >= 10000) {
         const dp = Math.ceil(amt * 0.5);
         const final = amt - dp;
-        const fee = Math.ceil(amt * 0.05);
+        const fee = Math.ceil(amt * 0.10);
         document.getElementById('trx-dp-amount').textContent = 'Rp ' + dp.toLocaleString('id');
         document.getElementById('trx-final-amount').textContent = 'Rp ' + final.toLocaleString('id');
         document.getElementById('trx-fee-amount').textContent = 'Rp ' + fee.toLocaleString('id');
@@ -1571,19 +1644,20 @@ async function switchWalletTab(tab, el) {
   } else if (tab === 'withdrawals') {
     const data = await api.getWithdrawals();
     if (!data.length) { content.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--muted)">Belum ada riwayat withdraw.</div>'; return; }
-    const stMap = { pending:{label:'Menunggu',color:'#d97706',bg:'#fffbeb'}, approved:{label:'✅ Disetujui',color:'var(--success)',bg:'#f0fdf4'}, rejected:{label:'❌ Ditolak',color:'var(--danger)',bg:'#fef2f2'} };
+    const stMap = { pending:{label:'Menunggu',cls:'pill-warning'}, approved:{label:'✅ Disetujui',cls:'pill-success'}, rejected:{label:'❌ Ditolak',cls:'pill-danger'} };
     content.innerHTML = data.map(w => {
       const st = stMap[w.status]||stMap.pending;
       return `
       <div class="card" style="margin-bottom:.8rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem">
         <div>
-          <div style="font-weight:700;font-size:.88rem">${w.bank_name} · ${w.account_number}</div>
-          <div style="font-size:.75rem;color:var(--muted)">a.n. ${w.account_name} · ${new Date(w.created_at).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'})}</div>
+          <div style="font-weight:700;font-size:.88rem">🪙 ${(w.solana_address||'').slice(0, 8)}${w.solana_address ? '…' + w.solana_address.slice(-6) : ''}</div>
+          <div style="font-size:.75rem;color:var(--muted)">${w.usdc_amount ? ('≈ ' + (parseInt(w.usdc_amount)/1e6).toLocaleString('en-US',{maximumFractionDigits:6}) + ' USDC') : 'USDC dihitung saat approve'} · ${new Date(w.created_at).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'})}</div>
+          ${w.tx_signature?`<div style="font-size:.72rem;color:var(--muted);margin-top:.2rem">Tx: ${w.tx_signature.slice(0, 12)}…${w.tx_signature.slice(-8)}</div>`:''}
           ${w.admin_note?`<div style="font-size:.75rem;color:var(--muted);margin-top:.2rem">Catatan: ${w.admin_note}</div>`:''}
         </div>
         <div style="text-align:right">
           <div style="font-weight:800">Rp ${parseInt(w.amount).toLocaleString('id')}</div>
-          <span style="font-size:.72rem;font-weight:700;padding:.2rem .5rem;border-radius:100px;background:${st.bg};color:${st.color}">${st.label}</span>
+          <span class="pill ${st.cls}">${st.label}</span>
         </div>
       </div>`;}).join('');
 
@@ -1593,17 +1667,17 @@ async function switchWalletTab(tab, el) {
     const stats = data.stats || {};
     const referred = data.referred_users || [];
     content.innerHTML = `
-      <div class="card" style="margin-bottom:1rem;background:linear-gradient(135deg,#fff4e6,#fce8e4)">
+      <div class="card" style="margin-bottom:1rem;background:var(--accent-soft);border-color:var(--accent-soft-border)">
         <div style="font-weight:700;font-size:1rem;margin-bottom:.5rem">🎁 Program Referral AkuBisa</div>
         <p style="font-size:.85rem;color:var(--muted);margin-bottom:1rem">Ajak temanmu bergabung dan dapatkan komisi 5% dari setiap transaksi pertama mereka!</p>
-        <div style="background:white;border-radius:10px;padding:.8rem;display:flex;gap:.5rem;align-items:center;margin-bottom:1rem">
+        <div style="background:var(--surface);border-radius:10px;padding:.8rem;display:flex;gap:.5rem;align-items:center;margin-bottom:1rem">
           <input readonly value="${refUrl}" style="flex:1;border:none;font-size:.82rem;color:var(--ink);background:none;outline:none" id="ref-url-input">
           <button class="btn btn-primary btn-sm" onclick="navigator.clipboard.writeText('${refUrl}');showToast('Link disalin!','success')">Salin</button>
         </div>
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;text-align:center">
           <div><div style="font-size:1.5rem;font-weight:800;color:var(--accent)">${stats.total_referred||0}</div><div style="font-size:.72rem;color:var(--muted)">Total Diajak</div></div>
           <div><div style="font-size:1.5rem;font-weight:800;color:var(--accent2)">${stats.paid_referrals||0}</div><div style="font-size:.72rem;color:var(--muted)">Transaksi</div></div>
-          <div><div style="font-size:1.5rem;font-weight:800;color:#7c3aed">Rp ${parseInt(stats.total_commission||0).toLocaleString('id')}</div><div style="font-size:.72rem;color:var(--muted)">Komisi</div></div>
+          <div><div style="font-size:1.5rem;font-weight:800;color:var(--violet-text)">Rp ${parseInt(stats.total_commission||0).toLocaleString('id')}</div><div style="font-size:.72rem;color:var(--muted)">Komisi</div></div>
         </div>
       </div>
       ${referred.length ? `
@@ -1630,11 +1704,11 @@ async function switchWalletTab(tab, el) {
           </div>`
         : `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1rem">` +
           data.map(p => `
-            <div style="background:white;border:1.5px solid var(--border);border-radius:14px;overflow:hidden;transition:box-shadow .2s;position:relative" onmouseover="this.style.boxShadow='0 4px 20px rgba(0,0,0,.1)'" onmouseout="this.style.boxShadow='none'">
+            <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:14px;overflow:hidden;transition:box-shadow .2s;position:relative" onmouseover="this.style.boxShadow='0 4px 20px rgba(0,0,0,.1)'" onmouseout="this.style.boxShadow='none'">
               <div style="position:relative">
                 ${p.photos&&p.photos.length
                   ? `<img src="${p.photos[0]}" style="width:100%;height:160px;object-fit:cover">`
-                  : `<div style="height:100px;background:linear-gradient(135deg,var(--warm),#e8e0d5);display:flex;align-items:center;justify-content:center;font-size:2.5rem">🗂️</div>`}
+                  : `<div style="height:100px;background:linear-gradient(135deg,var(--warm),var(--surface-3));display:flex;align-items:center;justify-content:center;font-size:2.5rem">🗂️</div>`}
                 <span style="position:absolute;top:.6rem;left:.6rem;font-size:.65rem;font-weight:700;padding:.25rem .6rem;border-radius:100px;${p.transaction_id?'background:var(--accent2);color:white':'background:var(--accent);color:white'}">${p.transaction_id?t('trx_badge'):t('trx_manual')}</span>
                 ${!p.is_public?'<span style="position:absolute;top:.6rem;right:.6rem;font-size:.65rem;font-weight:700;padding:.25rem .6rem;border-radius:100px;background:rgba(0,0,0,.5);color:white">🔒 Privat</span>':''}
                 ${p.photos&&p.photos.length>1?`<span style="position:absolute;bottom:.4rem;right:.4rem;background:rgba(0,0,0,.55);color:white;font-size:.65rem;padding:.2rem .45rem;border-radius:100px">+${p.photos.length-1} foto</span>`:''}
@@ -1645,8 +1719,8 @@ async function switchWalletTab(tab, el) {
                 ${p.client_rating?`<div style="font-size:.78rem;color:#f59e0b;margin-bottom:.6rem">★ ${p.client_rating}/5${p.client_review?` <span style="color:var(--muted);font-style:italic">"${p.client_review.slice(0,40)}${p.client_review.length>40?'...':''}"</span>`:''}</div>`:''}
                 <div style="font-size:.72rem;color:var(--muted);margin-bottom:.7rem">${new Date(p.created_at).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}</div>
                 <div style="display:flex;gap:.4rem;flex-wrap:wrap">
-                  <button onclick="togglePortfolioVisibility(${p.id},${!p.is_public})" style="flex:1;padding:.35rem .6rem;border-radius:100px;font-size:.72rem;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:white;color:var(--ink)">${p.is_public?'👁 Publik':'🔒 Privat'}</button>
-                  <button onclick="deletePortfolio(${p.id})" style="padding:.35rem .7rem;border-radius:100px;font-size:.72rem;font-weight:600;cursor:pointer;border:1.5px solid var(--danger);background:white;color:var(--danger)">🗑</button>
+                  <button onclick="togglePortfolioVisibility(${p.id},${!p.is_public})" style="flex:1;padding:.35rem .6rem;border-radius:100px;font-size:.72rem;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:var(--surface);color:var(--ink)">${p.is_public?'👁 Publik':'🔒 Privat'}</button>
+                  <button onclick="deletePortfolio(${p.id})" style="padding:.35rem .7rem;border-radius:100px;font-size:.72rem;font-weight:600;cursor:pointer;border:1.5px solid var(--danger);background:var(--surface);color:var(--danger)">🗑</button>
                 </div>
               </div>
             </div>`).join('') + '</div>');
@@ -1746,10 +1820,14 @@ async function togglePortfolioVisibility(id, isPublic) {
 function openWithdrawModal(balance) {
   document.getElementById('wd-amount').value = '';
   document.getElementById('wd-amount').max = balance;
-  document.getElementById('wd-bank').value = '';
-  document.getElementById('wd-account-number').value = '';
-  document.getElementById('wd-account-name').value = '';
   document.getElementById('wd-error').textContent = '';
+  // Tampilkan alamat payout Solana yang tersimpan di profil. Bila belum
+  // ada, arahkan user mengisinya dulu di Edit Profil.
+  const addr = (currentUser && currentUser.solana_address) || '';
+  const addrEl = document.getElementById('wd-solana-address');
+  if (addrEl) addrEl.textContent = addr ? (addr.slice(0, 8) + '…' + addr.slice(-6)) : '— belum diisi —';
+  const warnEl = document.getElementById('wd-solana-warn');
+  if (warnEl) warnEl.style.display = addr ? 'none' : 'block';
   document.getElementById('withdraw-modal').classList.add('open');
 }
 
@@ -1757,17 +1835,17 @@ function closeWithdrawModal() { document.getElementById('withdraw-modal').classL
 
 async function submitWithdraw() {
   const amount = parseInt(document.getElementById('wd-amount').value);
-  const bank_name = document.getElementById('wd-bank').value;
-  const account_number = document.getElementById('wd-account-number').value.trim();
-  const account_name = document.getElementById('wd-account-name').value.trim();
   const errEl = document.getElementById('wd-error');
 
   if (!amount || amount < 50000) { errEl.textContent = 'Minimum withdraw Rp 50.000'; return; }
-  if (!bank_name || !account_number || !account_name) { errEl.textContent = 'Semua field wajib diisi'; return; }
+  if (!currentUser || !currentUser.solana_address) {
+    errEl.textContent = 'Isi dulu alamat payout Solana di Edit Profil (dompet USDC, mis. Phantom).';
+    return;
+  }
 
   const btn = document.getElementById('wd-btn');
   btn.innerHTML = '<span class="spinner"></span>Memproses...'; btn.disabled = true;
-  const res = await api.requestWithdraw({ amount, bank_name, account_number, account_name });
+  const res = await api.requestWithdraw({ amount });
   btn.innerHTML = 'Tarik Saldo'; btn.disabled = false;
 
   if (res.message && !res.message.includes('gagal')) {
@@ -1789,19 +1867,19 @@ async function openKycModal() {
 
   if (status) {
     if (status.status === 'pending') {
-      info.innerHTML = `<div style="background:#fef9c3;border:1px solid #fde047;border-radius:10px;padding:.8rem;font-size:.83rem;color:#854d0e">
+      info.innerHTML = `<div class="notice notice-warning" style="font-size:.83rem">
         ⏳ <strong>Pengajuan sedang diproses.</strong> Admin akan mereview dalam 1x24 jam. Kamu akan mendapat notifikasi hasilnya.
       </div>`;
       form.style.display = 'none';
       footer.innerHTML = `<button class="btn btn-outline" onclick="closeKycModal()">${t('btn_close')}</button>`;
     } else if (status.status === 'approved') {
-      info.innerHTML = `<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:.8rem;font-size:.83rem;color:#166534">
+      info.innerHTML = `<div class="notice notice-success" style="font-size:.83rem">
         ✅ <strong>Identitas kamu sudah terverifikasi!</strong> Badge ✓ Terverifikasi tampil di profilmu.
       </div>`;
       form.style.display = 'none';
       footer.innerHTML = `<button class="btn btn-outline" onclick="closeKycModal()">${t('btn_close')}</button>`;
     } else if (status.status === 'rejected') {
-      info.innerHTML = `<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:.8rem;font-size:.83rem;color:#991b1b">
+      info.innerHTML = `<div class="notice notice-danger" style="font-size:.83rem">
         ❌ <strong>Pengajuan ditolak.</strong> Alasan: ${status.admin_note || 'Dokumen tidak valid'}. Silakan ajukan ulang dengan dokumen yang benar.
       </div>`;
       form.style.display = 'block';
@@ -2003,20 +2081,530 @@ async function searchUsers(query) {
   } catch(e) { container.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--danger)">Gagal memuat.</div>'; }
 }
 
-// ===== PEMBAYARAN PAKASIR =====
-async function bayarPakasir(transactionId, paymentType, btn) {
+// ===== PEMBAYARAN SOLANA USDC =====
+// Modal generik untuk semua pembayaran USDC: menampilkan alamat escrow +
+// jumlah USDC yang TERKUNCI, lalu pembeli memasukkan signature transaksi
+// Solana-nya. `verify(signature)` harus mengembalikan promise
+// { ok, message, ... } (lihat api.verify*Payment).
+let solanaPayVerify = null;
+let solanaPayOnSuccess = null;
+function openSolanaPayModal({ title, escrowAddress, amountUsdcDisplay, amountIdr, rate, verify, onSuccess }) {
+  document.getElementById('sp-title').textContent = title || 'Bayar dengan USDC (Solana)';
+  document.getElementById('sp-escrow').value = escrowAddress || '';
+  document.getElementById('sp-amount-usdc').textContent = amountUsdcDisplay || '-';
+  document.getElementById('sp-amount-idr').textContent = amountIdr ? ('Rp ' + parseInt(amountIdr).toLocaleString('id')) : '';
+  document.getElementById('sp-rate').textContent = rate ? ('Kurs terkunci: Rp ' + parseFloat(rate).toLocaleString('id') + ' / USDC') : '';
+  document.getElementById('sp-signature').value = '';
+  document.getElementById('sp-error').textContent = '';
+  solanaPayVerify = verify;
+  solanaPayOnSuccess = onSuccess || null;
+  document.getElementById('solana-pay-modal').classList.add('open');
+}
+function closeSolanaPayModal() { document.getElementById('solana-pay-modal').classList.remove('open'); }
+function copyEscrowAddress() {
+  const el = document.getElementById('sp-escrow');
+  const done = () => showToast('Alamat escrow disalin!', 'success');
+  if (navigator.clipboard) { navigator.clipboard.writeText(el.value).then(done).catch(done); }
+  else { el.select(); document.execCommand('copy'); done(); }
+}
+async function submitSolanaPayVerify() {
+  const sig = document.getElementById('sp-signature').value.trim();
+  const errEl = document.getElementById('sp-error');
+  if (!sig || sig.length < 80 || sig.length > 90) { errEl.textContent = 'Masukkan signature transaksi Solana yang valid.'; return; }
+  const btn = document.getElementById('sp-verify-btn');
+  btn.innerHTML = '<span class="spinner"></span>Memverifikasi...'; btn.disabled = true;
+  try {
+    const res = await solanaPayVerify(sig);
+    if (res && res.ok) {
+      closeSolanaPayModal();
+      showToast(res.message || 'Pembayaran terverifikasi!', 'success');
+      if (solanaPayOnSuccess) solanaPayOnSuccess(res);
+    } else {
+      errEl.textContent = (res && res.message) || 'Verifikasi gagal';
+    }
+  } catch (e) {
+    errEl.textContent = 'Koneksi gagal. Coba lagi.';
+  }
+  btn.innerHTML = 'Verifikasi Pembayaran'; btn.disabled = false;
+}
+
+// Bayar DP / pelunasan transaksi dengan USDC: ambil info bayar (alamat
+// escrow + jumlah terkunci), tampilkan modal, verifikasi signature.
+async function bayarSolana(transactionId, paymentType, btn) {
   const original = btn.innerHTML;
   btn.innerHTML = '⏳ Memuat...'; btn.disabled = true;
   try {
-    const res = await api.post('/pakasir/create', { transaction_id: transactionId, payment_type: paymentType });
-    if (res.payment_url) {
-      window.location.href = res.payment_url;
-    } else {
-      showToast(res.message || 'Gagal membuat pembayaran', 'error');
+    const info = await api.getPaymentInfo(transactionId);
+    if (!info.escrow_address || !info.amount_usdc) {
+      showToast(info.message || 'Pembayaran belum tersedia', 'error');
       btn.innerHTML = original; btn.disabled = false;
+      return;
     }
+    btn.innerHTML = original; btn.disabled = false;
+    openSolanaPayModal({
+      title: (paymentType === 'dp' ? 'Bayar DP' : 'Bayar Pelunasan') + ' — USDC (Solana)',
+      escrowAddress: info.escrow_address,
+      amountUsdcDisplay: info.amount_usdc_display,
+      amountIdr: info.amount_idr,
+      rate: info.rate_idr_per_usdc,
+      verify: (sig) => api.verifyTransactionPayment(transactionId, sig),
+      onSuccess: () => renderTransactions()
+    });
   } catch (e) {
     showToast('Terjadi kesalahan. Coba lagi.', 'error');
     btn.innerHTML = original; btn.disabled = false;
+  }
+}
+
+// ===== FEED SOSIAL =====
+// Feed ala media sosial: posting update skill / pamer karya, follow
+// talent, like & komentar. Data dari /api/social/* (backend/routes/social.js).
+// Semua teks buatan user di-escape (escHTML) sebelum masuk innerHTML.
+let feedTab = 'all';
+let feedPage = 1;
+let feedHasMore = false;
+let feedLoading = false;
+let feedComposerType = 'update';
+const feedPostsById = {};
+const FEED_LIMIT = 10;
+
+function escHTML(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+async function renderFeed(reset = true) {
+  // Komposer hanya untuk user login; tamu melihat ajakan login.
+  const composer = document.getElementById('feed-composer');
+  const hint = document.getElementById('feed-login-hint');
+  if (composer) composer.style.display = currentUser ? 'block' : 'none';
+  if (hint) hint.style.display = currentUser ? 'none' : 'block';
+  if (currentUser) {
+    const avEl = document.getElementById('feed-composer-avatar');
+    if (avEl) {
+      if (currentUser.avatar) avEl.innerHTML = `<img src="${currentUser.avatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+      else { avEl.style.background = avColor(currentUser.full_name); avEl.textContent = initials(currentUser.full_name); }
+    }
+    const ta = document.getElementById('feed-composer-text');
+    if (ta && !ta.dataset.bound) {
+      ta.dataset.bound = '1';
+      ta.addEventListener('input', () => {
+        document.getElementById('feed-composer-count').textContent = `${ta.value.length} / 2000`;
+      });
+    }
+  }
+  if (reset) loadDiscover();
+  loadFeed(true);
+}
+
+function setFeedTab(tab, el) {
+  feedTab = tab;
+  document.querySelectorAll('.feed-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  loadFeed(true);
+}
+
+async function loadFeed(reset = true) {
+  if (feedLoading) return;
+  if (reset) { feedPage = 1; feedHasMore = false; }
+  feedLoading = true;
+  const list = document.getElementById('feed-list');
+  const more = document.getElementById('feed-load-more');
+  if (reset && list) list.innerHTML = skeletonCards(3);
+  try {
+    const res = await api.getFeed(`tab=${feedTab}&page=${feedPage}&limit=${FEED_LIMIT}`);
+    const posts = res.posts || [];
+    feedHasMore = !!res.has_more;
+    if (reset) list.innerHTML = '';
+    if (!posts.length && reset) {
+      const isFollowing = feedTab === 'following';
+      list.innerHTML = emptyState(
+        isFollowing ? '👥' : '✨',
+        t(isFollowing ? 'feed_empty_following' : 'feed_empty'),
+        t(isFollowing ? 'feed_empty_following_desc' : 'feed_empty_desc'),
+        currentUser ? '' : '', ''
+      );
+    } else {
+      posts.forEach(p => {
+        feedPostsById[p.id] = p;
+        const div = document.createElement('div');
+        div.innerHTML = postCardHTML(p);
+        list.appendChild(div.firstElementChild);
+      });
+    }
+    if (more) {
+      more.innerHTML = feedHasMore
+        ? `<button class="btn btn-outline" onclick="loadFeed(false)" style="border-radius:100px;padding:.6rem 2rem">${t('explore_load_more')}</button>`
+        : '';
+    }
+    if (feedHasMore) feedPage++;
+  } catch (e) {
+    if (reset && list) list.innerHTML = '<p style="text-align:center;padding:2rem;color:var(--danger)">Gagal memuat feed.</p>';
+  }
+  feedLoading = false;
+}
+
+function postTypeBadge(type) {
+  if (type === 'portfolio') return `<span class="post-type-badge">🗂️ Portfolio</span>`;
+  if (type === 'showcase') return `<span class="post-type-badge">🛠️ Penawaran</span>`;
+  return '';
+}
+
+function postCardHTML(p) {
+  const a = p.author || {};
+  const ini = initials(a.full_name || '?');
+  const av = avColor(a.full_name || '');
+  const isMine = currentUser && currentUser.id === a.id;
+  const edited = p.updated_at && p.created_at && (new Date(p.updated_at) - new Date(p.created_at) > 1000);
+  const avatarHTML = a.avatar
+    ? `<img src="${a.avatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
+    : ini;
+  const roleBadge = a.role === 'worker'
+    ? `<span class="role-badge role-worker">Pekerja</span>`
+    : a.role === 'client' ? `<span class="role-badge role-client">Pencari</span>` : '';
+  const followBtn = (!isMine && currentUser)
+    ? `<button class="btn btn-sm ${p.following_author ? 'btn-outline' : 'btn-primary'}" data-follow-user="${a.id}" onclick="toggleFollow(${a.id}, this)" style="border-radius:100px">${p.following_author ? t('feed_following') : '+ ' + t('feed_follow')}</button>`
+    : '';
+  const listingPreview = p.listing ? `
+    <div class="post-attach" onclick="openListingDetail(${p.listing.id})">
+      <div style="font-size:.72rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.2rem">${p.listing.category_name || 'Penawaran'}</div>
+      <div style="font-weight:700;font-size:.9rem;line-height:1.35">${escHTML(p.listing.title)}</div>
+      <div style="font-size:.85rem;color:var(--accent);font-weight:700;margin-top:.2rem">${escHTML(p.listing.price || 'Nego')}</div>
+      <div style="font-size:.78rem;color:var(--accent);font-weight:600;margin-top:.4rem">${t('feed_view_listing')}</div>
+    </div>` : '';
+  const portoPreview = p.portfolio_item ? `
+    <div class="post-attach" onclick="openPublicProfile(${a.id})">
+      ${p.portfolio_item.photos && p.portfolio_item.photos.length
+        ? `<img src="${p.portfolio_item.photos[0]}" style="width:100%;height:150px;object-fit:cover;border-radius:10px;margin-bottom:.5rem">` : ''}
+      <div style="font-weight:700;font-size:.9rem;line-height:1.35">${escHTML(p.portfolio_item.title)}</div>
+      <div style="font-size:.78rem;color:var(--accent);font-weight:600;margin-top:.4rem">${t('feed_view_portfolio')}</div>
+    </div>` : '';
+  return `
+  <article class="post-card" id="post-${p.id}">
+    <div style="display:flex;gap:.8rem;align-items:flex-start">
+      <div class="avatar" style="background:${av};width:42px;height:42px;font-size:.85rem;cursor:pointer;flex-shrink:0" onclick="openPublicProfile(${a.id})">${avatarHTML}</div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap">
+          <span style="font-weight:700;font-size:.92rem;cursor:pointer" onclick="openPublicProfile(${a.id})">${escHTML(a.full_name || 'Anonim')}</span>
+          ${a.is_verified ? '<span style="font-size:.7rem;color:#1d9bf0;font-weight:700">✓</span>' : ''}
+          ${roleBadge}
+          <span style="font-size:.72rem;color:var(--muted)">· ${timeAgo(p.created_at)}</span>
+          ${edited ? `<span style="font-size:.72rem;color:var(--muted)">${t('feed_edited')}</span>` : ''}
+          ${postTypeBadge(p.type)}
+        </div>
+        ${a.city ? `<div style="font-size:.75rem;color:var(--muted)">📍 ${escHTML(a.city)}</div>` : ''}
+      </div>
+      ${followBtn}
+    </div>
+    <div class="post-body" id="post-body-${p.id}" style="margin:.9rem 0;font-size:.92rem;line-height:1.65;white-space:pre-wrap;word-break:break-word">${escHTML(p.body).replace(/\n/g, '<br>')}</div>
+    ${listingPreview}${portoPreview}
+    <div style="display:flex;gap:.4rem;flex-wrap:wrap;border-top:1px solid var(--border);padding-top:.7rem">
+      <button class="post-action ${p.liked_by_me ? 'active' : ''}" id="like-btn-${p.id}" onclick="toggleLike(${p.id})">${p.liked_by_me ? '❤️' : '🤍'} <span id="like-count-${p.id}">${p.like_count}</span> ${t('feed_like')}</button>
+      <button class="post-action" onclick="toggleComments(${p.id})">💬 <span id="comment-count-${p.id}">${p.comment_count}</span> ${t('feed_comment')}</button>
+      ${isMine ? `
+        <button class="post-action" onclick="editPostInline(${p.id})">✏️ Edit</button>
+        <button class="post-action danger" onclick="confirmDeletePost(${p.id})">🗑️ Hapus</button>` : ''}
+    </div>
+    <div id="post-comments-${p.id}" style="display:none;margin-top:.8rem">
+      <div id="comment-list-${p.id}"></div>
+      ${currentUser ? `
+      <div style="display:flex;gap:.5rem;margin-top:.6rem">
+        <input type="text" id="comment-input-${p.id}" class="form-input" placeholder="${t('feed_comment_ph')}" maxlength="1000" style="flex:1;padding:.5rem .9rem" onkeydown="if(event.key==='Enter')submitComment(${p.id})">
+        <button class="btn btn-primary btn-sm" onclick="submitComment(${p.id})">${t('feed_comment_btn')}</button>
+      </div>` : ''}
+    </div>
+  </article>`;
+}
+
+// ===== KOMPOSER =====
+function setFeedComposerType(type, el) {
+  feedComposerType = type;
+  document.querySelectorAll('.feed-type-btn').forEach(b => b.classList.toggle('active', b.dataset.type === type));
+  const sel = document.getElementById('feed-composer-attach');
+  if (type === 'update') { sel.style.display = 'none'; sel.innerHTML = ''; return; }
+  sel.style.display = 'block';
+  sel.innerHTML = `<option value="">${t('feed_composer_attach_ph')}</option>`;
+  loadComposerAttach(type);
+}
+
+async function loadComposerAttach(type) {
+  const sel = document.getElementById('feed-composer-attach');
+  try {
+    const items = type === 'portfolio' ? await api.getMyPortfolio() : await api.myListings();
+    const list = Array.isArray(items) ? items : (items.listings || []);
+    if (!list.length) {
+      sel.innerHTML = `<option value="">${type === 'portfolio' ? 'Belum ada item portfolio — buat dulu di profil.' : 'Belum ada penawaran aktif.'}</option>`;
+      return;
+    }
+    sel.innerHTML = `<option value="">${t('feed_composer_attach_ph')}</option>` +
+      list.map(it => `<option value="${it.id}">${escHTML(it.title || '')}</option>`).join('');
+  } catch (e) {
+    sel.innerHTML = `<option value="">Gagal memuat pilihan</option>`;
+  }
+}
+
+async function submitFeedPost() {
+  if (!currentUser) { goTo('login'); return; }
+  const text = document.getElementById('feed-composer-text').value.trim();
+  if (!text) { showToast(t('feed_composer_ph'), 'error'); return; }
+  const attachVal = document.getElementById('feed-composer-attach').value;
+  const payload = { body: text, type: feedComposerType };
+  if (feedComposerType === 'portfolio') {
+    if (!attachVal) { showToast('Pilih item portfolio yang mau dipamerkan', 'error'); return; }
+    payload.portfolio_item_id = parseInt(attachVal);
+  }
+  if (feedComposerType === 'showcase') {
+    if (!attachVal) { showToast('Pilih penawaran yang mau dipamerkan', 'error'); return; }
+    payload.listing_id = parseInt(attachVal);
+  }
+  const btn = document.getElementById('feed-post-btn');
+  btn.disabled = true;
+  const res = await api.createPost(payload);
+  btn.disabled = false;
+  if (!res.post) { showToast(res.message || 'Gagal memposting', 'error'); return; }
+  document.getElementById('feed-composer-text').value = '';
+  document.getElementById('feed-composer-count').textContent = '0 / 2000';
+  setFeedComposerType('update', document.querySelector('.feed-type-btn[data-type="update"]'));
+  feedPostsById[res.post.id] = res.post;
+  const list = document.getElementById('feed-list');
+  const empty = list.querySelector('.empty-state');
+  if (empty) list.innerHTML = '';
+  const div = document.createElement('div');
+  div.innerHTML = postCardHTML(res.post);
+  list.prepend(div.firstElementChild);
+  showToast(res.message || 'Postingan diterbitkan!', 'success');
+}
+
+// ===== LIKE =====
+async function toggleLike(postId) {
+  if (!currentUser) { goTo('login'); return; }
+  const p = feedPostsById[postId];
+  if (!p) return;
+  const res = p.liked_by_me ? await api.unlikePost(postId) : await api.likePost(postId);
+  if (res.like_count === undefined) { showToast(res.message || 'Gagal', 'error'); return; }
+  p.liked_by_me = res.liked;
+  p.like_count = res.like_count;
+  const btn = document.getElementById(`like-btn-${postId}`);
+  const count = document.getElementById(`like-count-${postId}`);
+  if (btn) { btn.classList.toggle('active', res.liked); btn.innerHTML = `${res.liked ? '❤️' : '🤍'} <span id="like-count-${postId}">${res.like_count}</span> ${t('feed_like')}`; }
+  if (count) count.textContent = res.like_count;
+}
+
+// ===== KOMENTAR =====
+async function toggleComments(postId) {
+  const wrap = document.getElementById(`post-comments-${postId}`);
+  if (!wrap) return;
+  const open = wrap.style.display !== 'none';
+  wrap.style.display = open ? 'none' : 'block';
+  if (!open && !wrap.dataset.loaded) {
+    wrap.dataset.loaded = '1';
+    await loadComments(postId);
+  }
+}
+
+async function loadComments(postId) {
+  const list = document.getElementById(`comment-list-${postId}`);
+  if (!list) return;
+  try {
+    const comments = await api.getComments(postId);
+    list.innerHTML = (comments || []).map(c => commentHTML(postId, c)).join('') ||
+      `<p style="font-size:.8rem;color:var(--muted);padding:.4rem 0">Belum ada komentar.</p>`;
+  } catch (e) {
+    list.innerHTML = '<p style="font-size:.8rem;color:var(--danger)">Gagal memuat komentar.</p>';
+  }
+}
+
+function commentHTML(postId, c) {
+  const a = c.author || {};
+  const ini = initials(a.full_name || '?');
+  const av = avColor(a.full_name || '');
+  const canDelete = currentUser && (currentUser.id === a.id || currentUser.id === feedPostsById[postId]?.user_id);
+  return `
+  <div id="comment-${c.id}" style="display:flex;gap:.6rem;padding:.5rem 0;border-top:1px solid var(--border)">
+    <div class="avatar" style="background:${av};width:28px;height:28px;font-size:.68rem;flex-shrink:0">${a.avatar ? `<img src="${a.avatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">` : ini}</div>
+    <div style="flex:1;min-width:0">
+      <div style="font-size:.8rem"><b style="cursor:pointer" onclick="openPublicProfile(${a.id})">${escHTML(a.full_name || 'Anonim')}</b> <span style="color:var(--muted);font-size:.7rem">· ${timeAgo(c.created_at)}</span></div>
+      <div style="font-size:.85rem;line-height:1.5;word-break:break-word">${escHTML(c.body)}</div>
+    </div>
+    ${canDelete ? `<button onclick="deleteComment(${c.id}, ${postId})" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:.8rem;align-self:flex-start" title="Hapus">✕</button>` : ''}
+  </div>`;
+}
+
+async function submitComment(postId) {
+  const input = document.getElementById(`comment-input-${postId}`);
+  const text = (input.value || '').trim();
+  if (!text) return;
+  const res = await api.addComment(postId, text);
+  if (!res.comment) { showToast(res.message || 'Gagal mengirim komentar', 'error'); return; }
+  input.value = '';
+  const list = document.getElementById(`comment-list-${postId}`);
+  const empty = list.querySelector('p');
+  if (empty) list.innerHTML = '';
+  list.insertAdjacentHTML('beforeend', commentHTML(postId, res.comment));
+  const p = feedPostsById[postId];
+  if (p) { p.comment_count++; const cc = document.getElementById(`comment-count-${postId}`); if (cc) cc.textContent = p.comment_count; }
+}
+
+async function deleteComment(commentId, postId) {
+  const res = await api.deleteComment(commentId);
+  if (res.message && !res.message.includes('dihapus')) { showToast(res.message, 'error'); return; }
+  const el = document.getElementById(`comment-${commentId}`);
+  if (el) el.remove();
+  const p = feedPostsById[postId];
+  if (p) { p.comment_count = Math.max(0, p.comment_count - 1); const cc = document.getElementById(`comment-count-${postId}`); if (cc) cc.textContent = p.comment_count; }
+}
+
+// ===== EDIT / HAPUS POSTINGAN SENDIRI =====
+function editPostInline(postId) {
+  const p = feedPostsById[postId];
+  const bodyEl = document.getElementById(`post-body-${postId}`);
+  if (!p || !bodyEl || bodyEl.dataset.editing) return;
+  bodyEl.dataset.editing = '1';
+  bodyEl.innerHTML = `
+    <textarea id="post-edit-${postId}" class="form-textarea" maxlength="2000" rows="4">${escHTML(p.body)}</textarea>
+    <div style="display:flex;gap:.5rem;margin-top:.5rem">
+      <button class="btn btn-primary btn-sm" onclick="savePostEdit(${postId})">Simpan</button>
+      <button class="btn btn-outline btn-sm" onclick="cancelPostEdit(${postId})">Batal</button>
+    </div>`;
+}
+
+async function savePostEdit(postId) {
+  const p = feedPostsById[postId];
+  const text = document.getElementById(`post-edit-${postId}`).value.trim();
+  if (!text) { showToast('Isi postingan tidak boleh kosong', 'error'); return; }
+  const res = await api.updatePost(postId, { body: text });
+  if (!res.post) { showToast(res.message || 'Gagal menyimpan', 'error'); return; }
+  feedPostsById[postId] = res.post;
+  const bodyEl = document.getElementById(`post-body-${postId}`);
+  bodyEl.dataset.editing = '';
+  bodyEl.innerHTML = `${escHTML(res.post.body).replace(/\n/g, '<br>')}`;
+  showToast(res.message || 'Postingan diperbarui!', 'success');
+}
+
+function cancelPostEdit(postId) {
+  const p = feedPostsById[postId];
+  const bodyEl = document.getElementById(`post-body-${postId}`);
+  if (!p || !bodyEl) return;
+  bodyEl.dataset.editing = '';
+  bodyEl.innerHTML = `${escHTML(p.body).replace(/\n/g, '<br>')}`;
+}
+
+function confirmDeletePost(postId) {
+  confirmDelete(t('feed_delete_confirm'), async () => {
+    const res = await api.deletePost(postId);
+    if (!res.message || res.message.includes('tidak')) { showToast(res.message || 'Gagal menghapus', 'error'); return; }
+    const el = document.getElementById(`post-${postId}`);
+    if (el) el.remove();
+    delete feedPostsById[postId];
+    showToast(t('feed_deleted'), 'success');
+  });
+}
+
+// ===== FOLLOW =====
+async function toggleFollow(userId, btn) {
+  if (!currentUser) { goTo('login'); return; }
+  const p = feedPostsById && Object.values(feedPostsById).find(x => x.author && x.author.id === userId);
+  const following = btn && btn.textContent.includes(t('feed_following')) && !btn.textContent.includes('+');
+  const res = following ? await api.unfollowUser(userId) : await api.followUser(userId);
+  if (res.following === undefined) { showToast(res.message || 'Gagal', 'error'); return; }
+  // Perbarui SEMUA tombol follow untuk user ini di halaman
+  document.querySelectorAll(`[data-follow-user="${userId}"]`).forEach(b => {
+    b.classList.toggle('btn-primary', !res.following);
+    b.classList.toggle('btn-outline', res.following);
+    b.textContent = res.following ? t('feed_following') : '+ ' + t('feed_follow');
+  });
+  // Perbarui angka pengikut di profil publik bila sedang dibuka
+  const pubF = document.getElementById('pub-followers');
+  if (pubF && pubProfileUserId === userId) pubF.textContent = res.followers_count;
+  const pubBtn = document.getElementById('pub-follow-btn');
+  if (pubBtn && pubProfileUserId === userId) {
+    pubBtn.textContent = res.following ? t('feed_following') : '+ ' + t('feed_follow');
+    pubBtn.classList.toggle('btn-outline', res.following);
+    pubBtn.classList.toggle('btn-primary', !res.following);
+  }
+  if (p) p.following_author = res.following;
+}
+
+async function loadPubFollowInfo(userId) {
+  try {
+    const info = await api.getFollowInfo(userId);
+    const fEl = document.getElementById('pub-followers');
+    const gEl = document.getElementById('pub-following');
+    if (fEl) fEl.textContent = info.followers_count ?? 0;
+    if (gEl) gEl.textContent = info.following_count ?? 0;
+    const btn = document.getElementById('pub-follow-btn');
+    if (btn) {
+      if (info.is_self || !currentUser) { btn.style.display = 'none'; }
+      else {
+        btn.style.display = 'block';
+        btn.textContent = info.is_following ? t('feed_following') : '+ ' + t('feed_follow');
+        btn.classList.toggle('btn-outline', info.is_following);
+        btn.classList.toggle('btn-primary', !info.is_following);
+      }
+    }
+  } catch (e) { /* follow-info gagal: biarkan angka 0, jangan blokir profil */ }
+}
+
+function toggleFollowPubProfile() {
+  if (!pubProfileUserId) return;
+  const btn = document.getElementById('pub-follow-btn');
+  toggleFollow(pubProfileUserId, btn);
+}
+
+async function openFollowList(direction) {
+  if (!pubProfileUserId) return;
+  const isFollowers = direction === 'followers';
+  try {
+    const res = isFollowers ? await api.getFollowers(pubProfileUserId) : await api.getFollowing(pubProfileUserId);
+    const users = res.users || [];
+    const modal = document.createElement('div');
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:1rem';
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+    modal.innerHTML = `
+      <div style="background:var(--surface);border-radius:20px;padding:1.5rem;max-width:420px;width:100%;max-height:80vh;overflow-y:auto">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+          <h3 style="font-weight:700;color:var(--ink)">${t(isFollowers ? 'feed_followers' : 'feed_following_count')} (${res.total || 0})</h3>
+          <button onclick="this.closest('[style*=fixed]').remove()" style="background:none;border:none;cursor:pointer;font-size:1.1rem;color:var(--muted)">✕</button>
+        </div>
+        ${users.length ? users.map(u => {
+          const ini = initials(u.full_name || '?');
+          const av = avColor(u.full_name || '');
+          return `
+          <div style="display:flex;align-items:center;gap:.8rem;padding:.6rem 0;border-top:1px solid var(--border)">
+            <div class="avatar" style="background:${av};width:36px;height:36px;font-size:.75rem;cursor:pointer" onclick="this.closest('[style*=fixed]').remove();openPublicProfile(${u.id})">${u.avatar ? `<img src="${u.avatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">` : ini}</div>
+            <div style="flex:1;min-width:0;cursor:pointer" onclick="this.closest('[style*=fixed]').remove();openPublicProfile(${u.id})">
+              <div style="font-weight:600;font-size:.88rem;color:var(--ink)">${escHTML(u.full_name || 'Anonim')}</div>
+              <div style="font-size:.75rem;color:var(--muted)">${escHTML(u.city || '')} · ${u.followers_count || 0} pengikut</div>
+            </div>
+          </div>`;
+        }).join('') : '<p style="color:var(--muted);font-size:.85rem;text-align:center;padding:1rem">Belum ada.</p>'}
+      </div>`;
+    document.body.appendChild(modal);
+  } catch (e) { showToast('Gagal memuat daftar', 'error'); }
+}
+
+// ===== DISCOVER — TALENT UNTUK DIIKUTI =====
+async function loadDiscover() {
+  const wrap = document.getElementById('feed-discover-list');
+  const section = document.getElementById('feed-discover');
+  if (!wrap) return;
+  try {
+    const users = await api.getDiscover();
+    if (!Array.isArray(users) || !users.length) { if (section) section.style.display = 'none'; return; }
+    if (section) section.style.display = 'block';
+    wrap.innerHTML = users.map(u => {
+      const ini = initials(u.full_name || '?');
+      const av = avColor(u.full_name || '');
+      return `
+      <div class="discover-card">
+        <div class="avatar" style="background:${av};width:52px;height:52px;font-size:1rem;cursor:pointer" onclick="openPublicProfile(${u.id})">${u.avatar ? `<img src="${u.avatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">` : ini}</div>
+        <div style="font-weight:700;font-size:.85rem;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px" onclick="openPublicProfile(${u.id})">${escHTML(u.full_name || 'Anonim')}</div>
+        <div style="font-size:.72rem;color:var(--muted)">${escHTML(u.city || 'Indonesia')}</div>
+        <div style="font-size:.72rem;color:var(--muted)">${u.completed_transactions || 0} transaksi · ${u.followers_count || 0} pengikut</div>
+        ${currentUser
+          ? `<button class="btn btn-primary btn-sm" data-follow-user="${u.id}" onclick="toggleFollow(${u.id}, this)" style="border-radius:100px;margin-top:.3rem">+ ${t('feed_follow')}</button>`
+          : `<button class="btn btn-outline btn-sm" onclick="goTo('login')" style="border-radius:100px;margin-top:.3rem">${t('feed_follow')}</button>`}
+      </div>`;
+    }).join('');
+  } catch (e) {
+    if (section) section.style.display = 'none';
   }
 }
