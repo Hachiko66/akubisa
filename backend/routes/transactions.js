@@ -2,49 +2,21 @@ const router = require('express').Router();
 const auth = require('../middleware/auth');
 const pool = require('../config/db');
 const { sendEmailNotif } = require('../config/email');
-const axios = require('axios');
-const crypto = require('crypto');
-const PLATFORM_FEE = parseInt(process.env.PLATFORM_FEE_PERCENT || 5) / 100;
-const BASE_URL = process.env.BASE_URL || 'https://akubisa.co';
-const DUITKU_MERCHANT = process.env.DUITKU_MERCHANT_CODE;
-const DUITKU_KEY = process.env.DUITKU_API_KEY;
-const DUITKU_URL = process.env.DUITKU_BASE_URL || 'https://sandbox.duitku.com/webapi/api';
+const { creditWorker, updateWorkerBadge } = require('../utils/ledger');
+const { getUsdcIdrRate, idrToMicroUsdc, formatUsdc, escrowAddress, verifyUsdcPayment, reserveSignature } = require('../utils/solana');
+// Fee platform 10% dari nilai transaksi (naik dari 5% per keputusan
+// produk 2026-11-23). Tetap dibebankan ke CLIENT di atas harga worker
+// (billed = total + fee), jadi worker menerima total_amount penuh.
+// Bisa di-override lewat env PLATFORM_FEE_PERCENT.
+const PLATFORM_FEE = parseInt(process.env.PLATFORM_FEE_PERCENT || 10) / 100;
 
-async function createDuitkuInvoice({ orderId, amount, email, name, description, successUrl }) {
-  const timestamp = Date.now().toString();
-  const signature = crypto.createHash('sha256')
-    .update(DUITKU_MERCHANT + timestamp + DUITKU_KEY)
-    .digest('hex');
-
-  const payload = {
-    paymentAmount: amount,
-    merchantOrderId: orderId,
-    productDetails: description,
-    customerVaName: name,
-    email,
-    callbackUrl: `${BASE_URL}/api/transactions/webhook/duitku`,
-    returnUrl: successUrl || `${BASE_URL}/#transactions`,
-    expiryPeriod: 1440,
-    customerDetail: {
-      firstName: name.split(' ')[0],
-      lastName: name.split(' ').slice(1).join(' ') || '',
-      email
-    }
-  };
-
-  const res = await axios.post('https://api-sandbox.duitku.com/api/merchant/createInvoice', payload, {
-    headers: {
-      'Accept': 'application/json',
-      'Content-Type': 'application/json',
-      'x-duitku-signature': signature,
-      'x-duitku-timestamp': timestamp,
-      'x-duitku-merchantcode': DUITKU_MERCHANT
-    }
-  });
-
-  if (res.data.statusCode !== '00') throw new Error(res.data.statusMessage || 'Duitku error');
-  return res.data;
-}
+// PEMBAYARAN — HANYA Solana + USDC (escrow kustodial platform).
+// Semua gateway fiat (Pakasir, Duitku, Xendit) sudah DIHAPUS:
+// Pakasir menutup layanan (2026-11-23) dan Yuyun tidak punya akun
+// gateway fiat lain. Client mengirim USDC ke alamat escrow, lalu
+// menyerahkan signature ke POST /:id/verify-payment; backend
+// memverifikasi on-chain (lihat utils/solana.js). Tidak ada lagi
+// webhook / hosted payment page.
 
 // POST buat transaksi baru
 router.post('/', auth, async (req, res) => {
@@ -65,11 +37,26 @@ router.post('/', auth, async (req, res) => {
     const dp_amount = Math.ceil(billed_amount * 0.5);
     const final_amount = billed_amount - dp_amount;
 
+    // KUNCI KURS — gagal tertutup bila kurs/escrow belum siap: tanpa
+    // kurs yang terkunci client tidak bisa membayar dengan jumlah yang
+    // pasti, jadi transaksi JANGAN dibuat.
+    let rateInfo, escrow;
+    try {
+      rateInfo = await getUsdcIdrRate();
+      escrow = escrowAddress().toBase58();
+    } catch (e) {
+      return res.status(503).json({ message: 'Pembayaran Solana belum siap: ' + e.message });
+    }
+    const dp_usdc_amount = idrToMicroUsdc(dp_amount, rateInfo.rate);
+    const final_usdc_amount = idrToMicroUsdc(final_amount, rateInfo.rate);
+
     const trx = await pool.query(`
       INSERT INTO transactions 
-        (type, listing_id, job_request_id, client_id, worker_id, total_amount, dp_amount, final_amount, platform_fee, notes)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *
-    `, [type||'listing', listing_id||null, job_request_id||null, req.user.id, worker_id, total_amount, dp_amount, final_amount, platform_fee, notes||null]);
+        (type, listing_id, job_request_id, client_id, worker_id, total_amount, dp_amount, final_amount, platform_fee, notes,
+         dp_usdc_amount, final_usdc_amount, usdc_rate_locked, rate_locked_at)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,NOW()) RETURNING *
+    `, [type||'listing', listing_id||null, job_request_id||null, req.user.id, worker_id, total_amount, dp_amount, final_amount, platform_fee, notes||null,
+        dp_usdc_amount, final_usdc_amount, rateInfo.rate]);
 
     const t = trx.rows[0];
     const clientData = await pool.query('SELECT email, full_name FROM users WHERE id=$1', [req.user.id]);
@@ -78,7 +65,12 @@ router.post('/', auth, async (req, res) => {
     res.status(201).json({
       message: 'Transaksi dibuat! Silakan lakukan pembayaran DP.',
       transaction_id: t.id,
-      dp_amount
+      dp_amount,
+      // Instruksi bayar DP (USDC terkunci pada kurs saat transaksi dibuat):
+      dp_usdc_amount,
+      dp_usdc_display: formatUsdc(dp_usdc_amount),
+      rate_idr_per_usdc: rateInfo.rate,
+      escrow_address: escrow
     });
   } catch(e) {
     res.status(500).json({ message: e.message });
@@ -128,6 +120,136 @@ router.get('/:id', auth, async (req, res) => {
     res.json(result.rows[0]);
   } catch(e) {
     res.status(500).json({ message: e.message });
+  }
+});
+
+// GET info pembayaran (untuk client yang mau bayar DP / pelunasan):
+// alamat escrow + jumlah USDC yang TERKUNCI pada kurs saat transaksi
+// dibuat + kursnya. Worker hanya bisa melihat (tidak membayar).
+router.get('/:id/payment-info', auth, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT * FROM transactions WHERE id=$1 AND (client_id=$2 OR worker_id=$2)',
+      [req.params.id, req.user.id]
+    );
+    const t = result.rows[0];
+    if (!t) return res.status(404).json({ message: 'Tidak ditemukan' });
+    if (t.status !== 'waiting_dp' && t.status !== 'waiting_final') {
+      return res.json({ payment_type: null, status: t.status, message: 'Transaksi ini tidak menunggu pembayaran.' });
+    }
+    const isDp = t.status === 'waiting_dp';
+    const amountIdr = parseInt(isDp ? t.dp_amount : t.final_amount, 10);
+    const amountUsdc = parseInt(isDp ? t.dp_usdc_amount : t.final_usdc_amount, 10);
+    if (!Number.isFinite(amountUsdc) || amountUsdc <= 0) {
+      return res.status(400).json({ message: 'Transaksi ini dibuat sebelum migrasi Solana (tidak ada jumlah USDC terkunci). Hubungi admin.' });
+    }
+    res.json({
+      payment_type: isDp ? 'dp' : 'final',
+      status: t.status,
+      amount_idr: amountIdr,
+      amount_usdc: amountUsdc,
+      amount_usdc_display: formatUsdc(amountUsdc),
+      rate_idr_per_usdc: parseFloat(t.usdc_rate_locked),
+      rate_locked_at: t.rate_locked_at,
+      escrow_address: escrowAddress().toBase58(),
+      network: require('../utils/solana').NETWORK,
+    });
+  } catch (e) {
+    res.status(500).json({ message: e.message });
+  }
+});
+
+// POST verifikasi pembayaran USDC (client menyerahkan signature).
+// 1) Verifikasi on-chain (read-only): signature ada + confirmed,
+//    transfer USDC ke escrow, jumlah PERSIS yang terkunci.
+// 2) Dalam SATU transaksi DB: kunci signature (tolak pemakaian ulang)
+//    + ubah status dengan guard (tolak verifikasi ganda) + untuk
+//    pelunasan: kredit worker (total_amount penuh, fee 10% sudah
+//    dibayar client di atas total — lihat utils/ledger.js).
+// Email dikirim SETELAH commit (best-effort) supaya kegagalan email
+// tidak membatalkan pembayaran yang sudah terverifikasi.
+router.post('/:id/verify-payment', auth, async (req, res) => {
+  const { signature } = req.body;
+  if (typeof signature !== 'string' || signature.length < 80 || signature.length > 90) {
+    return res.status(400).json({ message: 'Signature transaksi Solana tidak valid.' });
+  }
+  const client = await pool.connect();
+  try {
+    const tRes = await client.query('SELECT * FROM transactions WHERE id=$1', [req.params.id]);
+    const t = tRes.rows[0];
+    if (!t) return res.status(404).json({ message: 'Tidak ditemukan' });
+    if (t.client_id !== req.user.id) return res.status(403).json({ message: 'Hanya client yang bisa memverifikasi pembayaran.' });
+
+    let expected, nextStatus, sigCol;
+    if (t.status === 'waiting_dp') { expected = parseInt(t.dp_usdc_amount, 10); nextStatus = 'dp_paid'; sigCol = 'dp_tx_signature'; }
+    else if (t.status === 'waiting_final') { expected = parseInt(t.final_usdc_amount, 10); nextStatus = 'completed'; sigCol = 'final_tx_signature'; }
+    else return res.status(400).json({ message: 'Transaksi ini tidak menunggu pembayaran (status: ' + t.status + ').' });
+    if (!Number.isFinite(expected) || expected <= 0) {
+      return res.status(400).json({ message: 'Transaksi ini dibuat sebelum migrasi Solana (tidak ada jumlah USDC terkunci). Hubungi admin.' });
+    }
+
+    let v;
+    try {
+      v = await verifyUsdcPayment({ signature, expectedMicroUsdc: expected, recipientAddress: escrowAddress().toBase58() });
+    } catch (e) {
+      return res.status(503).json({ message: e.message });
+    }
+    if (!v.ok) return res.status(400).json({ message: v.reason });
+
+    await client.query('BEGIN');
+    const reserved = await reserveSignature(client, signature, 'transaction-' + nextStatus, t.id);
+    if (!reserved) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({ message: 'Signature ini sudah pernah dipakai untuk pembayaran lain.' });
+    }
+    const upd = await client.query(
+      `UPDATE transactions SET status=$1, ${sigCol}=$2 ${nextStatus === 'completed' ? ", final_paid_at=NOW()" : ''} WHERE id=$3 AND status=$4 RETURNING *`,
+      [nextStatus, signature, t.id, t.status]
+    );
+    if (!upd.rows.length) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({ message: 'Transaksi sudah diproses (kemungkinan verifikasi ganda).' });
+    }
+    if (nextStatus === 'dp_paid') {
+      await client.query(`
+        INSERT INTO notifications (user_id, type, title, message, link)
+        VALUES ($1,'transaction','💰 DP Diterima!','Klien telah membayar DP via USDC. Silakan mulai bekerja.','#transactions')
+      `, [t.worker_id]);
+    } else {
+      await creditWorker(client, t.worker_id, parseInt(t.total_amount, 10));
+      await updateWorkerBadge(client, t.worker_id);
+      await client.query(`
+        INSERT INTO notifications (user_id, type, title, message, link)
+        VALUES ($1,'transaction','🎉 Pembayaran Lunas!','Klien telah melunasi via USDC. Dana masuk ke dompetmu.','#wallet')
+      `, [t.worker_id]);
+      await client.query(`
+        INSERT INTO notifications (user_id, type, title, message, link)
+        VALUES ($1,'transaction','✅ Pembayaran Selesai','Terima kasih! Proyek telah selesai.','#transactions')
+      `, [t.client_id]);
+    }
+    await client.query('COMMIT');
+
+    // Email best-effort setelah commit (template yang sudah ada).
+    try {
+      if (nextStatus === 'dp_paid') {
+        sendEmailNotif(t.worker_id, 'new_transaction', {
+          clientName: 'Klien', amount: formatUsdc(expected), description: t.notes || ('Proyek #' + t.id)
+        }, pool);
+      } else {
+        sendEmailNotif(t.worker_id, 'transaction_completed', { amount: 'Rp ' + parseInt(t.total_amount, 10).toLocaleString('id') }, pool);
+      }
+    } catch { /* email gagal tidak membatalkan pembayaran */ }
+
+    res.json({
+      message: nextStatus === 'dp_paid' ? 'DP terverifikasi! Worker sudah bisa mulai bekerja.' : 'Pelunasan terverifikasi! Transaksi selesai.',
+      status: nextStatus,
+      signature
+    });
+  } catch (e) {
+    try { await client.query('ROLLBACK'); } catch { /* abaikan */ }
+    res.status(500).json({ message: e.message });
+  } finally {
+    client.release();
   }
 });
 
@@ -212,57 +334,4 @@ router.patch('/:id/dispute', auth, async (req, res) => {
   }
 });
 
-// POST Duitku Webhook
-router.post('/webhook/duitku', async (req, res) => {
-  try {
-    const { merchantCode, amount, merchantOrderId, resultCode, signature } = req.body;
-    const expectedSig = crypto.createHash('md5')
-      .update(merchantCode + amount + merchantOrderId + DUITKU_KEY)
-      .digest('hex');
-    if (signature !== expectedSig) {
-      console.error('Invalid Duitku webhook signature');
-      return res.status(400).send('Invalid signature');
-    }
-    if (resultCode !== '00') return res.send('OK');
-
-    if (merchantOrderId.startsWith('DP-')) {
-      const trxId = merchantOrderId.split('-')[1];
-      await pool.query(
-        "UPDATE transactions SET status='dp_paid', dp_paid_at=NOW() WHERE id=$1 AND status='waiting_dp'",
-        [trxId]
-      );
-      const t = await pool.query('SELECT * FROM transactions WHERE id=$1', [trxId]);
-      if (t.rows[0]) {
-        await pool.query(`INSERT INTO notifications (user_id, type, title, message, link) VALUES ($1,'transaction','💰 DP Masuk!','DP 50% telah dibayar. Silakan mulai pengerjaan.','#transactions')`, [t.rows[0].worker_id]);
-        await pool.query(`INSERT INTO notifications (user_id, type, title, message, link) VALUES ($1,'transaction','✅ Pembayaran DP Berhasil','DP 50% kamu berhasil diterima.','#transactions')`, [t.rows[0].client_id]);
-        const clientData = await pool.query('SELECT full_name FROM users WHERE id=$1', [t.rows[0].client_id]);
-        sendEmailNotif(t.rows[0].worker_id, 'new_transaction', {
-          clientName: clientData.rows[0]?.full_name || 'Klien',
-          amount: 'Rp ' + parseInt(t.rows[0].dp_amount).toLocaleString('id'),
-          description: t.rows[0].notes || 'Proyek #' + trxId
-        }, pool);
-      }
-    } else if (merchantOrderId.startsWith('FINAL-')) {
-      const trxId = merchantOrderId.split('-')[1];
-      await pool.query(
-        "UPDATE transactions SET status='completed', final_paid_at=NOW() WHERE id=$1 AND status='waiting_final'",
-        [trxId]
-      );
-      const t = await pool.query('SELECT * FROM transactions WHERE id=$1', [trxId]);
-      if (t.rows[0]) {
-        await pool.query(`INSERT INTO notifications (user_id, type, title, message, link) VALUES ($1,'transaction','🎉 Pembayaran Lunas!','Klien telah melunasi pembayaran. Dana akan segera dicairkan.','#transactions')`, [t.rows[0].worker_id]);
-        await pool.query(`INSERT INTO notifications (user_id, type, title, message, link) VALUES ($1,'transaction','✅ Pembayaran Selesai','Terima kasih! Proyek telah selesai.','#transactions')`, [t.rows[0].client_id]);
-        // Update badge worker
-        const workerCount = await pool.query("SELECT COUNT(*) FROM transactions WHERE worker_id=$1 AND status='completed'", [t.rows[0].worker_id]);
-        const n = parseInt(workerCount.rows[0].count);
-        const level = n >= 50 ? 'elite' : n >= 20 ? 'expert' : n >= 5 ? 'pro' : 'pemula';
-        await pool.query('UPDATE users SET badge_level=$1 WHERE id=$2', [level, t.rows[0].worker_id]);
-      }
-    }
-    res.send('OK');
-  } catch(e) {
-    console.error('Duitku webhook error:', e.message);
-    res.status(500).json({ message: 'Internal server error' });
-  }
-});
 module.exports = router;
