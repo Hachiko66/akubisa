@@ -79,17 +79,19 @@ function renderExploreMenuTabs() {
     `<div class="chip ${exploreMenu===m.slug?'active':''}" onclick="setExploreMenu('${m.slug}',this)">${m.icon ? m.icon+' ' : ''}${m.name}</div>`).join('');
 }
 
-// Baris chip subkategori: anak dari menu yang dipilih; bila menu
-// 'semua', chip = semua kategori utama (klik induk -> pindah menu).
+// Baris chip subkategori: anak dari menu yang dipilih. Bila menu
+// 'semua', baris ini DISEMBUNYIKAN — baris tab menu di atasnya sudah
+// menampilkan Semua + semua kategori utama, jadi menampilkan keduanya
+// membuat chip tampil ganda.
 function renderExploreChips() {
   const chipWrap = document.getElementById('explore-chips');
   if (!chipWrap) return;
   if (exploreMenu === 'semua') {
-    chipWrap.innerHTML =
-      `<div class="chip ${exploreFilter==='semua'?'active':''}" onclick="setExploreFilter('semua',this)">${t('filter_all')}</div>` +
-      topCategories().map(c=>`<div class="chip ${exploreFilter===c.slug?'active':''}" onclick="setExploreFilter('${c.slug}',this)">${c.icon} ${c.name}</div>`).join('');
+    chipWrap.innerHTML = '';
+    chipWrap.style.display = 'none';
     return;
   }
+  chipWrap.style.display = '';
   const parent = categoryBySlug(exploreMenu);
   const kids = childCategories(exploreMenu);
   if (!kids.length) {
@@ -339,7 +341,7 @@ async function renderDashboard() {
             <div style="display:flex;gap:.5rem;justify-content:flex-end" onclick="event.stopPropagation()">
               <button class="btn btn-outline btn-sm" onclick="openEditListing(${l.id})">✏️ Edit</button>
               <button class="btn btn-danger btn-sm" onclick="deleteListing(${l.id})">🗑 Hapus</button>
-              <button class="btn btn-sm" style="background:linear-gradient(135deg,#e8521a,#c94415);color:white;border:none;font-size:.75rem;padding:.3rem .8rem;border-radius:8px;cursor:pointer" onclick="openBoostModal(${l.id}, '${l.title.replace(/'/g,'')}')">⚡ Boost</button>
+              <button class="btn btn-sm" style="background:linear-gradient(135deg,#d2693c,#b25a33);color:white;border:none;font-size:.75rem;padding:.3rem .8rem;border-radius:8px;cursor:pointer" onclick="openBoostModal(${l.id}, '${l.title.replace(/'/g,'')}')">⚡ Boost</button>
             </div>
           </div>`;
           }).join('')
@@ -547,7 +549,7 @@ async function loadConversations() {
       return `
         <div onclick="openConversation(${c.id},'${(c.other_name||'').replace(/'/g,"\\'")}',${c.other_id},'${c.listing_title||''}')"
           style="padding:1rem 1.2rem;border-bottom:1px solid var(--border);cursor:pointer;display:flex;gap:.8rem;align-items:center;transition:background .2s;${activeConvId===c.id?'background:var(--warm)':''}"
-          onmouseover="this.style.background='var(--warm)'" onmouseout="this.style.background='${activeConvId===c.id?'var(--warm)':'white'}'">
+          onmouseover="this.style.background='var(--warm)'" onmouseout="this.style.background='${activeConvId===c.id?'var(--warm)':'var(--surface)'}'">
           <div class="avatar" style="background:${av};width:38px;height:38px;font-size:.8rem;flex-shrink:0">${ini}</div>
           <div style="flex:1;min-width:0">
             <div style="display:flex;justify-content:space-between;align-items:center">
@@ -784,7 +786,7 @@ async function loadPublicPortfolio(userId) {
         <div style="padding:.9rem 1rem 1rem">
           <div style="font-weight:700;font-size:.92rem;margin-bottom:.3rem;line-height:1.3">${p.title}</div>
           ${p.description?`<p style="font-size:.78rem;color:var(--muted);line-height:1.5;margin-bottom:.5rem;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden">${p.description}</p>`:''}
-          ${p.client_rating?`<div style="font-size:.78rem;color:#f59e0b">★ ${p.client_rating}/5</div>`:''}
+          ${p.client_rating?`<div style="font-size:.78rem;color:var(--accent3)">★ ${p.client_rating}/5</div>`:''}
           <div style="font-size:.7rem;color:var(--muted);margin-top:.4rem">${new Date(p.created_at).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}</div>
         </div>
       </div>`;
@@ -846,7 +848,7 @@ function openPortoViewer(idx) {
       <div style="background:rgba(255,255,255,.08);border-radius:12px;padding:1.2rem;color:white">
         <div style="font-weight:700;font-size:1.1rem;margin-bottom:.5rem">${item.title}</div>
         ${item.description?`<p style="font-size:.85rem;color:rgba(255,255,255,.7);line-height:1.6;margin-bottom:.7rem">${item.description}</p>`:''}
-        ${item.client_rating?`<div style="color:#f59e0b;font-size:.85rem">★ ${item.client_rating}/5</div>`:''}
+        ${item.client_rating?`<div style="color:var(--accent3);font-size:.85rem">★ ${item.client_rating}/5</div>`:''}
       </div>
     </div>`;
 
@@ -1184,7 +1186,7 @@ async function openJobDetail(id) {
         ${r.city?`<span>📍 ${r.city}</span>`:''}
         <span>👥 ${r.application_count||0} pelamar</span>
       </div>
-      <div style="font-size:.88rem;line-height:1.7;color:#333;margin-bottom:1.5rem;white-space:pre-wrap">${r.description}</div>
+      <div style="font-size:.88rem;line-height:1.7;color:var(--text);margin-bottom:1.5rem;white-space:pre-wrap">${r.description}</div>
       <div class="card" style="margin-bottom:1rem">
         <div style="display:flex;align-items:center;gap:.8rem">
           <div class="avatar" style="background:${av};width:40px;height:40px">${ini}</div>
@@ -1716,7 +1718,7 @@ async function switchWalletTab(tab, el) {
               <div style="padding:.9rem 1rem 1rem">
                 <div style="font-weight:700;font-size:.92rem;margin-bottom:.3rem;line-height:1.3">${p.title}</div>
                 ${p.description?`<p style="font-size:.78rem;color:var(--muted);line-height:1.5;margin-bottom:.6rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${p.description}</p>`:''}
-                ${p.client_rating?`<div style="font-size:.78rem;color:#f59e0b;margin-bottom:.6rem">★ ${p.client_rating}/5${p.client_review?` <span style="color:var(--muted);font-style:italic">"${p.client_review.slice(0,40)}${p.client_review.length>40?'...':''}"</span>`:''}</div>`:''}
+                ${p.client_rating?`<div style="font-size:.78rem;color:var(--accent3);margin-bottom:.6rem">★ ${p.client_rating}/5${p.client_review?` <span style="color:var(--muted);font-style:italic">"${p.client_review.slice(0,40)}${p.client_review.length>40?'...':''}"</span>`:''}</div>`:''}
                 <div style="font-size:.72rem;color:var(--muted);margin-bottom:.7rem">${new Date(p.created_at).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}</div>
                 <div style="display:flex;gap:.4rem;flex-wrap:wrap">
                   <button onclick="togglePortfolioVisibility(${p.id},${!p.is_public})" style="flex:1;padding:.35rem .6rem;border-radius:100px;font-size:.72rem;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:var(--surface);color:var(--ink)">${p.is_public?'👁 Publik':'🔒 Privat'}</button>
