@@ -2,6 +2,7 @@ const router = require('express').Router();
 const auth = require('../middleware/auth');
 const pool = require('../config/db');
 const { sendEmailNotif } = require('../config/email');
+const { notifyUser } = require('../utils/notify');
 
 // GET semua job requests
 router.get('/', async (req, res) => {
@@ -143,6 +144,13 @@ router.post('/:id/apply', auth, async (req, res) => {
       applicantName: applicant.rows[0]?.full_name || 'Seseorang',
       jobTitle: jr.rows[0].title
     }, pool);
+    // Notifikasi in-app ke pemilik job request (best-effort)
+    notifyUser(jr.rows[0].user_id, {
+      type: 'job',
+      title: '💼 Lamaran Baru',
+      body: `${applicant.rows[0]?.full_name || 'Seseorang'} melamar "${jr.rows[0].title}"`,
+      link: '#job-requests'
+    });
     res.status(201).json({ message: 'Lamaran terkirim!', data: result.rows[0] });
   } catch(e) {
     if (e.code === '23505') return res.status(400).json({ message: 'Kamu sudah melamar sebelumnya' });
@@ -154,7 +162,7 @@ router.post('/:id/apply', auth, async (req, res) => {
 router.patch('/applications/:appId/accept', auth, async (req, res) => {
   try {
     const app = await pool.query(`
-      SELECT ja.*, jr.user_id as owner_id FROM job_applications ja
+      SELECT ja.*, jr.user_id as owner_id, jr.title as job_title FROM job_applications ja
       JOIN job_requests jr ON ja.job_request_id = jr.id
       WHERE ja.id = $1
     `, [req.params.appId]);
@@ -163,6 +171,13 @@ router.patch('/applications/:appId/accept', auth, async (req, res) => {
     await pool.query("UPDATE job_applications SET status='accepted' WHERE id=$1", [req.params.appId]);
     await pool.query("UPDATE job_applications SET status='rejected' WHERE job_request_id=$1 AND id!=$2", [app.rows[0].job_request_id, req.params.appId]);
     await pool.query("UPDATE job_requests SET status='in_progress' WHERE id=$1", [app.rows[0].job_request_id]);
+    // Notifikasi in-app ke pelamar yang diterima (best-effort)
+    notifyUser(app.rows[0].applicant_id, {
+      type: 'job',
+      title: '🎉 Lamaran Diterima!',
+      body: `Lamaranmu untuk "${app.rows[0].job_title}" diterima.`,
+      link: '#job-requests'
+    });
     res.json({ message: 'Pelamar diterima!' });
   } catch(e) { res.status(500).json({ message: e.message }); }
 });
