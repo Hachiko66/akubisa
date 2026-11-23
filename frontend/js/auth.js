@@ -15,10 +15,10 @@ function setRegRole(role) {
   const c = document.getElementById('reg-card-client');
   if (!w || !c) return;
   if (role === 'worker') {
-    w.style.borderColor = 'var(--accent)'; w.style.background = '#fff8f6';
+    w.style.borderColor = 'var(--accent)'; w.style.background = 'var(--accent-soft)';
     c.style.borderColor = 'var(--border)'; c.style.background = 'white';
   } else {
-    c.style.borderColor = 'var(--accent)'; c.style.background = '#fff8f6';
+    c.style.borderColor = 'var(--accent)'; c.style.background = 'var(--accent-soft)';
     w.style.borderColor = 'var(--border)'; w.style.background = 'white';
   }
   document.getElementById('reg-worker-hint').style.display = role === 'worker' ? 'block' : 'none';
