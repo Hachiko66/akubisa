@@ -36,7 +36,7 @@ if [ -n "${DATABASE_URL:-}" ] || [ -n "${DB_NAME:-}" ]; then
         : { host: process.env.DB_HOST || 'localhost', user: process.env.DB_USER, password: process.env.DB_PASSWORD, database: process.env.DB_NAME, port: process.env.DB_PORT || 5432 };
       const c = new Client(cfg);
       await c.connect();
-      for (const f of ['config/migrate-menus.sql', 'config/migrate-social.sql']) {
+      for (const f of ['config/migrate-menus.sql', 'config/migrate-social.sql', 'config/migrate-notifications.sql']) {
         console.log('Migrasi:', f);
         await c.query(fs.readFileSync(f, 'utf8'));
       }
