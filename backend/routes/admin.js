@@ -1,6 +1,8 @@
 const router = require('express').Router();
 const admin = require('../middleware/admin');
 const pool = require('../config/db');
+const { creditWorker, creditClient, updateWorkerBadge } = require('../utils/ledger');
+const { getUsdcIdrRate, idrToMicroUsdc, formatUsdc, isValidSolanaAddress, verifyUsdcPayment, sendUsdc, reserveSignature } = require('../utils/solana');
 
 // ===== DASHBOARD STATS =====
 router.get('/stats', admin, async (req, res) => {
@@ -102,7 +104,15 @@ router.get('/listings', admin, async (req, res) => {
     let where = 'WHERE 1=1';
     const params = [];
     if (search)   { params.push(`%${search}%`); where += ` AND l.title ILIKE $${params.length}`; }
-    if (category) { params.push(category); where += ` AND c.slug = $${params.length}`; }
+    // Filter kategori: slug induk ikut menampilkan listing semua
+    // subkategorinya (diselesaikan ke daftar id dulu).
+    if (category) {
+      const cats = await pool.query(
+        'SELECT id FROM categories WHERE slug = $1 OR parent_slug = $1', [category]);
+      const ids = cats.rows.map(r => r.id);
+      if (ids.length) { params.push(ids); where += ` AND l.category_id = ANY($${params.length})`; }
+      else where += ' AND FALSE';
+    }
     params.push(limit, offset);
     const result = await pool.query(`
       SELECT l.*, u.full_name, u.email,
@@ -197,22 +207,113 @@ router.patch('/withdrawals/:id/approve', admin, async (req, res) => {
     const wr = await pool.query('SELECT * FROM withdraw_requests WHERE id=$1', [req.params.id]);
     if (!wr.rows[0]) return res.status(404).json({ message: 'Tidak ditemukan' });
     if (wr.rows[0].status !== 'pending') return res.status(400).json({ message: 'Sudah diproses' });
+    const w = wr.rows[0];
+    if (!w.solana_address || !isValidSolanaAddress(w.solana_address)) {
+      return res.status(400).json({ message: 'Request ini tidak punya alamat payout Solana yang valid.' });
+    }
+
+    // Kunci kurs SAAT INI (momen transfer) lalu kirim USDC dari escrow
+    // ke alamat payout snapshot request. Bila pengiriman GAGAL (saldo
+    // escrow kurang / RPC down / keypair belum dikonfigurasi), request
+    // TETAP 'pending' — JANGAN tandai approved, supaya admin bisa
+    // mencoba lagi dan saldo worker tidak hilang.
+    let rateInfo, usdcAmount, sig;
+    try {
+      rateInfo = await getUsdcIdrRate();
+      usdcAmount = idrToMicroUsdc(w.amount, rateInfo.rate);
+      sig = await sendUsdc({ toAddress: w.solana_address, microUsdc: usdcAmount });
+    } catch (e) {
+      console.error('[withdraw] kirim USDC gagal:', e.message);
+      return res.status(503).json({ message: 'Gagal mengirim USDC: ' + e.message + ' Request tetap pending.' });
+    }
 
     await pool.query(`
-      UPDATE withdraw_requests SET status='approved', admin_note=$1, processed_at=NOW() WHERE id=$2
-    `, [admin_note||null, req.params.id]);
+      UPDATE withdraw_requests SET status='approved', admin_note=$1, processed_at=NOW(),
+        usdc_amount=$2, rate_idr_per_usdc=$3, tx_signature=$4, paid_at=NOW() WHERE id=$5
+    `, [admin_note||null, usdcAmount, rateInfo.rate, sig, req.params.id]);
 
     await pool.query(`
       UPDATE worker_balances SET total_withdrawn=total_withdrawn+$1 WHERE worker_id=$2
-    `, [wr.rows[0].amount, wr.rows[0].worker_id]);
+    `, [w.amount, w.worker_id]);
 
     await pool.query(`
       INSERT INTO notifications (user_id, type, title, message, link)
-      VALUES ($1,'wallet','✅ Withdraw Disetujui!','Withdraw Rp ${parseInt(wr.rows[0].amount).toLocaleString()} telah disetujui dan sedang ditransfer.','#wallet')
-    `, [wr.rows[0].worker_id]);
+      VALUES ($1,'wallet','✅ Withdraw Disetujui!','Withdraw Rp ${parseInt(w.amount).toLocaleString()} (${formatUsdc(usdcAmount)}) telah dikirim ke alamat Solanamu.','#wallet')
+    `, [w.worker_id]);
 
-    res.json({ message: 'Withdraw disetujui!' });
+    res.json({ message: 'Withdraw disetujui dan USDC terkirim!', tx_signature: sig, usdc_amount: usdcAmount });
   } catch(e) { res.status(500).json({ message: e.message }); }
+});
+
+// POST catat tx signature manual (fallback bila admin mengirim USDC
+// manual dari wallet escrow, mis. RPC backend down saat approve).
+// Signature TETAP diverifikasi on-chain: harus transfer USDC ke alamat
+// payout snapshot request, jumlahnya dalam toleransi ±2% dari yang
+// seharusnya dikirim pada kurs saat ini (mengakomodasi pergeseran kurs
+// antara admin mengirim dan mencatat). Signature dikunci supaya tidak
+// bisa dipakai dua kali.
+router.post('/withdrawals/:id/record-tx', admin, async (req, res) => {
+  const { tx_signature } = req.body;
+  if (typeof tx_signature !== 'string' || tx_signature.length < 80 || tx_signature.length > 90) {
+    return res.status(400).json({ message: 'Signature transaksi Solana tidak valid.' });
+  }
+  const client = await pool.connect();
+  try {
+    const wr = await client.query('SELECT * FROM withdraw_requests WHERE id=$1', [req.params.id]);
+    if (!wr.rows[0]) return res.status(404).json({ message: 'Tidak ditemukan' });
+    if (wr.rows[0].status !== 'pending') return res.status(400).json({ message: 'Sudah diproses' });
+    const w = wr.rows[0];
+    if (!w.solana_address || !isValidSolanaAddress(w.solana_address)) {
+      return res.status(400).json({ message: 'Request ini tidak punya alamat payout Solana yang valid.' });
+    }
+
+    let rateInfo;
+    try { rateInfo = await getUsdcIdrRate(); }
+    catch (e) { return res.status(503).json({ message: 'Kurs tidak tersedia: ' + e.message }); }
+    const expected = idrToMicroUsdc(w.amount, rateInfo.rate);
+    const tolerance = Math.max(1000, Math.ceil(expected * 0.02)); // min 0,001 USDC
+
+    let v;
+    try {
+      v = await verifyUsdcPayment({ signature: tx_signature, expectedMicroUsdc: expected, recipientAddress: w.solana_address, toleranceMicroUsdc: tolerance });
+    } catch (e) {
+      return res.status(503).json({ message: e.message });
+    }
+    if (!v.ok) return res.status(400).json({ message: v.reason });
+
+    await client.query('BEGIN');
+    const reserved = await reserveSignature(client, tx_signature, 'withdraw-manual', w.id);
+    if (!reserved) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({ message: 'Signature ini sudah pernah dipakai.' });
+    }
+    const upd = await client.query(
+      `UPDATE withdraw_requests SET status='approved', processed_at=NOW(),
+         usdc_amount=$1, rate_idr_per_usdc=$2, tx_signature=$3, paid_at=NOW()
+       WHERE id=$4 AND status='pending' RETURNING *`,
+      [v.amountMicroUsdc, rateInfo.rate, tx_signature, w.id]
+    );
+    if (!upd.rows.length) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({ message: 'Request sudah diproses.' });
+    }
+    await client.query(
+      'UPDATE worker_balances SET total_withdrawn=total_withdrawn+$1 WHERE worker_id=$2',
+      [w.amount, w.worker_id]
+    );
+    await client.query(`
+      INSERT INTO notifications (user_id, type, title, message, link)
+      VALUES ($1,'wallet','✅ Withdraw Disetujui!','Withdraw Rp ${parseInt(w.amount).toLocaleString()} (${formatUsdc(v.amountMicroUsdc)}) telah dikirim ke alamat Solanamu.','#wallet')
+    `, [w.worker_id]);
+    await client.query('COMMIT');
+
+    res.json({ message: 'Tx manual tercatat dan terverifikasi on-chain.', tx_signature, usdc_amount: v.amountMicroUsdc });
+  } catch (e) {
+    try { await client.query('ROLLBACK'); } catch { /* abaikan */ }
+    res.status(500).json({ message: e.message });
+  } finally {
+    client.release();
+  }
 });
 
 router.patch('/withdrawals/:id/reject', admin, async (req, res) => {
@@ -261,32 +362,60 @@ router.patch('/disputes/:id/resolve', admin, async (req, res) => {
   const { decision, admin_note } = req.body;
   // decision: 'refund' | 'release'
   if (!decision) return res.status(400).json({ message: 'Keputusan wajib diisi' });
+  if (!['refund', 'release'].includes(decision)) return res.status(400).json({ message: 'Keputusan tidak valid' });
   try {
     const t = await pool.query('SELECT * FROM transactions WHERE id=$1', [req.params.id]);
     if (!t.rows[0]) return res.status(404).json({ message: 'Tidak ditemukan' });
+    if (t.rows[0].status !== 'disputed') return res.status(400).json({ message: 'Dispute sudah diproses' });
     const trx = t.rows[0];
 
     if (decision === 'refund') {
-      await pool.query(`UPDATE transactions SET status='refunded' WHERE id=$1`, [trx.id]);
+      // REFUND NYATA — dulu hanya ganti status + notifikasi, uangnya
+      // tidak pernah bergerak. Tidak ada lagi gateway fiat yang bisa
+      // me-refund otomatis (Pakasir tutup; Duitku/Xendit dihapus), jadi
+      // refund dicatat sebagai kredit klien sebesar DP yang sudah
+      // dibayar (USDC yang sudah masuk escrow tetap di escrow sampai
+      // admin mencairkan kredit ini). Admin wajib menindaklanjuti
+      // pencairan kredit ini secara manual — bila client minta uangnya
+      // kembali dalam USDC, admin mengirim dari escrow sebesar
+      // kredit/kurs saat itu dan mencatatnya — sampai pemakaian kredit
+      // di checkout tersedia (lihat client_credits).
+      // Guard status='disputed' membuat putusan ini idempotent: klik
+      // dua kali tidak membuat dua kredit.
+      const updated = await pool.query(
+        "UPDATE transactions SET status='refunded', refunded_at=NOW() WHERE id=$1 AND status='disputed' RETURNING *",
+        [trx.id]
+      );
+      if (!updated.rows.length) return res.status(400).json({ message: 'Dispute sudah diproses' });
+      const refundAmount = parseInt(trx.dp_amount, 10) || 0; // DP yang sudah dibayar client
+      if (refundAmount > 0) {
+        await creditClient(pool, {
+          userId: trx.client_id,
+          amount: refundAmount,
+          transactionId: trx.id,
+          reason: 'refund_dispute',
+        });
+      }
       await pool.query(`
         INSERT INTO notifications (user_id, type, title, message, link)
-        VALUES ($1,'transaction','↩️ Dispute Selesai - Refund','Admin memutuskan refund untuk transaksi #${trx.id}. Dana akan dikembalikan.','#transactions')
+        VALUES ($1,'transaction','↩️ Dispute Selesai - Refund','Admin memutuskan refund untuk transaksi #${trx.id}. Dana DP Rp ${refundAmount.toLocaleString('id')} dicatat sebagai kredit akunmu dan akan dikembalikan admin.','#transactions')
       `, [trx.client_id]);
       await pool.query(`
         INSERT INTO notifications (user_id, type, title, message, link)
         VALUES ($1,'transaction','↩️ Dispute Selesai','Admin memutuskan refund untuk klien pada transaksi #${trx.id}.','#transactions')
       `, [trx.worker_id]);
     } else if (decision === 'release') {
-      const workerEarning = trx.total_amount - trx.platform_fee;
-      await pool.query(`UPDATE transactions SET status='completed' WHERE id=$1`, [trx.id]);
-      await pool.query(`
-        INSERT INTO worker_balances (worker_id, total_earned, balance)
-        VALUES ($1,$2,$2)
-        ON CONFLICT (worker_id) DO UPDATE SET
-          total_earned=worker_balances.total_earned+$2,
-          balance=worker_balances.balance+$2,
-          updated_at=NOW()
-      `, [trx.worker_id, workerEarning]);
+      // Worker menerima total_amount PENUH — fee 10% sudah dibayar client
+      // di atas total (lihat utils/ledger.js). Aturan lama di sini
+      // (total_amount - platform_fee) memotong fee dari worker padahal
+      // client sudah membayarnya: worker kena fee dua kali.
+      const updated = await pool.query(
+        "UPDATE transactions SET status='completed', final_paid_at=NOW() WHERE id=$1 AND status='disputed' RETURNING *",
+        [trx.id]
+      );
+      if (!updated.rows.length) return res.status(400).json({ message: 'Dispute sudah diproses' });
+      await creditWorker(pool, trx.worker_id, parseInt(trx.total_amount, 10));
+      await updateWorkerBadge(pool, trx.worker_id);
       await pool.query(`
         INSERT INTO notifications (user_id, type, title, message, link)
         VALUES ($1,'transaction','✅ Dispute Selesai','Admin memutuskan dana dilepas ke pekerja untuk transaksi #${trx.id}.','#transactions')
@@ -438,21 +567,39 @@ router.get('/boost-orders', async (req, res) => {
 
 // ===== CATEGORIES =====
 router.post('/categories', async (req, res) => {
-  const { name, slug, icon } = req.body;
+  const { name, slug, icon, parent_slug } = req.body;
   try {
+    // parent_slug harus menunjuk ke slug kategori induk yang ada
+    // (NULL = menu utama). Validasi ini mencegah subkategori yatim.
+    if (parent_slug) {
+      const parent = await pool.query('SELECT id FROM categories WHERE slug = $1', [parent_slug]);
+      if (!parent.rows.length) return res.status(400).json({ message: 'Induk tidak ditemukan' });
+    }
     const result = await pool.query(
-      'INSERT INTO categories (name, slug, icon) VALUES ($1, $2, $3) RETURNING *',
-      [name, slug, icon]
+      'INSERT INTO categories (name, slug, icon, parent_slug) VALUES ($1, $2, $3, $4) RETURNING *',
+      [name, slug, icon, parent_slug || null]
     );
     res.json(result.rows[0]);
-  } catch(e) { res.status(500).json({ message: e.message }); }
+  } catch(e) {
+    if (e.code === '23505') return res.status(400).json({ message: 'Slug sudah dipakai' });
+    res.status(500).json({ message: e.message });
+  }
 });
 
 router.delete('/categories/:id', async (req, res) => {
   try {
+    // Induk yang masih punya subkategori tidak boleh dihapus.
+    const kids = await pool.query(
+      'SELECT COUNT(*) FROM categories WHERE parent_slug = (SELECT slug FROM categories WHERE id = $1)',
+      [req.params.id]);
+    if (parseInt(kids.rows[0].count) > 0)
+      return res.status(400).json({ message: 'Hapus dulu subkategorinya' });
     await pool.query('DELETE FROM categories WHERE id = $1', [req.params.id]);
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ message: e.message }); }
+  } catch(e) {
+    if (e.code === '23503') return res.status(400).json({ message: 'Masih dipakai listing / job request' });
+    res.status(500).json({ message: e.message });
+  }
 });
 
 // ===== BROADCAST =====
