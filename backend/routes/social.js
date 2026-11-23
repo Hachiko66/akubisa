@@ -15,6 +15,7 @@ const router = require('express').Router();
 const jwt = require('jsonwebtoken');
 const auth = require('../middleware/auth');
 const pool = require('../config/db');
+const { notifyUser } = require('../utils/notify');
 
 const MAX_POST_LEN = 2000;
 const MAX_COMMENT_LEN = 1000;
@@ -203,14 +204,25 @@ router.delete('/posts/:id', auth, async (req, res) => {
 // POST /api/social/posts/:id/like — idempotent (like dua kali tetap 1).
 router.post('/posts/:id/like', auth, async (req, res) => {
   try {
-    const post = await pool.query('SELECT id FROM social_posts WHERE id=$1 AND deleted_at IS NULL', [req.params.id]);
+    const post = await pool.query('SELECT id, user_id FROM social_posts WHERE id=$1 AND deleted_at IS NULL', [req.params.id]);
     if (!post.rows.length) return res.status(404).json({ message: 'Postingan tidak ditemukan' });
-    await pool.query(
+    const ins = await pool.query(
       'INSERT INTO post_likes (post_id, user_id) VALUES ($1,$2) ON CONFLICT (post_id, user_id) DO NOTHING',
       [req.params.id, req.user.id]
     );
     const count = await pool.query('SELECT COUNT(*) FROM post_likes WHERE post_id=$1', [req.params.id]);
     res.json({ liked: true, like_count: parseInt(count.rows[0].count) });
+    // Notifikasi ke penulis postingan — hanya untuk like BARU dan
+    // bukan like ke postingan sendiri (best-effort).
+    if (ins.rowCount > 0 && post.rows[0].user_id !== req.user.id) {
+      const liker = await pool.query('SELECT full_name FROM users WHERE id=$1', [req.user.id]);
+      notifyUser(post.rows[0].user_id, {
+        type: 'social',
+        title: '❤️ Postinganmu disukai',
+        body: `${liker.rows[0]?.full_name || 'Seseorang'} menyukai postinganmu.`,
+        link: '#feed'
+      });
+    }
   } catch (e) { res.status(500).json({ message: e.message }); }
 });
 
@@ -249,7 +261,7 @@ router.post('/posts/:id/comments', auth, async (req, res) => {
   if (!text) return res.status(400).json({ message: 'Tulis dulu komentarmu' });
   if (text.length > MAX_COMMENT_LEN) return res.status(400).json({ message: `Komentar maksimal ${MAX_COMMENT_LEN} karakter` });
   try {
-    const post = await pool.query('SELECT id FROM social_posts WHERE id=$1 AND deleted_at IS NULL', [req.params.id]);
+    const post = await pool.query('SELECT id, user_id FROM social_posts WHERE id=$1 AND deleted_at IS NULL', [req.params.id]);
     if (!post.rows.length) return res.status(404).json({ message: 'Postingan tidak ditemukan' });
     const result = await pool.query(
       'INSERT INTO post_comments (post_id, user_id, body) VALUES ($1,$2,$3) RETURNING *',
@@ -264,6 +276,15 @@ router.post('/posts/:id/comments', auth, async (req, res) => {
         author: { id: req.user.id, full_name: author.rows[0].full_name, avatar: author.rows[0].avatar, is_verified: author.rows[0].is_verified },
       },
     });
+    // Notifikasi ke penulis postingan — bukan komentar sendiri (best-effort).
+    if (post.rows[0].user_id !== req.user.id) {
+      notifyUser(post.rows[0].user_id, {
+        type: 'social',
+        title: '💬 Komentar baru',
+        body: `${author.rows[0].full_name}: ${text.slice(0, 100)}`,
+        link: '#feed'
+      });
+    }
   } catch (e) { res.status(500).json({ message: e.message }); }
 });
 
@@ -293,12 +314,22 @@ router.post('/users/:id/follow', auth, async (req, res) => {
   try {
     const target = await pool.query('SELECT id FROM users WHERE id=$1', [targetId]);
     if (!target.rows.length) return res.status(404).json({ message: 'User tidak ditemukan' });
-    await pool.query(
+    const ins = await pool.query(
       'INSERT INTO follows (follower_id, following_id) VALUES ($1,$2) ON CONFLICT (follower_id, following_id) DO NOTHING',
       [req.user.id, targetId]
     );
     const count = await pool.query('SELECT COUNT(*) FROM follows WHERE following_id=$1', [targetId]);
     res.json({ following: true, followers_count: parseInt(count.rows[0].count) });
+    // Notifikasi ke user yang diikuti — hanya untuk follow BARU (best-effort).
+    if (ins.rowCount > 0) {
+      const follower = await pool.query('SELECT full_name FROM users WHERE id=$1', [req.user.id]);
+      notifyUser(targetId, {
+        type: 'social',
+        title: '👥 Pengikut baru',
+        body: `${follower.rows[0]?.full_name || 'Seseorang'} mulai mengikutimu.`,
+        link: '#feed'
+      });
+    }
   } catch (e) { res.status(500).json({ message: e.message }); }
 });
 
