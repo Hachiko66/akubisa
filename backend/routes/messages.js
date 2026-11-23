@@ -2,6 +2,7 @@ const router = require('express').Router();
 const auth = require('../middleware/auth');
 const pool = require('../config/db');
 const { sendEmailNotif } = require('../config/email');
+const { notifyUser } = require('../utils/notify');
 
 // GET semua conversation user
 router.get('/conversations', auth, async (req, res) => {
@@ -81,6 +82,13 @@ router.post('/send', auth, async (req, res) => {
       senderName: sender.rows[0]?.full_name || 'Seseorang',
       preview: content.trim().slice(0, 100)
     }, pool);
+    // Notifikasi in-app ke penerima (best-effort, tidak melempar)
+    notifyUser(receiver_id, {
+      type: 'message',
+      title: `💬 Pesan baru dari ${sender.rows[0]?.full_name || 'Seseorang'}`,
+      body: content.trim().slice(0, 100),
+      link: '#messages'
+    });
   } catch(e) { res.status(500).json({ message: e.message }); }
 });
 
