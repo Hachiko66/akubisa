@@ -282,6 +282,16 @@ async function renderProfile() {
   badge.textContent = u.role === 'worker' ? t('badge_worker') : t('badge_client');
   badge.className = `role-badge ${u.role==='worker'?'role-worker':'role-client'}`;
 
+  // AkuBisa Pro: badge bila member aktif, atau CTA langganan.
+  const proEl = document.getElementById('profile-pro-area');
+  if (proEl) {
+    if (u.is_pro) {
+      proEl.innerHTML = `<div style="display:flex;align-items:center;gap:.5rem;background:var(--accent-soft);border:1px solid var(--accent-soft-border);border-radius:12px;padding:.7rem .9rem;margin-top:.8rem"><span class="pro-badge">⭐ PRO</span><span style="font-size:.82rem">Member Pro aktif · bebas biaya penarikan</span></div>`;
+    } else {
+      proEl.innerHTML = `<button class="btn btn-primary btn-sm" style="margin-top:.8rem" onclick="openProModal()">⭐ Jadi Pro — Rp49.000/bulan</button>`;
+    }
+  }
+
   document.getElementById('sw-worker').classList.toggle('active', u.role==='worker');
   document.getElementById('sw-client').classList.toggle('active', u.role==='client');
 }
@@ -704,6 +714,9 @@ async function renderPublicProfile(userId) {
     // Badge level
     const badgeEl = document.getElementById('pub-badge-level');
     if (badgeEl && profile.badge_level) badgeEl.innerHTML = badgeHTML(profile.badge_level);
+    // Badge PRO (member aktif)
+    const proBadgeEl = document.getElementById('pub-pro-badge');
+    if (proBadgeEl) proBadgeEl.style.display = profile.is_pro ? 'inline-block' : 'none';
     document.getElementById('pub-city').textContent = profile.city || 'Indonesia';
     document.getElementById('pub-listings').textContent = (profile.listing_count || 0);
     document.getElementById('pub-bio').textContent = profile.bio || '';
@@ -1520,7 +1533,7 @@ async function openCreateTrxModal(workerId, workerName, listingId = null, type =
     if (listingPrice) { amountEl.value = listingPrice; amountEl.readOnly = true; }
     document.getElementById('trx-notes').value = 'Pembelian produk digital';
     if (listingPrice && listingPrice >= 10000) {
-      const fee = Math.ceil(listingPrice * 0.10);
+      const fee = Math.ceil(listingPrice * 0.05);
       document.getElementById('trx-dp-amount').textContent = 'Rp ' + listingPrice.toLocaleString('id');
       document.getElementById('trx-final-amount').textContent = 'Rp 0 (lunas)';
       document.getElementById('trx-fee-amount').textContent = 'Rp ' + fee.toLocaleString('id');
@@ -1534,7 +1547,7 @@ async function openCreateTrxModal(workerId, workerName, listingId = null, type =
       if (amt >= 10000) {
         const dp = Math.ceil(amt * 0.5);
         const final = amt - dp;
-        const fee = Math.ceil(amt * 0.10);
+        const fee = Math.ceil(amt * 0.05);
         document.getElementById('trx-dp-amount').textContent = 'Rp ' + dp.toLocaleString('id');
         document.getElementById('trx-final-amount').textContent = 'Rp ' + final.toLocaleString('id');
         document.getElementById('trx-fee-amount').textContent = 'Rp ' + fee.toLocaleString('id');
@@ -1826,6 +1839,7 @@ function openWithdrawModal(balance) {
   document.getElementById('wd-amount').value = '';
   document.getElementById('wd-amount').max = balance;
   document.getElementById('wd-error').textContent = '';
+  updateWithdrawFeePreview();
   // Tampilkan alamat payout Solana yang tersimpan di profil. Bila belum
   // ada, arahkan user mengisinya dulu di Edit Profil.
   const addr = (currentUser && currentUser.solana_address) || '';
@@ -1837,6 +1851,26 @@ function openWithdrawModal(balance) {
 }
 
 function closeWithdrawModal() { document.getElementById('withdraw-modal').classList.remove('open'); }
+
+// Biaya penarikan 1% (min Rp1.000, maks Rp10.000); gratis untuk
+// member Pro. Preview di sisi klien saja — backend menghitung ulang
+// secara otoritatif saat approve (lihat utils/revenue.js).
+function calcWithdrawFeePreview(amount) {
+  if (!amount || amount <= 0) return 0;
+  return Math.min(10000, Math.max(1000, Math.round(amount * 0.01)));
+}
+function updateWithdrawFeePreview() {
+  const infoEl = document.getElementById('wd-fee-info');
+  if (!infoEl) return;
+  const amount = parseInt(document.getElementById('wd-amount').value);
+  if (!amount || amount < 50000) { infoEl.textContent = ''; return; }
+  if (currentUser && currentUser.is_pro) {
+    infoEl.textContent = '⭐ Gratis — member Pro bebas biaya penarikan. Diterima bersih: Rp ' + amount.toLocaleString('id');
+    return;
+  }
+  const fee = calcWithdrawFeePreview(amount);
+  infoEl.textContent = 'Biaya penarikan (1%): Rp ' + fee.toLocaleString('id') + ' · Diterima bersih: Rp ' + (amount - fee).toLocaleString('id');
+}
 
 async function submitWithdraw() {
   const amount = parseInt(document.getElementById('wd-amount').value);
@@ -2093,12 +2127,18 @@ async function searchUsers(query) {
 // { ok, message, ... } (lihat api.verify*Payment).
 let solanaPayVerify = null;
 let solanaPayOnSuccess = null;
-function openSolanaPayModal({ title, escrowAddress, amountUsdcDisplay, amountIdr, rate, verify, onSuccess }) {
+function openSolanaPayModal({ title, escrowAddress, amountUsdcDisplay, amountIdr, rate, rateLockedUntil, breakdown, verify, onSuccess }) {
   document.getElementById('sp-title').textContent = title || 'Bayar';
   document.getElementById('sp-escrow').value = escrowAddress || '';
   document.getElementById('sp-amount-usdc').textContent = amountUsdcDisplay ? ('≈ ' + amountUsdcDisplay) : '-';
   document.getElementById('sp-amount-idr').textContent = amountIdr ? ('Rp ' + parseInt(amountIdr).toLocaleString('id')) : '-';
   document.getElementById('sp-rate').textContent = rate ? ('Kurs terkunci: Rp ' + parseFloat(rate).toLocaleString('id') + ' / USDC') : '';
+  // Masa berlaku kunci kurs 24 jam (lihat utils/revenue.js).
+  const untilEl = document.getElementById('sp-rate-until');
+  if (untilEl) untilEl.textContent = rateLockedUntil ? ('Berlaku sampai ' + new Date(rateLockedUntil).toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })) : '';
+  // Rincian harga (dipakai pembelian produk digital: harga + fee = total).
+  const bdEl = document.getElementById('sp-breakdown');
+  if (bdEl) bdEl.textContent = breakdown || '';
   document.getElementById('sp-signature').value = '';
   document.getElementById('sp-error').textContent = '';
   solanaPayVerify = verify;
@@ -2152,6 +2192,7 @@ async function bayarSolana(transactionId, paymentType, btn) {
       amountUsdcDisplay: info.amount_usdc_display,
       amountIdr: info.amount_idr,
       rate: info.rate_idr_per_usdc,
+      rateLockedUntil: info.rate_locked_until,
       verify: (sig) => api.verifyTransactionPayment(transactionId, sig),
       onSuccess: () => renderTransactions()
     });
@@ -2601,7 +2642,7 @@ async function loadDiscover() {
       return `
       <div class="discover-card">
         <div class="avatar" style="background:${av};width:52px;height:52px;font-size:1rem;cursor:pointer" onclick="openPublicProfile(${u.id})">${u.avatar ? `<img src="${u.avatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">` : ini}</div>
-        <div style="font-weight:700;font-size:.85rem;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px" onclick="openPublicProfile(${u.id})">${escHTML(u.full_name || 'Anonim')}</div>
+        <div style="font-weight:700;font-size:.85rem;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px" onclick="openPublicProfile(${u.id})">${escHTML(u.full_name || 'Anonim')} ${u.is_pro ? '<span class="pro-badge">⭐ PRO</span>' : ''}</div>
         <div style="font-size:.72rem;color:var(--muted)">${escHTML(u.city || 'Indonesia')}</div>
         <div style="font-size:.72rem;color:var(--muted)">${u.completed_transactions || 0} transaksi · ${u.followers_count || 0} pengikut</div>
         ${currentUser
