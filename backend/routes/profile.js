@@ -29,6 +29,7 @@ router.get('/:id', async (req, res) => {
     const u = await pool.query(
       `SELECT u.id, u.full_name, u.avatar, u.bio, u.city, u.is_verified, u.created_at, u.badge_level,
               u.social_twitter, u.social_linkedin, u.social_github, u.social_tiktok, u.social_youtube, u.social_telegram,
+              EXISTS (SELECT 1 FROM subscriptions s WHERE s.user_id = u.id AND s.plan='pro' AND s.status='active' AND s.expires_at > NOW()) AS is_pro,
               COUNT(DISTINCT l.id) as listing_count,
               COALESCE(AVG(r.rating),0) as avg_rating,
               COUNT(DISTINCT r.id) as review_count,
