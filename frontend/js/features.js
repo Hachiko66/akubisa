@@ -212,8 +212,8 @@ async function loadNotifPanel() {
         onmouseover="this.style.background='var(--warm)'" onmouseout="this.style.background='${n.is_read?'var(--surface)':'var(--accent-soft)'}'">
         <div style="font-size:1.1rem;margin-top:.1rem">${notifIcon(n.type)}</div>
         <div style="flex:1;min-width:0">
-          <div style="font-size:.82rem;font-weight:${n.is_read?'500':'700'}">${n.title}</div>
-          ${n.message ? `<div style="font-size:.75rem;color:var(--muted);margin-top:.2rem;line-height:1.4">${n.message}</div>` : ''}
+          <div style="font-size:.82rem;font-weight:${n.is_read?'500':'700'}">${escHTML(n.title)}</div>
+          ${n.message ? `<div style="font-size:.75rem;color:var(--muted);margin-top:.2rem;line-height:1.4">${escHTML(n.message)}</div>` : ''}
           <div style="font-size:.68rem;color:var(--muted);margin-top:.3rem">${timeAgo(n.created_at)}</div>
         </div>
         ${!n.is_read ? '<div style="width:7px;height:7px;border-radius:50%;background:var(--accent);flex-shrink:0;margin-top:.3rem"></div>' : ''}
@@ -225,7 +225,7 @@ async function loadNotifPanel() {
 }
 
 function notifIcon(type) {
-  const icons = { message:'💬', review:'⭐', bookmark:'🔖', system:'📢', listing:'📋', transaction:'💳', wallet:'💰' };
+  const icons = { message:'💬', review:'⭐', bookmark:'🔖', system:'📢', broadcast:'📢', listing:'📋', transaction:'💳', wallet:'💰', social:'👥', job:'💼', kyc:'🪪' };
   return icons[type] || '🔔';
 }
 
@@ -267,12 +267,23 @@ async function markAllNotifsRead() {
 
 function updateNotifBadge(count) {
   const badge = document.getElementById('notif-badge');
-  if (!badge) return;
-  if (count > 0) {
-    badge.textContent = count > 9 ? '9+' : count;
-    badge.style.cssText = 'display:flex!important;position:absolute;top:-5px;right:-5px;background:var(--accent);color:white;font-size:.6rem;font-weight:800;min-width:17px;height:17px;border-radius:50%;align-items:center;justify-content:center;padding:0 3px';
-  } else {
-    badge.style.display = 'none';
+  if (badge) {
+    if (count > 0) {
+      badge.textContent = count > 9 ? '9+' : count;
+      badge.style.cssText = 'display:flex!important;position:absolute;top:-5px;right:-5px;background:var(--accent);color:white;font-size:.6rem;font-weight:800;min-width:17px;height:17px;border-radius:50%;align-items:center;justify-content:center;padding:0 3px';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+  // Badge yang sama di menu mobile (id terpisah, satu angka yang sama).
+  const mBadge = document.getElementById('notif-badge-mobile');
+  if (mBadge) {
+    if (count > 0) {
+      mBadge.textContent = count > 9 ? '9+' : count;
+      mBadge.style.display = 'inline-block';
+    } else {
+      mBadge.style.display = 'none';
+    }
   }
 }
 
