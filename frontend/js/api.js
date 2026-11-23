@@ -61,6 +61,39 @@ const catStyle = {
   transportasi:{ bg:'#e8f0ff', color:'#1a3a8a' },
   kesehatan: { bg:'#f0fff4', color:'#166534' },
 
+  // ===== MENU UTAMA (induk) =====
+  freelance: { bg:'#fce8e4', color:'#e8521a' },
+  digital:   { bg:'#ede9fe', color:'#6d28d9' },
+  lowongan:  { bg:'#e0f2fe', color:'#0369a1' },
+
+  // ===== FREELANCE =====
+  'freelance-web-developer':  { bg:'#e8f4ee', color:'#2a6b4a' },
+  'freelance-design-grafis':  { bg:'#fce8e4', color:'#e8521a' },
+  'freelance-akunting':       { bg:'#e8eeff', color:'#2a4ab0' },
+  'freelance-marketing':      { bg:'#fff0f6', color:'#b02a6b' },
+  'freelance-konten-kreator': { bg:'#fff4e6', color:'#c07a00' },
+
+  // ===== PRODUK DIGITAL =====
+  'digital-ai':            { bg:'#f0f0ff', color:'#6b21a8' },
+  'digital-design-grafis': { bg:'#fce8e4', color:'#e8521a' },
+  'digital-web-developer': { bg:'#e8f4ee', color:'#2a6b4a' },
+  'digital-marketing':     { bg:'#fff0f6', color:'#b02a6b' },
+  'digital-crypto':        { bg:'#fff8e1', color:'#b45309' },
+  'digital-trading':       { bg:'#e8f0ff', color:'#1a3a8a' },
+  'digital-memasak':       { bg:'#ffedd5', color:'#c2410c' },
+  'digital-lainnya':       { bg:'#f0f0f0', color:'#555' },
+
+  // ===== OPEN TO WORK =====
+  'otw-marketing':            { bg:'#fff0f6', color:'#b02a6b' },
+  'otw-design-grafis':        { bg:'#fce8e4', color:'#e8521a' },
+  'otw-akunting':             { bg:'#e8eeff', color:'#2a4ab0' },
+  'otw-admin':                { bg:'#f0f0f0', color:'#555' },
+  'otw-customer-service':     { bg:'#e0f2fe', color:'#0369a1' },
+  'otw-social-media-manager': { bg:'#ede9fe', color:'#6d28d9' },
+  'otw-konten-kreator':       { bg:'#fff4e6', color:'#c07a00' },
+  'otw-community-builder':    { bg:'#f0fff4', color:'#166534' },
+  'otw-analis':               { bg:'#e8eeff', color:'#2a4ab0' },
+  'otw-ai-expert':            { bg:'#f0f0ff', color:'#6b21a8' },
 };
 const avColors = ['#2a6b4a','#e8521a','#d4a017','#2a4ab0','#b02a6b','#555566','#0891b2'];
 const initials = (name='') => name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
@@ -133,6 +166,31 @@ api.getTransaction     = (id)    => fetch(`${API}/transactions/${id}`, { headers
 api.submitTransaction  = (id)    => fetch(`${API}/transactions/${id}/submit`, { method:'PATCH', headers:headers(true) }).then(r=>r.json());
 api.approveTransaction = (id)    => fetch(`${API}/transactions/${id}/approve`, { method:'PATCH', headers:headers(true) }).then(r=>r.json());
 api.disputeTransaction = (id, reason) => fetch(`${API}/transactions/${id}/dispute`, { method:'PATCH', headers:headers(true), body:JSON.stringify({reason}) }).then(r=>r.json());
+// ===== PEMBAYARAN SOLANA USDC =====
+// getPaymentInfo: alamat escrow + jumlah USDC terkunci untuk DP/pelunasan.
+// verify*: mengembalikan { ok, ...data } — ok=false bila backend menolak
+// (jumlah salah, signature sudah dipakai, dsb.).
+api.getPaymentInfo = (id) => fetch(`${API}/transactions/${id}/payment-info`, { headers:headers(true) }).then(r=>r.json());
+api.verifyTransactionPayment = async (id, signature) => {
+  const r = await fetch(`${API}/transactions/${id}/verify-payment`, { method:'POST', headers:headers(true), body:JSON.stringify({signature}) });
+  const data = await r.json().catch(() => ({}));
+  return { ok: r.ok, ...data };
+};
+api.verifyDigitalPayment = async (id, purchaseId, signature) => {
+  const r = await fetch(`${API}/listings/${id}/verify-payment`, { method:'POST', headers:headers(true), body:JSON.stringify({purchase_id:purchaseId, signature}) });
+  const data = await r.json().catch(() => ({}));
+  return { ok: r.ok, ...data };
+};
+api.verifyBoostPayment = async (orderId, signature) => {
+  const r = await fetch(`${API}/boost/verify-payment`, { method:'POST', headers:headers(true), body:JSON.stringify({order_id:orderId, signature}) });
+  const data = await r.json().catch(() => ({}));
+  return { ok: r.ok, ...data };
+};
+api.adminRecordWithdrawTx = async (id, txSignature) => {
+  const r = await fetch(`${API}/admin/withdrawals/${id}/record-tx`, { method:'POST', headers:headers(true), body:JSON.stringify({tx_signature:txSignature}) });
+  const data = await r.json().catch(() => ({}));
+  return { ok: r.ok, ...data };
+};
 
 // ===== WALLET =====
 api.getBalance      = ()           => fetch(`${API}/wallet/balance`, { headers:headers(true) }).then(r=>r.json());
@@ -156,6 +214,23 @@ api.adminRejectWithdrawal   = (id, note)      => fetch(`${API}/admin/withdrawals
 api.adminGetDisputes        = ()              => fetch(`${API}/admin/disputes`, { headers:headers(true) }).then(r=>r.json());
 api.adminResolveDispute     = (id, decision, note) => fetch(`${API}/admin/disputes/${id}/resolve`, { method:'PATCH', headers:headers(true), body:JSON.stringify({decision, admin_note:note}) }).then(r=>r.json());
 api.adminGetTransactions    = ()              => fetch(`${API}/admin/transactions`, { headers:headers(true) }).then(r=>r.json());
+// ===== SOSIAL (FEED / FOLLOW / LIKE / KOMENTAR) =====
+api.getFeed        = (params='') => fetch(`${API}/social/feed?${params}`, { headers:headers(true) }).then(r=>r.json());
+api.createPost     = (data)      => fetch(`${API}/social/posts`, { method:'POST', headers:headers(true), body:JSON.stringify(data) }).then(r=>r.json());
+api.updatePost     = (id, data)  => fetch(`${API}/social/posts/${id}`, { method:'PATCH', headers:headers(true), body:JSON.stringify(data) }).then(r=>r.json());
+api.deletePost     = (id)        => fetch(`${API}/social/posts/${id}`, { method:'DELETE', headers:headers(true) }).then(r=>r.json());
+api.likePost       = (id)        => fetch(`${API}/social/posts/${id}/like`, { method:'POST', headers:headers(true) }).then(r=>r.json());
+api.unlikePost     = (id)        => fetch(`${API}/social/posts/${id}/like`, { method:'DELETE', headers:headers(true) }).then(r=>r.json());
+api.getComments    = (id)        => fetch(`${API}/social/posts/${id}/comments`).then(r=>r.json());
+api.addComment     = (id, body)  => fetch(`${API}/social/posts/${id}/comments`, { method:'POST', headers:headers(true), body:JSON.stringify({body}) }).then(r=>r.json());
+api.deleteComment  = (id)        => fetch(`${API}/social/comments/${id}`, { method:'DELETE', headers:headers(true) }).then(r=>r.json());
+api.followUser     = (id)        => fetch(`${API}/social/users/${id}/follow`, { method:'POST', headers:headers(true) }).then(r=>r.json());
+api.unfollowUser   = (id)        => fetch(`${API}/social/users/${id}/follow`, { method:'DELETE', headers:headers(true) }).then(r=>r.json());
+api.getFollowInfo  = (id)        => fetch(`${API}/social/users/${id}/follow-info`, { headers:headers(true) }).then(r=>r.json());
+api.getFollowers   = (id)        => fetch(`${API}/social/users/${id}/followers`).then(r=>r.json());
+api.getFollowing   = (id)        => fetch(`${API}/social/users/${id}/following`).then(r=>r.json());
+api.getDiscover    = ()          => fetch(`${API}/social/discover`, { headers:headers(true) }).then(r=>r.json());
+
 // Generic methods
 api.get    = (path) => fetch(`${API}${path}`, { headers: headers(true) }).then(r => r.json());
 api.delete = (path) => fetch(`${API}${path}`, { method: 'DELETE', headers: headers(true) }).then(r => r.json());
