@@ -4,6 +4,7 @@ const pool = require('../config/db');
 const { sendEmailNotif } = require('../config/email');
 const { creditWorker, updateWorkerBadge } = require('../utils/ledger');
 const { getUsdcIdrRate, idrToMicroUsdc, formatUsdc, escrowAddress, verifyUsdcPayment, reserveSignature } = require('../utils/solana');
+const { notifyUser } = require('../utils/notify');
 // Fee platform 10% dari nilai transaksi (naik dari 5% per keputusan
 // produk 2026-11-23). Tetap dibebankan ke CLIENT di atas harga worker
 // (billed = total + fee), jadi worker menerima total_amount penuh.
@@ -267,11 +268,16 @@ router.patch('/:id/submit', auth, async (req, res) => {
       UPDATE transactions SET status='submitted', worker_submitted_at=NOW(), auto_release_at=$1 WHERE id=$2
     `, [autoRelease, req.params.id]);
 
-    // Notif ke client dengan action approve
-    await pool.query(`
-      INSERT INTO notifications (user_id, type, title, message, link, action, metadata)
-      VALUES ($1,'transaction','📦 Pekerjaan Selesai!','Pekerja telah menandai pekerjaan selesai. Klik untuk langsung lakukan pelunasan.','#transactions','approve',$2)
-    `, [trxData.rows[0].client_id, JSON.stringify({trx_id: parseInt(req.params.id)})]);
+    // Notif ke client dengan action approve (kolom action/metadata
+    // ditambahkan lewat migrate-notifications.sql). Dibungkus
+    // try/catch sendiri supaya gagal notif tidak menggagalkan submit
+    // yang statusnya sudah berubah di atas.
+    try {
+      await pool.query(`
+        INSERT INTO notifications (user_id, type, title, message, link, action, metadata)
+        VALUES ($1,'transaction','📦 Pekerjaan Selesai!','Pekerja telah menandai pekerjaan selesai. Klik untuk langsung lakukan pelunasan.','#transactions','approve',$2)
+      `, [trxData.rows[0].client_id, JSON.stringify({trx_id: parseInt(req.params.id)})]);
+    } catch (e) { console.error('Notif error:', e.message); }
 
     // Email ke client
     const workerData = await pool.query('SELECT full_name FROM users WHERE id=$1', [req.user.id]);
@@ -300,6 +306,14 @@ router.patch('/:id/approve', auth, async (req, res) => {
       "UPDATE transactions SET status='waiting_final', client_approved_at=NOW() WHERE id=$1",
       [trx.id]
     );
+
+    // Notifikasi in-app ke worker (best-effort)
+    notifyUser(trx.worker_id, {
+      type: 'transaction',
+      title: '✅ Pekerjaan Disetujui',
+      body: 'Klien menyetujui hasil pekerjaanmu. Pelunasan segera diproses.',
+      link: '#transactions'
+    });
 
     res.json({ message: 'Disetujui! Silakan lakukan pelunasan.' });
   } catch(e) {
