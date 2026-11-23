@@ -915,7 +915,7 @@ body { font-family: var(--font-body); }
         <h4 data-i18n="footer_info">Info</h4>
         <a onclick="goTo('terms')"><span data-i18n="terms_title">Syarat & Ketentuan</span></a>
         <a onclick="goTo('privacy')"><span data-i18n="privacy_title">Kebijakan Privasi</span></a>
-        <a href="mailto:support@akubisa.co"><span data-i18n="footer_help">Bantuan</span></a>
+        <a onclick="goTo('faq')"><span data-i18n="footer_help">Bantuan</span></a>
         <a href="mailto:support@akubisa.co">support@akubisa.co</a>
         <a href="https://x.com/GoenawanY" target="_blank">Developer: @GoenawanY</a>
         <div style="font-size:.78rem;color:rgba(255,255,255,.3);margin-top:.3rem">Jl. Online, Indonesia 🇮🇩</div>
@@ -2142,7 +2142,7 @@ body { font-family: var(--font-body); }
     </div>
   </div>
   <div class="section">
-    <div style="max-width:800px;margin:0 auto;line-height:1.8;color:#444;font-size:.92rem">
+    <div style="max-width:800px;margin:0 auto;line-height:1.8;color:var(--text);font-size:.92rem">
       <h2 style="color:var(--ink);font-size:1.2rem;font-weight:700;margin:2rem 0 .8rem">1. Penerimaan Syarat</h2>
       <p>Dengan mengakses dan menggunakan platform AkuBisa, kamu menyetujui untuk terikat oleh syarat dan ketentuan ini. Jika kamu tidak setuju, harap tidak menggunakan layanan kami.</p>
 
@@ -2180,7 +2180,7 @@ body { font-family: var(--font-body); }
     </div>
   </div>
   <div class="section">
-    <div style="max-width:800px;margin:0 auto;line-height:1.8;color:#444;font-size:.92rem">
+    <div style="max-width:800px;margin:0 auto;line-height:1.8;color:var(--text);font-size:.92rem">
       <h2 style="color:var(--ink);font-size:1.2rem;font-weight:700;margin:2rem 0 .8rem">1. Data yang Kami Kumpulkan</h2>
       <p>Kami mengumpulkan: nama, email, nomor telepon, foto profil, dan dokumen KYC (KTP & selfie) saat kamu mendaftar dan menggunakan layanan kami.</p>
 
@@ -2204,6 +2204,115 @@ body { font-family: var(--font-body); }
     </div>
   </div>
 </div>
+
+<!-- ===== PUSAT BANTUAN / FAQ ===== -->
+<div id="page-faq" class="page" style="display:none">
+  <div class="dark-section" style="padding:3rem 5vw">
+    <div style="max-width:800px;margin:0 auto">
+      <h1 style="font-family:'Playfair Display',Georgia,serif;font-size:2.5rem;font-weight:900;margin-bottom:.5rem">Pusat Bantuan</h1>
+      <p style="color:rgba(255,255,255,.5);font-size:.88rem">Jawaban atas pertanyaan yang paling sering ditanyakan.</p>
+    </div>
+  </div>
+  <div class="section">
+    <div style="max-width:800px;margin:0 auto">
+      <details class="faq-item" open>
+        <summary>Bagaimana cara mendaftar di AkuBisa?</summary>
+        <div class="faq-answer">
+          <p>Pendaftaran gratis dan tanpa kartu kredit. Klik "Daftar", isi nama, email, dan password, lalu lengkapi profilmu. Satu akun bisa dipakai sebagai Pekerja maupun Pencari (Klien) — kamu bisa berpindah mode kapan saja dari menu profil. Pendaftaran memakan waktu kurang dari satu menit.</p>
+        </div>
+      </details>
+      <details class="faq-item">
+        <summary>Apa bedanya mode Pekerja dan mode Pencari?</summary>
+        <div class="faq-answer">
+          <p><strong>Mode Pekerja</strong> untuk kamu yang menawarkan jasa atau produk digital: buat penawaran, terima pesanan, dan terima pembayaran ke saldo. <strong>Mode Pencari (Klien)</strong> untuk kamu yang butuh talent: posting kebutuhan, pilih penawaran, dan bayar lewat escrow. Satu akun bisa menjalankan keduanya; ganti mode kapan saja tanpa membuat akun baru.</p>
+        </div>
+      </details>
+      <details class="faq-item">
+        <summary>Bagaimana cara kerja escrow AkuBisa?</summary>
+        <div class="faq-answer">
+          <p>Saat transaksi dibuat, Klien membayar DP dan dananya ditahan di wallet escrow milik platform — bukan langsung ke Pekerja. Setelah Pekerja menyerahkan hasil dan Klien menyetujuinya, Klien melunasi sisanya dan dana masuk ke saldo Pekerja. Kalau Klien tidak memberi kabar selama 7 hari setelah hasil diserahkan, dana dilepas otomatis ke Pekerja (auto-release).</p>
+          <p>Sistem ini melindungi kedua belah pihak: Klien tidak membayar untuk pekerjaan yang tidak datang, dan Pekerja tidak bekerja tanpa jaminan bayar.</p>
+        </div>
+      </details>
+      <details class="faq-item">
+        <summary>Berapa fee platform?</summary>
+        <div class="faq-answer">
+          <p>Platform mengenakan fee 10% dari nilai transaksi, dan fee ini dibebankan ke Klien di atas harga Pekerja. Contoh: harga Pekerja Rp100.000, maka Klien membayar total Rp110.000 (DP Rp55.000 + pelunasan Rp55.000). Pekerja menerima Rp100.000 penuh tanpa potongan.</p>
+          <p>Produk digital tidak dikenai fee — penjual menerima harga penuh.</p>
+        </div>
+      </details>
+      <details class="faq-item">
+        <summary>Bagaimana cara membayar?</summary>
+        <div class="faq-answer">
+          <p>Semua harga di AkuBisa dalam Rupiah, dan pembayaran dilakukan dengan USDC di jaringan Solana. Caranya: buat transaksi, lalu sistem menampilkan alamat wallet escrow AkuBisa dan jumlah USDC yang harus dikirim. Kurs IDR ke USDC dikunci saat transaksi dibuat, jadi jumlahnya tidak berubah.</p>
+          <p>Kirim USDC dari wallet kamu (misalnya Phantom) ke alamat escrow tersebut, lalu masukkan signature transaksi ke AkuBisa untuk diverifikasi otomatis di blockchain. Transaksi minimal Rp10.000. Pembayaran dibagi dua tahap: DP 50% di awal dan pelunasan 50% setelah hasil pekerjaan diserahkan.</p>
+        </div>
+      </details>
+      <details class="faq-item">
+        <summary>Bagaimana cara menarik saldo?</summary>
+        <div class="faq-answer">
+          <p>Pastikan kamu sudah mengisi alamat payout Solana di profil (alamat ini tidak tampil di profil publik). Lalu ajukan penarikan dari halaman Dompet, minimal Rp50.000. Saldo yang ditarik akan dibekukan, dan setelah admin menyetujui, USDC dikirim dari escrow ke alamat yang kamu konfirmasi saat mengajukan penarikan.</p>
+          <p>Perlu diingat: alamat tujuan dicatat saat kamu mengajukan — kalau kamu mengganti alamat di profil setelahnya, dana tetap dikirim ke alamat yang sudah kamu konfirmasi. Kurs USDC dikunci pada saat admin menyetujui penarikan.</p>
+        </div>
+      </details>
+      <details class="faq-item">
+        <summary>Apa yang terjadi jika pekerjaan tidak selesai?</summary>
+        <div class="faq-answer">
+          <p>Ajukan dispute dari halaman Transaksi dan jelaskan masalahnya. Admin AkuBisa akan meninjau dan memberikan keputusan dalam 1x24 jam kerja. Ada dua kemungkinan putusan: dana dilepas ke Pekerja (pekerjaan dinilai selesai), atau dikembalikan ke Klien sebagai kredit di akunnya sebesar DP yang sudah dibayar.</p>
+          <p>Perlu diketahui, pengembalian dana tidak dikirim otomatis sebagai USDC — USDC yang sudah masuk escrow tetap dipegang platform sampai admin mencairkan kredit tersebut. Kalau Klien tidak merespons selama 7 hari setelah Pekerja menyerahkan hasil, dana dilepas otomatis ke Pekerja.</p>
+        </div>
+      </details>
+      <details class="faq-item">
+        <summary>Bolehkah bertransaksi di luar AkuBisa?</summary>
+        <div class="faq-answer">
+          <p>Tidak. Semua pembayaran wajib dilakukan lewat platform. Pembayaran di luar AkuBisa membatalkan perlindungan escrow dan dispute — kalau terjadi masalah, admin tidak bisa membantumu. Pelanggaran yang terbukti berujung penindakan akun: peringatan, pembekuan sementara, hingga penutupan akun.</p>
+          <p>AkuBisa tidak membaca atau memindai isi chat kamu; penegakan dilakukan berdasarkan laporan pengguna dan review admin.</p>
+        </div>
+      </details>
+      <details class="faq-item">
+        <summary>Apa itu KYC dan siapa yang wajib melakukannya?</summary>
+        <div class="faq-answer">
+          <p>KYC (Know Your Customer) adalah verifikasi identitas dengan mengunggah foto KTP dan selfie. KYC wajib dilakukan sebelum kamu membuat transaksi — sistem akan menolak pembuatan transaksi bila identitasmu belum terverifikasi.</p>
+          <p>Ajukan KYC dari halaman profil; tim AkuBisa akan meninjaunya, dan bila disetujui, badge terverifikasi akan tampil di profilmu. Dokumen KYC hanya dapat diakses oleh tim verifikasi dan tidak dibagikan ke pihak lain.</p>
+        </div>
+      </details>
+      <details class="faq-item">
+        <summary>Bagaimana cara kerja Feed?</summary>
+        <div class="faq-answer">
+          <p>Feed adalah tempat pengguna memposting update, memamerkan portofolio, dan menunjukkan skill — sekaligus tempat mencari talent. Kamu bisa mengikuti talent, menyukai, dan mengomentari postingan mereka.</p>
+          <p>Ada tiga jenis postingan: update (kabar darimu), portfolio (karya dari portofoliomu), dan showcase (penawaran yang kamu jual). Postingan portfolio dan showcase wajib menautkan karya atau penawaran milikmu sendiri.</p>
+        </div>
+      </details>
+      <details class="faq-item">
+        <summary>Apa itu Boost penawaran?</summary>
+        <div class="faq-answer">
+          <p>Boost membuat penawaranmu tampil di bagian teratas halaman Jelajahi selama paket yang kamu pilih: 3 hari Rp15.000, 7 hari Rp25.000, 30 hari Rp75.000, atau 1 tahun Rp300.000. Boost dibayar dengan USDC seperti pembayaran lainnya, dan status featured langsung aktif setelah pembayaranmu terverifikasi.</p>
+        </div>
+      </details>
+      <details class="faq-item">
+        <summary>Bagaimana cara menjaga keamanan akun?</summary>
+        <div class="faq-answer">
+          <p>Gunakan password yang kuat dan jangan dipakai ulang di situs lain. Jangan pernah membagikan password, seed phrase, atau private key wallet Solana kamu kepada siapa pun — termasuk orang yang mengaku admin AkuBisa.</p>
+          <p>AkuBisa tidak pernah meminta seed phrase atau private key lewat chat, email, atau telepon. Kalau ada yang memintanya, itu penipuan: jangan dilayani dan laporkan ke support@akubisa.co.</p>
+        </div>
+      </details>
+      <div class="faq-contact">
+        <h3>Masih butuh bantuan?</h3>
+        <p>Tim AkuBisa siap membantu. Kirim email dan jelaskan masalahmu sedetail mungkin — sertakan ID transaksi bila pertanyaanmu terkait pembayaran.</p>
+        <a href="mailto:support@akubisa.co" class="btn btn-primary" style="text-decoration:none">Hubungi support@akubisa.co</a>
+        <p style="margin-top:1rem;margin-bottom:0">Baca juga: <a onclick="goTo('terms')" style="color:var(--accent);cursor:pointer">Syarat &amp; Ketentuan</a> · <a onclick="goTo('privacy')" style="color:var(--accent);cursor:pointer">Kebijakan Privasi</a></p>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  // FAQ: hanya satu jawaban terbuka dalam satu waktu
+  document.querySelectorAll('#page-faq details.faq-item').forEach(function(d) {
+    d.addEventListener('toggle', function() {
+      if (d.open) document.querySelectorAll('#page-faq details.faq-item').forEach(function(o) { if (o !== d) o.open = false; });
+    });
+  });
+</script>
 
 <script src="/js/i18n.js?v=1773203841"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.7/quill.min.js"></script>
