@@ -1,13 +1,7 @@
 const router = require('express').Router();
 const auth = require('../middleware/auth');
 const pool = require('../config/db');
-const axios = require('axios');
-const crypto = require('crypto');
-const { BASE_URL } = process.env;
-
-const DUITKU_MERCHANT = process.env.DUITKU_MERCHANT_CODE;
-const DUITKU_KEY = process.env.DUITKU_API_KEY;
-const DUITKU_URL = process.env.DUITKU_BASE_URL || 'https://sandbox.duitku.com/webapi/api';
+const { getUsdcIdrRate, idrToMicroUsdc, formatUsdc, escrowAddress, verifyUsdcPayment, reserveSignature } = require('../utils/solana');
 
 const PACKAGES = {
   '3day':  { days: 3,   amount: 15000,  label: 'Boost 3 Hari' },
@@ -21,7 +15,17 @@ router.get('/packages', (req, res) => {
   res.json(PACKAGES);
 });
 
-// POST beli boost
+// POST beli boost — dibayar via Solana USDC (satu-satunya rel bayar).
+// DULU: invoice dibuat ke Duitku (sandbox) tapi webhook di file ini
+// mengharapkan format Xendit — dua format itu TIDAK PERNAH cocok, jadi
+// boost yang sudah dibayar TIDAK PERNAH aktif. Lalu sempat dipindah ke
+// Pakasir; Pakasir kini tutup dan semua gateway fiat dihapus.
+// Sekarang: kurs DIKUNCI saat order dibuat (usdc_amount +
+// rate_idr_per_usdc disimpan di boost_orders); pembeli mengirim USDC
+// ke escrow lalu menyerahkan signature ke POST /verify-payment.
+// Kolom xendit_invoice_id / xendit_invoice_url TIDAK lagi ditulis
+// (peninggalan gateway Xendit; dibiarkan di DB live sebagai kolom
+// mati — jangan dipakai untuk apa pun).
 router.post('/buy', auth, async (req, res) => {
   const { listing_id, package: pkg } = req.body;
   if (!PACKAGES[pkg]) return res.status(400).json({ message: 'Paket tidak valid' });
@@ -31,82 +35,96 @@ router.post('/buy', auth, async (req, res) => {
     if (!listing.rows[0]) return res.status(404).json({ message: 'Listing tidak ditemukan' });
 
     const p = PACKAGES[pkg];
-    const userRes = await pool.query('SELECT email, full_name FROM users WHERE id=$1', [req.user.id]);
-    const user = userRes.rows[0];
 
-    // Buat Duitku invoice
-    let invoiceUrl = null;
-    let duitkuOrderId = `BOOST-${listing_id}-${Date.now()}`;
-    try {
-      const timestamp = Date.now().toString();
-      const signature = crypto.createHash('sha256')
-        .update(DUITKU_MERCHANT + timestamp + DUITKU_KEY)
-        .digest('hex');
-      const inv = await axios.post('https://api-sandbox.duitku.com/api/merchant/createInvoice', {
-        paymentAmount: p.amount,
-        merchantOrderId: duitkuOrderId,
-        productDetails: `${p.label} - "${listing.rows[0].title}"`,
-        customerVaName: user.full_name,
-        email: user.email,
-        returnUrl: `${BASE_URL}/#dashboard`,
-        callbackUrl: `${BASE_URL}/api/boost/webhook`,
-        expiryPeriod: 1440
-      }, {
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'x-duitku-signature': signature,
-          'x-duitku-timestamp': timestamp,
-          'x-duitku-merchantcode': DUITKU_MERCHANT
-        }
-      });
-      if (inv.data.statusCode === '00') invoiceUrl = inv.data.paymentUrl;
-    } catch(e) {
-      console.error('Duitku boost error:', e.message);
-    }
+    // Kunci kurs saat order dibuat. Gagal tertutup bila kurs/escrow
+    // belum siap.
+    let rateInfo;
+    try { rateInfo = await getUsdcIdrRate(); }
+    catch (e) { return res.status(503).json({ message: 'Pembayaran Solana belum siap: ' + e.message }); }
+    const usdcAmount = idrToMicroUsdc(p.amount, rateInfo.rate);
 
-    // Simpan order
+    // Simpan order (status 'pending' sampai verifikasi on-chain lolos)
     const order = await pool.query(`
-      INSERT INTO boost_orders (listing_id, user_id, package, amount, days, xendit_invoice_id, xendit_invoice_url)
+      INSERT INTO boost_orders (listing_id, user_id, package, amount, days, usdc_amount, rate_idr_per_usdc)
       VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *
-    `, [listing_id, req.user.id, pkg, p.amount, p.days, duitkuOrderId, invoiceUrl]);
+    `, [listing_id, req.user.id, pkg, p.amount, p.days, usdcAmount, rateInfo.rate]);
 
-    res.json({ message: 'Order dibuat!', invoice_url: invoiceUrl, order_id: order.rows[0].id });
+    res.json({
+      message: 'Order dibuat! Silakan kirim USDC ke alamat escrow, lalu verifikasi dengan signature transaksimu.',
+      order_id: order.rows[0].id,
+      escrow_address: escrowAddress().toBase58(),
+      amount: p.amount,
+      amount_usdc: usdcAmount,
+      amount_usdc_display: formatUsdc(usdcAmount),
+      rate_idr_per_usdc: rateInfo.rate
+    });
   } catch(e) {
     res.status(500).json({ message: e.message });
   }
 });
 
-// POST Webhook Xendit boost payment
-router.post('/webhook', async (req, res) => {
+// POST verifikasi pembayaran boost (pembeli menyerahkan signature).
+// Setelah verifikasi lolos: order jadi 'paid' + masa aktif dihitung,
+// DAN listing benar-benar di-featured (is_featured + featured_until)
+// — dulu aktivasi hanya menulis boost_orders sehingga boost berbayar
+// tidak pernah mengubah urutan listing (is_featured hanya di-set
+// endpoint promote gratis / admin).
+router.post('/verify-payment', auth, async (req, res) => {
+  const { order_id, signature } = req.body;
+  if (typeof signature !== 'string' || signature.length < 80 || signature.length > 90) {
+    return res.status(400).json({ message: 'Signature transaksi Solana tidak valid.' });
+  }
+  const client = await pool.connect();
   try {
-    const { external_id, status } = req.body;
-    if (status !== 'PAID' || !external_id?.startsWith('boost_')) return res.json({ ok: true });
-
-    const listing_id = external_id.split('_')[1];
-
-    // Update order
-    const order = await pool.query(
-      "UPDATE boost_orders SET status='paid', started_at=NOW(), expires_at=NOW() + (days || ' days')::interval WHERE xendit_invoice_id=$1 AND status='pending' RETURNING *",
-      [req.body.id]
+    const oRes = await client.query(
+      'SELECT * FROM boost_orders WHERE id=$1 AND user_id=$2',
+      [order_id, req.user.id]
     );
-
-    if (order.rows[0]) {
-      // Aktifkan boost di listing
-      await pool.query(`
-        UPDATE listings SET is_featured=true, featured_until=$1, boost_package=$2 WHERE id=$3
-      `, [order.rows[0].expires_at, order.rows[0].package, listing_id]);
-
-      // Notif ke user
-      await pool.query(`
-        INSERT INTO notifications (user_id, type, title, message, link)
-        VALUES ($1,'boost','🚀 Listing Berhasil Di-Boost!','Listing kamu sekarang tampil di posisi teratas selama ${order.rows[0].days} hari.','#my-listings')
-      `, [order.rows[0].user_id]);
+    const o = oRes.rows[0];
+    if (!o) return res.status(404).json({ message: 'Order tidak ditemukan' });
+    if (o.status === 'paid') return res.json({ message: 'Boost sudah aktif.' });
+    if (o.status !== 'pending') return res.status(400).json({ message: 'Status order tidak valid.' });
+    const expected = parseInt(o.usdc_amount, 10);
+    if (!Number.isFinite(expected) || expected <= 0) {
+      return res.status(400).json({ message: 'Order ini dibuat sebelum migrasi Solana (tidak ada jumlah USDC terkunci). Hubungi admin.' });
     }
 
-    res.json({ ok: true });
-  } catch(e) {
+    let v;
+    try {
+      v = await verifyUsdcPayment({ signature, expectedMicroUsdc: expected, recipientAddress: escrowAddress().toBase58() });
+    } catch (e) {
+      return res.status(503).json({ message: e.message });
+    }
+    if (!v.ok) return res.status(400).json({ message: v.reason });
+
+    await client.query('BEGIN');
+    const reserved = await reserveSignature(client, signature, 'boost', o.id);
+    if (!reserved) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({ message: 'Signature ini sudah pernah dipakai untuk pembayaran lain.' });
+    }
+    const upd = await client.query(
+      `UPDATE boost_orders SET status='paid', started_at=NOW(),
+         expires_at=NOW() + (days || ' days')::interval, tx_signature=$1
+       WHERE id=$2 AND status='pending' RETURNING *`,
+      [signature, o.id]
+    );
+    if (!upd.rows.length) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({ message: 'Order sudah diproses.' });
+    }
+    const activated = upd.rows[0];
+    await client.query(
+      'UPDATE listings SET is_featured=true, featured_until=$1 WHERE id=$2',
+      [activated.expires_at, o.listing_id]
+    );
+    await client.query('COMMIT');
+    res.json({ message: `Boost aktif selama ${o.days} hari!`, signature, expires_at: activated.expires_at });
+  } catch (e) {
+    try { await client.query('ROLLBACK'); } catch { /* abaikan */ }
     res.status(500).json({ message: e.message });
+  } finally {
+    client.release();
   }
 });
 
