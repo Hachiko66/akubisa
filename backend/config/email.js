@@ -1,7 +1,20 @@
 const nodemailer = require('nodemailer');
 
+// Pengiriman email lewat layanan transaksional (Resend SMTP).
+// Gmail tidak bisa dipakai lagi: Gmail menimpa header `from` dengan akun
+// yang login ke SMTP, jadi semua email terkirim dari email pribadi pemilik.
+// Resend mengirim dari domain terverifikasi apa adanya.
+// .env yang dipakai di VPS:
+//   EMAIL_HOST=smtp.resend.com
+//   EMAIL_PORT=465
+//   EMAIL_USER=resend            (literal, bukan alamat email)
+//   EMAIL_PASS=<Resend API key, diawali re_>
+//   EMAIL_FROM=AkuBisa <noreply@akubisa.co>
+
+const EMAIL_FROM = process.env.EMAIL_FROM || 'AkuBisa <noreply@akubisa.co>';
+
 const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+  host: process.env.EMAIL_HOST || 'smtp.resend.com',
   port: parseInt(process.env.EMAIL_PORT || '465'),
   secure: parseInt(process.env.EMAIL_PORT || '465') === 465,
   auth: {
@@ -13,7 +26,7 @@ const transporter = nodemailer.createTransport({
 const sendEmail = async ({ to, subject, html }) => {
   try {
     await transporter.sendMail({
-      from: 'AkuBisa <noreply@akubisa.co>',
+      from: EMAIL_FROM,
       replyTo: 'noreply@akubisa.co',
       to, subject, html
     });
