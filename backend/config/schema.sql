@@ -234,8 +234,9 @@ ALTER TABLE transactions ADD COLUMN IF NOT EXISTS refunded_at TIMESTAMP;
 -- Aturan: harga di sistem tetap Rupiah; saat transaksi/order dibuat,
 -- kurs IDR->USDC DIKUNCI dan jumlah USDC (micro-USDC, 1 USDC =
 -- 1.000.000) disimpan di baris terkait. Verifikasi on-chain harus
--- cocok dengan jumlah yang terkunci itu. Fee platform 10% (naik dari
--- 5%) dibebankan ke client di atas harga worker.
+-- cocok dengan jumlah yang terkunci itu. Fee platform 5%
+-- dibebankan ke client di atas harga worker (sempat 10% di ronde
+-- crypto, dikembalikan ke 5% per keputusan produk 2026-11-23).
 -- Kolom xendit_dp_invoice_id / xendit_final_invoice_id dan
 -- duitku_reference / duitku_order_id di tabel transactions TIDAK lagi
 -- ditulis (peninggalan gateway lama). Dibiarkan di DB live sebagai
@@ -293,6 +294,54 @@ ALTER TABLE withdraw_requests ADD COLUMN IF NOT EXISTS usdc_estimate BIGINT;
 ALTER TABLE withdraw_requests ADD COLUMN IF NOT EXISTS usdc_amount BIGINT;
 ALTER TABLE withdraw_requests ADD COLUMN IF NOT EXISTS tx_signature VARCHAR(100);
 ALTER TABLE withdraw_requests ADD COLUMN IF NOT EXISTS paid_at TIMESTAMP;
+
+-- ===== PENDAPATAN (2026-11-23) =====
+-- Keran pemasukan platform (lihat backend/utils/revenue.js — satu
+-- sumber kebenaran angka-angka di bawah; migrasi live-DB yang sama
+-- ada di backend/config/migrate-revenue.sql):
+-- 1. Kunci kurs IDR->USDC berlaku 24 JAM sejak rate_locked_at
+--    (RATE_LOCK_TTL_MS). verify-payment menolak kunci kedaluwarsa.
+-- 2. Fee produk digital 5% (pembeli bayar harga + fee, penjual
+--    terima harga penuh; fee mengendap di escrow).
+-- 3. Biaya penarikan 1% (min Rp1.000, maks Rp10.000); member Pro
+--    bebas biaya penarikan.
+-- 4. Membership Pro Rp49.000 / 30 hari (tabel subscriptions).
+
+-- 1. Kunci kurs 24 jam untuk boost + produk digital (transactions
+--    sudah punya rate_locked_at). Baris lama diisi dari created_at.
+ALTER TABLE boost_orders ADD COLUMN IF NOT EXISTS rate_locked_at TIMESTAMP;
+ALTER TABLE digital_purchases ADD COLUMN IF NOT EXISTS rate_locked_at TIMESTAMP;
+UPDATE boost_orders SET rate_locked_at = created_at WHERE rate_locked_at IS NULL;
+UPDATE digital_purchases SET rate_locked_at = created_at WHERE rate_locked_at IS NULL;
+
+-- 2. Fee produk digital 5%
+ALTER TABLE digital_purchases ADD COLUMN IF NOT EXISTS platform_fee INT NOT NULL DEFAULT 0;
+ALTER TABLE digital_purchases ADD COLUMN IF NOT EXISTS total_amount INT;
+UPDATE digital_purchases SET total_amount = amount WHERE total_amount IS NULL;
+
+-- 3. Biaya penarikan 1% (min Rp1.000, maks Rp10.000; 0 untuk Pro)
+ALTER TABLE withdraw_requests ADD COLUMN IF NOT EXISTS fee_rp INT NOT NULL DEFAULT 0;
+ALTER TABLE withdraw_requests ADD COLUMN IF NOT EXISTS fee_usdc BIGINT;
+
+-- 4. Membership Pro (Rp49.000 / 30 hari)
+--    status: 'pending' (menunggu verifikasi bayar USDC) | 'active'
+--    | 'expired' (tidak dipakai aktif — kedaluwarsa dibaca dari
+--    expires_at).
+CREATE TABLE IF NOT EXISTS subscriptions (
+  id SERIAL PRIMARY KEY,
+  user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  plan VARCHAR(20) NOT NULL DEFAULT 'pro' CHECK (plan IN ('pro')),
+  status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','active','expired')),
+  amount INT NOT NULL DEFAULT 49000,
+  usdc_amount BIGINT,
+  rate_idr_per_usdc NUMERIC(12,2),
+  rate_locked_at TIMESTAMP,
+  started_at TIMESTAMP,
+  expires_at TIMESTAMP,
+  tx_signature VARCHAR(100),
+  created_at TIMESTAMP DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_subscriptions_user ON subscriptions(user_id, plan, status, expires_at);
 
 -- ===== FITUR SOSIAL: FEED, FOLLOW, LIKE, KOMENTAR (2026-11-23) =====
 -- AkuBisa sebagai media sosial: user posting update skill / pamer
